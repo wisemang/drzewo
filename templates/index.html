@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nearest Trees</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 400px; /* Specify a height for the map */
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>User's Location</h2>
+    <p id="location">Fetching location...</p>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <h2>Nearest Trees</h2>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Common Name</th>
+                <th>Botanical Name</th>
+                <th>Address</th>
+                <th>Street Name</th>
+                <th>Distance (m)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Results will be inserted here -->
+        </tbody>
+    </table>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let userMarker;
+
+        function displayLocation(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            document.getElementById('location').textContent = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
+
+            // Initialize the map
+            map = L.map('map').setView([latitude, longitude], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add a marker for the user's location
+            userMarker = L.marker([latitude, longitude]).addTo(map);
+            userMarker.bindPopup("You are here").openPopup();
+
+            // Fetch the nearest trees
+            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=10`)
+                .then(response => response.json())
+                .then(data => {
+                    updateTable(data);
+                    updateMap(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateMap(data) {
+            data.forEach(item => {
+                const marker = L.marker([item.latitude, item.longitude]).addTo(map);
+                marker.bindPopup(`Common Name: ${item.common_name}<br>Botanical Name: ${item.botanical_name}`);
+            });
+        }
+
+        function updateTable(data) {
+            const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+            table.innerHTML = ''; // Clear existing table data
+
+            data.forEach(row => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.source}</td>
+                    <td>${row.common_name}</td>
+                    <td>${row.botanical_name}</td>
+                    <td>${row.address}</td>
+                    <td>${row.streetname}</td>
+                    <td>${row.distance.toFixed(2)}</td>
+                `;
+                table.appendChild(tr);
+            });
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    document.getElementById('location').textContent = "User denied the request for Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    document.getElementById('location').textContent = "Location information is unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    document.getElementById('location').textContent = "The request to get user location timed out.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    document.getElementById('location').textContent = "An unknown error occurred.";
+                    break;
+            }
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(displayLocation, showError);
+            } else { 
+                document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        getLocation(); // Call the function to get the location when the page loads
+    </script>
+</body>
+</html>
