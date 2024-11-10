@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
-            height: 400px; /* Specify a height for the map */
+            height: 400px;
         }
         table, th, td {
             border: 1px solid black;
@@ -16,11 +16,25 @@
         th, td {
             padding: 10px;
         }
+        #location, #accuracy {
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+        #refresh-location {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        .highlight {
+            background-color: #d9f9d9; /* Light green background for highlighted rows */
+        }
     </style>
 </head>
 <body>
-    <h2>User's Location</h2>
+    <h2>Your Location</h2>
     <p id="location">Fetching location...</p>
+    <p id="accuracy"></p>
+    <span id="refresh-location" onclick="getLocation()">Refresh Location</span>
 
     <!-- Map Container -->
     <div id="map"></div>
@@ -44,26 +58,42 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        let map;
-        let userMarker;
+        let map, userMarker;
+        let treeMarkers = [];
+
+        // Custom tree icon from svgrepo.com
+        const treeIcon = L.icon({
+            iconUrl: 'static/images/tree-gross-outline-svgrepo-com.svg',
+            iconSize: [30, 30], // Adjust the size as needed
+            iconAnchor: [15, 30], // Anchor the icon to the bottom center
+            popupAnchor: [0, -30] // Position the popup above the icon
+        });
 
         function displayLocation(position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
             document.getElementById('location').textContent = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
+            document.getElementById('accuracy').textContent = 'Accuracy: ±' + accuracy.toFixed(1) + ' meters';
 
-            // Initialize the map
-            map = L.map('map').setView([latitude, longitude], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            // Initialize or update the map
+            if (!map) {
+                map = L.map('map').setView([latitude, longitude], 18);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom:21
+                }).addTo(map);
 
-            // Add a marker for the user's location
-            userMarker = L.marker([latitude, longitude]).addTo(map);
-            userMarker.bindPopup("You are here").openPopup();
+                userMarker = L.marker([latitude, longitude]).addTo(map)
+                    .bindPopup("You are here")
+                    .openPopup();
+            } else {
+                userMarker.setLatLng([latitude, longitude]);
+                map.setView([latitude, longitude], 18);
+            }
 
             // Fetch the nearest trees
-            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=10`)
+            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=40`)
                 .then(response => response.json())
                 .then(data => {
                     updateTable(data);
@@ -73,18 +103,42 @@
         }
 
         function updateMap(data) {
-            data.forEach(item => {
-                const marker = L.marker([item.latitude, item.longitude]).addTo(map);
-                marker.bindPopup(`Common Name: ${item.common_name}<br>Botanical Name: ${item.botanical_name}`);
-            });
+    // Remove previous markers
+    treeMarkers.forEach(marker => map.removeLayer(marker));
+    treeMarkers = [];
+
+    data.forEach((item, index) => {
+        const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
+
+        // Customize the popup content
+        const popupContent = `
+            <div>
+                <strong>${item.common_name}</strong><br>
+                <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        
+        // Add click event to highlight the row
+        marker.on('click', () => highlightRow(index));
+
+        treeMarkers.push(marker);
+
+        if (index === 0) {
+            marker.openPopup();
+            highlightRow(index);
         }
+    });
+}
 
         function updateTable(data) {
             const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
-            table.innerHTML = ''; // Clear existing table data
+            table.innerHTML = '';
 
-            data.forEach(row => {
+            data.forEach((row, index) => {
                 let tr = document.createElement('tr');
+                tr.id = `tree-row-${index}`;
                 tr.innerHTML = `
                     <td>${row.source}</td>
                     <td>${row.common_name}</td>
@@ -93,8 +147,30 @@
                     <td>${row.streetname}</td>
                     <td>${row.distance.toFixed(2)}</td>
                 `;
+                
+                // Add click event to highlight the marker
+                tr.addEventListener('click', () => highlightMarker(index));
+                
                 table.appendChild(tr);
             });
+        }
+
+        // Highlight both the marker and the row
+        function highlightMarker(index) {
+            const marker = treeMarkers[index];
+            
+            // Center the map on the marker and open its popup
+            map.setView(marker.getLatLng(), 18);
+            marker.openPopup();
+            
+            // Highlight the corresponding row
+            highlightRow(index);
+        }
+
+        // Function to highlight a table row
+        function highlightRow(index) {
+            document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight'));
+            document.getElementById(`tree-row-${index}`).classList.add('highlight');
         }
 
         function showError(error) {
@@ -122,7 +198,7 @@
             }
         }
 
-        getLocation(); // Call the function to get the location when the page loads
+        getLocation();
     </script>
 </body>
 </html>
