@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nearest Trees</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="icon" href="/static/images/tree-gross-outline-svgrepo-com.svg" type="image/svg+xml">
     <style>
         #map {
             height: 400px;
@@ -31,23 +32,37 @@
     </style>
 </head>
 <body>
-    <h2>Your Location</h2>
-    <p id="location">Fetching location...</p>
-    <p id="accuracy"></p>
-    <span id="refresh-location" onclick="getLocation()">Refresh Location</span>
+    <!-- Friendly Introduction -->
+    <h1>TreeSeek</h1>
+    <p>Learn more about the trees around you.</p>
 
-    <!-- Map Container -->
-    <div id="map"></div>
+    <!-- Main Map Interface -->
+    <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
 
-    <h2>Nearest Trees</h2>
+    <!-- Actions & User Location Info -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <!-- Refresh Links with Friendly Text -->
+        <div>
+            <span id="refresh-location" onclick="getLocation()" style="cursor: pointer; color: blue; text-decoration: underline;">Update to my current location</span>
+            <span id="get-trees-at-center" onclick="getTreesAtCenter()" style="cursor: pointer; color: blue; text-decoration: underline; margin-left: 15px;">Find trees near the center of the map</span>
+        </div>
+
+        <!-- Location & Accuracy (for reference only, smaller text) -->
+        <div>
+            <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
+            <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+        </div>
+    </div>
+
+    <!-- Nearest Trees List with Friendlier Headers -->
+    <h2>Nearby Trees</h2>
+    <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
     <table id="resultsTable">
         <thead>
             <tr>
-                <th>Source</th>
+                <th>Address</th>
                 <th>Common Name</th>
                 <th>Botanical Name</th>
-                <th>Address</th>
-                <th>Street Name</th>
                 <th>Distance (m)</th>
             </tr>
         </thead>
@@ -55,7 +70,7 @@
             <!-- Results will be inserted here -->
         </tbody>
     </table>
-
+    
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         let map, userMarker;
@@ -93,7 +108,7 @@
             }
 
             // Fetch the nearest trees
-            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=40`)
+            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=80`)
                 .then(response => response.json())
                 .then(data => {
                     updateTable(data);
@@ -102,35 +117,70 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
-        function updateMap(data) {
-    // Remove previous markers
-    treeMarkers.forEach(marker => map.removeLayer(marker));
-    treeMarkers = [];
-
-    data.forEach((item, index) => {
-        const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
-
-        // Customize the popup content
-        const popupContent = `
-            <div>
-                <strong>${item.common_name}</strong><br>
-                <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
-            </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        
-        // Add click event to highlight the row
-        marker.on('click', () => highlightRow(index));
-
-        treeMarkers.push(marker);
-
-        if (index === 0) {
-            marker.openPopup();
-            highlightRow(index);
+        function fetchTrees(latitude, longitude) {
+            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=40`)
+                .then(response => response.json())
+                .then(data => {
+                    updateTable(data);
+                    addMarkers(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
         }
-    });
+
+        function addMarkers(data) {
+            data.forEach((item, index) => {
+                const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
+
+                // Customize the popup content
+                const popupContent = `
+                    <div>
+                        <strong>${item.common_name}</strong><br>
+                        <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                marker.on('click', () => highlightRow(index));
+                treeMarkers.push(marker);
+            });
+        }
+
+
+        function updateMap(data) {
+            // Remove previous markers
+            treeMarkers.forEach(marker => map.removeLayer(marker));
+            treeMarkers = [];
+
+            data.forEach((item, index) => {
+                const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
+
+                // Customize the popup content
+                const popupContent = `
+                    <div>
+                        <strong>${item.common_name}</strong><br>
+                        <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                
+                // Add click event to highlight the row
+                marker.on('click', () => highlightRow(index));
+
+                treeMarkers.push(marker);
+
+                if (index === 0) {
+                    marker.openPopup();
+                    highlightRow(index);
+                }
+            });
 }
+
+        function getTreesAtCenter() {
+            const center = map.getCenter();
+            fetchTrees(center.lat, center.lng);
+        }
+
 
         function updateTable(data) {
             const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
@@ -140,11 +190,9 @@
                 let tr = document.createElement('tr');
                 tr.id = `tree-row-${index}`;
                 tr.innerHTML = `
-                    <td>${row.source}</td>
+                    <td>${row.address} ${row.streetname}</td>
                     <td>${row.common_name}</td>
                     <td>${row.botanical_name}</td>
-                    <td>${row.address}</td>
-                    <td>${row.streetname}</td>
                     <td>${row.distance.toFixed(2)}</td>
                 `;
                 
