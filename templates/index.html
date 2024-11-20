@@ -1,88 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nearest Trees</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="icon" href="/static/images/tree-gross-outline-svgrepo-com.svg" type="image/svg+xml">
-    <style>
-        #map {
-            height: 400px;
-        }
-        table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-        }
-        #location, #accuracy {
-            font-size: 1.2em;
-            margin: 5px 0;
-        }
-        #refresh-location {
-            cursor: pointer;
-            color: blue;
-            text-decoration: underline;
-        }
-        .highlight {
-            background-color: #d9f9d9; /* Light green background for highlighted rows */
-        }
-    </style>
-</head>
-<body>
-    <!-- Friendly Introduction -->
-    <h1>TreeSeek</h1>
-    <p>Learn more about the trees around you.</p>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nearest Trees</title>
+        <link rel="icon" href="/static/images/tree-gross-outline-svgrepo-com.svg" type="image/svg+xml">
+        <style>
+            #map {
+                height: 400px;
+            }
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 10px;
+            }
+            #location, #accuracy {
+                font-size: 1.2em;
+                margin: 5px 0;
+            }
+            .highlight {
+                background-color: #d9f9d9; /* Light green background for highlighted rows */
+            }
+            .button {
+                display: inline-block;
+                padding: 10px 15px;
+                margin: 5px;
+                font-size: 1em;
+                color: white;
+                background-color: #4CAF50;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-align: center;
+            }
+            .button:hover {
+                background-color: #45a049;
+            }
+            .button-icon {
+                font-size: 1.2em;
+            }
+        </style>
 
-    <!-- Main Map Interface -->
-    <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
+        <!-- Leaflet -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-    <!-- Actions & User Location Info -->
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <!-- Refresh Links with Friendly Text -->
-        <div>
-            <span id="refresh-location" onclick="getLocation()" style="cursor: pointer; color: blue; text-decoration: underline;">Update to my current location</span>
-            <span id="get-trees-at-center" onclick="getTreesAtCenter()" style="cursor: pointer; color: blue; text-decoration: underline; margin-left: 15px;">Find trees near the center of the map</span>
-        </div>
+        <!-- Maplibre GL -->
+        <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+        <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 
-        <!-- Location & Accuracy (for reference only, smaller text) -->
-        <div>
-            <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
-            <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
-        </div>
-    </div>
+        <!-- Maplibre GL Leaflet  -->
+        <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 
-    <!-- Nearest Trees List with Friendlier Headers -->
-    <h2>Nearby Trees</h2>
-    <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
-    <table id="resultsTable">
-        <thead>
-            <tr>
-                <th>Address</th>
-                <th>Common Name</th>
-                <th>Botanical Name</th>
-                <th>Distance (m)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Results will be inserted here -->
-        </tbody>
-    </table>
+    </head>
+    <body>
+        <!-- Friendly Introduction -->
+        <h1>TreeSeek</h1>
+        <p>Learn more about the trees around you.</p>
     
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <!-- Action Buttons -->
+        <div style="margin-bottom: 1em;">
+            <button class="button" onclick="getLocation()">
+                <span class="button-icon">📍</span> Current Location
+            </button>
+            <button class="button" onclick="getTreesAtCenter()">
+                <span class="button-icon">🌳</span> Load more trees
+            </button>
+        </div>
+    
+        <!-- Main Map Interface -->
+        <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
+    
+        <!-- Actions & User Location Info -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <!-- Location & Accuracy (for reference only, smaller text) -->
+            <div>
+                <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
+                <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+            </div>
+        </div>
+
+        <!-- Nearest Trees List with Friendlier Headers -->
+        <h2>Nearby Trees</h2>
+        <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Common Name</th>
+                    <th>Botanical Name</th>
+                    <th>Distance (m)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Results will be inserted here -->
+            </tbody>
+        </table>
+    
     <script>
-        let map, userMarker;
+        let map; // Declare a global map variable
+        let userMarker;
         let treeMarkers = [];
 
-        // Custom tree icon from svgrepo.com
+        // Custom tree icon
         const treeIcon = L.icon({
             iconUrl: 'static/images/tree-gross-outline-svgrepo-com.svg',
-            iconSize: [30, 30], // Adjust the size as needed
-            iconAnchor: [15, 30], // Anchor the icon to the bottom center
-            popupAnchor: [0, -30] // Position the popup above the icon
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
         });
+
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function initializeMap() {
+            const mapProvider = getUrlParameter('map') || 'osm'; // Default to OSM
+
+            let tileLayerUrl, attribution;
+
+            if (mapProvider === 'openfreemap') {
+                tileLayerUrl = 'https://tiles.openfreemap.org/styles/liberty/{z}/{x}/{y}.png';
+                attribution = '© OpenStreetMap contributors, OpenFreeMap';
+                map = L.map('map').setView([51.505, -0.09], 18)
+
+                L.maplibreGL({
+                    style: 'https://tiles.openfreemap.org/styles/liberty',
+                }).addTo(map)
+            } else {
+                tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                attribution = '© OpenStreetMap contributors';
+                map = L.map('map').setView([51.505, -0.09], 18); // Default center and zoom level
+            }
+
+            L.tileLayer(tileLayerUrl, {
+                attribution: attribution,
+                maxZoom: 21
+            }).addTo(map);
+        }
 
         function displayLocation(position) {
             const latitude = position.coords.latitude;
@@ -91,30 +149,18 @@
             document.getElementById('location').textContent = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
             document.getElementById('accuracy').textContent = 'Accuracy: ±' + accuracy.toFixed(1) + ' meters';
 
-            // Initialize or update the map
-            if (!map) {
-                map = L.map('map').setView([latitude, longitude], 18);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
-                    maxZoom:21
-                }).addTo(map);
-
+            if (!userMarker) {
                 userMarker = L.marker([latitude, longitude]).addTo(map)
                     .bindPopup("You are here")
                     .openPopup();
             } else {
                 userMarker.setLatLng([latitude, longitude]);
-                map.setView([latitude, longitude], 18);
             }
 
+            map.setView([latitude, longitude], 18); // Center the map on the user's location
+
             // Fetch the nearest trees
-            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=80`)
-                .then(response => response.json())
-                .then(data => {
-                    updateTable(data);
-                    updateMap(data);
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            fetchTrees(latitude, longitude);
         }
 
         function fetchTrees(latitude, longitude) {
@@ -131,56 +177,17 @@
             data.forEach((item, index) => {
                 const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
 
-                // Customize the popup content
                 const popupContent = `
                     <div>
                         <strong>${item.common_name}</strong><br>
                         <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
                     </div>
                 `;
-
                 marker.bindPopup(popupContent);
                 marker.on('click', () => highlightRow(index));
                 treeMarkers.push(marker);
             });
         }
-
-
-        function updateMap(data) {
-            // Remove previous markers
-            treeMarkers.forEach(marker => map.removeLayer(marker));
-            treeMarkers = [];
-
-            data.forEach((item, index) => {
-                const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
-
-                // Customize the popup content
-                const popupContent = `
-                    <div>
-                        <strong>${item.common_name}</strong><br>
-                        <em style="font-size: 0.9em;">${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
-                    </div>
-                `;
-
-                marker.bindPopup(popupContent);
-                
-                // Add click event to highlight the row
-                marker.on('click', () => highlightRow(index));
-
-                treeMarkers.push(marker);
-
-                if (index === 0) {
-                    marker.openPopup();
-                    highlightRow(index);
-                }
-            });
-}
-
-        function getTreesAtCenter() {
-            const center = map.getCenter();
-            fetchTrees(center.lat, center.lng);
-        }
-
 
         function updateTable(data) {
             const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
@@ -195,34 +202,41 @@
                     <td>${row.botanical_name}</td>
                     <td>${row.distance.toFixed(2)}</td>
                 `;
-                
-                // Add click event to highlight the marker
+
                 tr.addEventListener('click', () => highlightMarker(index));
-                
+
                 table.appendChild(tr);
             });
         }
 
-        // Highlight both the marker and the row
         function highlightMarker(index) {
             const marker = treeMarkers[index];
-            
-            // Center the map on the marker and open its popup
             map.setView(marker.getLatLng(), 18);
             marker.openPopup();
-            
-            // Highlight the corresponding row
             highlightRow(index);
         }
 
-        // Function to highlight a table row
         function highlightRow(index) {
             document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight'));
-            document.getElementById(`tree-row-${index}`).classList.add('highlight');
+            const row = document.getElementById(`tree-row-${index}`);
+            if (row) row.classList.add('highlight');
+        }
+
+        function getTreesAtCenter() {
+            const center = map.getCenter();
+            fetchTrees(center.lat, center.lng);
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(displayLocation, showError);
+            } else {
+                document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
+            }
         }
 
         function showError(error) {
-            switch(error.code) {
+            switch (error.code) {
                 case error.PERMISSION_DENIED:
                     document.getElementById('location').textContent = "User denied the request for Geolocation.";
                     break;
@@ -238,14 +252,8 @@
             }
         }
 
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(displayLocation, showError);
-            } else { 
-                document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
-            }
-        }
-
+        // Initialize the map and setup location tracking
+        initializeMap();
         getLocation();
     </script>
 </body>

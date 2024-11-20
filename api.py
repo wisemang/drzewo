@@ -28,7 +28,8 @@ def nearest():
     conn = psycopg2.connect(**db_params)
     cur = conn.cursor()
     cur.execute("""
-        SELECT source, common_name, botanical_name, address, streetname, 
+        SELECT source, objectid, common_name, botanical_name, address, streetname,
+        dbh_trunk, tree_position_number,
         ST_Distance(geom, ST_MakePoint(%s, %s)::geography) AS distance,
         ST_X(ST_GeometryN(geom, 1)) AS longitude, ST_Y(ST_GeometryN(geom, 1)) AS latitude
         FROM street_trees
@@ -38,7 +39,7 @@ def nearest():
     results = cur.fetchall()
     cur.close()
     conn.close()
-    return jsonify([{'source': row[0], 'common_name': row[1], 'botanical_name':row[2], 'address':row[3], 'streetname': row[4], 'distance': row[5], 'longitude': row[6], 'latitude': row[7]} for row in results])
+    return jsonify([{'source': row[0], 'objectid': row[1], 'common_name': row[2], 'botanical_name':row[3], 'address':row[4], 'streetname': row[5], 'dbh':row[6], 'pos':row[7], 'distance': row[8], 'longitude': row[9], 'latitude': row[10]} for row in results])
 
 
 
