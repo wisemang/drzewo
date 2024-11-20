@@ -68,6 +68,11 @@
             <button class="button" onclick="getTreesAtCenter()">
                 <span class="button-icon">🌳</span> Load more trees
             </button>
+            <div style="margin-bottom: 10px;">
+                <button id="toggle-provider" class="button" onclick="toggleMapProvider()">
+                    Switch to OpenFreeMap
+                </button>
+            </div>
         </div>
     
         <!-- Main Map Interface -->
@@ -100,7 +105,6 @@
         </table>
     
     <script>
-        let map; // Declare a global map variable
         let userMarker;
         let treeMarkers = [];
 
@@ -117,30 +121,48 @@
             return urlParams.get(name);
         }
 
+        let map; // Global map instance
+        let currentProvider = 'osm'; // Default provider
+        let osmLayer, openFreeMapLayer;
+
         function initializeMap() {
-            const mapProvider = getUrlParameter('map') || 'osm'; // Default to OSM
+            // Create the map instance
+            map = L.map('map').setView([51.505, -0.09], 13); // Default center and zoom
 
-            let tileLayerUrl, attribution;
-
-            if (mapProvider === 'openfreemap') {
-                tileLayerUrl = 'https://tiles.openfreemap.org/styles/liberty/{z}/{x}/{y}.png';
-                attribution = '© OpenStreetMap contributors, OpenFreeMap';
-                map = L.map('map').setView([51.505, -0.09], 18)
-
-                L.maplibreGL({
-                    style: 'https://tiles.openfreemap.org/styles/liberty',
-                }).addTo(map)
-            } else {
-                tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                attribution = '© OpenStreetMap contributors';
-                map = L.map('map').setView([51.505, -0.09], 18); // Default center and zoom level
-            }
-
-            L.tileLayer(tileLayerUrl, {
-                attribution: attribution,
+            // Define the OSM layer
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
                 maxZoom: 21
-            }).addTo(map);
+            });
+
+            // Define the OpenFreeMap layer using MapLibre GL
+            openFreeMapLayer = L.maplibreGL({
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+            });
+
+            // Add the default layer to the map
+            map.addLayer(osmLayer);
         }
+
+        // Toggle between OSM and OpenFreeMap
+        function toggleMapProvider() {
+            if (currentProvider === 'osm') {
+                // Switch to OpenFreeMap
+                map.removeLayer(osmLayer);
+                map.addLayer(openFreeMapLayer);
+                currentProvider = 'openfreemap';
+                document.getElementById('toggle-provider').textContent = 'Switch to OSM';
+            } else {
+                // Switch to OSM
+                map.removeLayer(openFreeMapLayer);
+                map.addLayer(osmLayer);
+                currentProvider = 'osm';
+                document.getElementById('toggle-provider').textContent = 'Switch to OpenFreeMap';
+            }
+        }
+
+        // Initialize the map
+        initializeMap();
 
         function displayLocation(position) {
             const latitude = position.coords.latitude;
