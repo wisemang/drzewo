@@ -25,7 +25,7 @@
             }
             .button {
                 display: inline-block;
-                padding: 10px 15px;
+                padding: 10px 10px;
                 margin: 5px;
                 font-size: 1em;
                 color: white;
@@ -42,14 +42,60 @@
                 font-size: 1.2em;
             }
             .map-icon-button {
-                font-size: 1.5em;
+                display: flex; /* Use Flexbox for centering */
+                justify-content: center; /* Horizontally center */
+                align-items: center; /* Vertically center */
+                width: 32px; /* Match Leaflet zoom button size */
+                height: 32px; /* Match Leaflet zoom button size */
+                font-size: 22px; /* Adjust icon size */
                 cursor: pointer;
-                background: none;
-                border: none;
-                outline: none;
+                background: rgba(255, 255, 255, 0.7); /* Translucent background */
+                border: 1px solid #ccc; /* Border similar to zoom buttons */
+                border-radius: 3px; /* Rounded corners */
+                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65); /* Shadow for consistent style */
+                padding: 0; /* Remove padding */
             }
+
             .map-icon-button:hover {
-                background-color: rgba(0, 0, 0, 0.1);
+                background: rgba(255, 255, 255, 0.9); /* Slightly more opaque on hover */
+            }
+
+            .leaflet-control-zoom {
+                background: rgba(255, 255, 255, 0.7); /* Translucent background */
+                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65); /* Retain shadow */
+            }
+
+            .leaflet-control-zoom a {
+                color: #000; /* Icon color */
+            }
+
+            .leaflet-control-zoom a:hover {
+                background: rgba(255, 255, 255, 0.9); /* Slightly more opaque on hover */
+            }
+
+            .treedata {
+                border-collapse: collapse; /* Remove gaps between table cells */
+                border: none;
+                width: 100%; /* Make the table take full width of the popup */
+                font-family: Arial, sans-serif; /* Clean, readable font */
+                font-size: 0.9em; /* Slightly smaller font for compact display */
+                color: #333; /* Neutral text color */
+            }
+
+            .treedata td {
+                padding: 4px 8px; /* Add spacing inside cells */
+                vertical-align: top; /* Align content to the top of each cell */
+                border: none;
+            }
+
+            .treedata tr td:last-child {
+                font-weight: bold; /* Emphasize the first column */
+                color: #2a7b2a; /* Use a subtle green for emphasis */
+            }
+
+            .treedata tr td:first-child {
+                text-align: right; /* Align the second column to the right */
+                color: #666; /* De-emphasize with lighter text color */
             }
         </style>
 
@@ -89,15 +135,6 @@
         <!-- Main Map Interface -->
         <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
     
-        <!-- Actions & User Location Info -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <!-- Location & Accuracy (for reference only, smaller text) -->
-            <div>
-                <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
-                <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
-            </div>
-        </div>
-
         <!-- Nearest Trees List with Friendlier Headers -->
         <h2>Nearby Trees</h2>
         <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
@@ -107,6 +144,7 @@
                     <th>Address</th>
                     <th>Common Name</th>
                     <th>Botanical Name</th>
+                    <th>DBH</th>
                     <th>Distance (m)</th>
                 </tr>
             </thead>
@@ -115,9 +153,19 @@
             </tbody>
         </table>
     
+        <!-- Actions & User Location Info -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <!-- Location & Accuracy (for reference only, smaller text) -->
+            <div>
+                <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
+                <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+            </div>
+        </div>
+
     <script>
         let map; // Global map instance
         let userMarker; // User marker
+        let treeMarkers = []; // Array to store tree markers
         let currentProvider = 'openfreemap'; // Default map provider
         let osmLayer, openFreeMapLayer;
 
@@ -131,7 +179,7 @@
 
         function initializeMap() {
             // Initialize the map with a default view (will be updated by geolocation)
-            map = L.map('map').setView([51.505, -0.09], 13);
+            map = L.map('map').setView([43.65107, -79.347015], 13);
 
             // Define the OSM layer
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -195,11 +243,11 @@
             document.getElementById('accuracy').textContent = `Accuracy: ±${accuracy.toFixed(1)} meters`;
 
             // Update the map view
-            map.setView([latitude, longitude], 18);
+            map.setView([latitude, longitude], 19);
 
             // Add or update the user's location marker
             if (!userMarker) {
-                userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("You are here").openPopup();
+                userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("You are here");
             } else {
                 userMarker.setLatLng([latitude, longitude]);
             }
@@ -235,63 +283,91 @@
         }
 
         function addMarkers(data) {
-            data.forEach(item => {
+            treeMarkers = []; // Clear the previous markers
+
+            data.forEach((item, index) => {
                 const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
+
                 const popupContent = `
                     <div>
                         <strong>${item.common_name}</strong><br>
-                        <em>${item.address} ${item.streetname} (${item.distance.toFixed(2)} m)</em>
+                        <small><em>${item.address} ${item.streetname}</em></small><br>
+                        <hr>
+                        <table class="treedata">
+                            <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
+                            <tr><td>Diameter at breast height</td><td>${item.dbh} cm</td></tr>
+                            <tr><td>Distance from your location</td><td>${item.distance.toFixed(2)} m</td></tr>
+                        </table>
                     </div>
                 `;
+
                 marker.bindPopup(popupContent);
+
+                // Add the marker to the global array
+                treeMarkers.push(marker);
+
+                // Highlight the corresponding row when the marker is clicked
+                marker.on('click', () => highlightRow(index));
             });
+        }
+
+        function highlightMarker(index) {
+            const marker = treeMarkers[index];
+            if (marker) {
+                map.setView(marker.getLatLng(), 18); // Center the map on the marker
+                marker.openPopup();
+                highlightRow(index);
+            }
+        }
+
+        function highlightRow(index) {
+            document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight')); // Remove existing highlights
+            const row = document.getElementById(`tree-row-${index}`);
+            if (row) row.classList.add('highlight'); // Add highlight to the clicked row
         }
 
         function updateTable(data) {
             const tableBody = document.getElementById('resultsTable').querySelector('tbody');
             tableBody.innerHTML = '';
 
-            data.forEach(item => {
+            data.forEach((item, index) => {
                 const row = document.createElement('tr');
+                row.id = `tree-row-${index}`;
                 row.innerHTML = `
                     <td>${item.address} ${item.streetname}</td>
                     <td>${item.common_name}</td>
                     <td>${item.botanical_name}</td>
+                    <td>${item.dbh}</td>
                     <td>${item.distance.toFixed(2)}</td>
                 `;
+
+                // Add click event to highlight the marker
+                row.addEventListener('click', () => highlightMarker(index));
+
                 tableBody.appendChild(row);
             });
         }
 
         function addCustomControls() {
-            // Create a custom control for current location
+            // Current Location Button
             const currentLocationControl = L.control({ position: 'topleft' });
             currentLocationControl.onAdd = function () {
-                const div = L.DomUtil.create('div', 'leaflet-control');
+                const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
                 div.innerHTML = `<button id="current-location" class="map-icon-button" title="Go to current location">📍</button>`;
-                div.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-                div.style.border = 'none';
-                div.style.padding = '5px';
-                div.style.borderRadius = '5px';
                 return div;
             };
             currentLocationControl.addTo(map);
 
-            // Create a custom control for loading more trees
+            // Load More Trees Button
             const loadTreesControl = L.control({ position: 'topleft' });
             loadTreesControl.onAdd = function () {
-                const div = L.DomUtil.create('div', 'leaflet-control');
+                const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
                 div.innerHTML = `<button id="load-more-trees" class="map-icon-button" title="Load more trees">🌳</button>`;
-                div.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-                div.style.border = 'none';
-                div.style.padding = '5px';
-                div.style.borderRadius = '5px';
-                div.style.marginTop = '5px'; // Add spacing between controls
                 return div;
             };
             loadTreesControl.addTo(map);
 
-            // Attach event listeners to the buttons
+            // Add Event Listeners
             document.getElementById('current-location').addEventListener('click', getLocation);
             document.getElementById('load-more-trees').addEventListener('click', getTreesAtCenter);
         }
