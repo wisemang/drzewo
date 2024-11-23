@@ -73,11 +73,24 @@
                 background: rgba(255, 255, 255, 0.9); /* Slightly more opaque on hover */
             }
 
+            .tree-marker-common-name {
+                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
+                font-weight: bold;
+                color: #2a7b2a;
+            }
+
+            .tree-marker-address {
+                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
+                font-size: 0.82em; /* Slightly smaller font for compact display */
+                font-style: italic;
+                color: #333; /* Neutral text color */
+            }
+
             .treedata {
                 border-collapse: collapse; /* Remove gaps between table cells */
                 border: none;
                 width: 100%; /* Make the table take full width of the popup */
-                font-family: Arial, sans-serif; /* Clean, readable font */
+                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
                 font-size: 0.9em; /* Slightly smaller font for compact display */
                 color: #333; /* Neutral text color */
             }
@@ -115,22 +128,6 @@
         <!-- Friendly Introduction -->
         <h1>TreeSeek</h1>
         <p>Learn more about the trees around you.</p>
-    
-        <!-- Action Buttons -->
-        <!-- <div style="margin-bottom: 1em;">
-            <button class="button" onclick="getLocation()">
-                <span class="button-icon">📍</span> Current Location
-            </button>
-            <button class="button" onclick="getTreesAtCenter()">
-                <span class="button-icon">🌳</span> Load more trees
-            </button>
-            
-            <div style="margin-bottom: 10px;">
-                <button id="toggle-provider" class="button" onclick="toggleMapProvider()">
-                    Switch to OpenFreeMap
-                </button>
-            </div>
-        </div> -->
     
         <!-- Main Map Interface -->
         <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
@@ -289,9 +286,9 @@
                 const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
 
                 const popupContent = `
-                    <div>
-                        <strong>${item.common_name}</strong><br>
-                        <small><em>${item.address} ${item.streetname}</em></small><br>
+                    <div class="tree-marker">
+                        <span class="tree-marker-common-name">${item.common_name}</span><br>
+                        <span class="tree-marker-address">${item.address} ${item.streetname}</span><br>
                         <hr>
                         <table class="treedata">
                             <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
