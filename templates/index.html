@@ -228,22 +228,30 @@
             getLocation();
         }
 
-        // Function to handle map interaction
         let debounceTimer;
-        
+        let lastLoadedCenter = null;
+        let lastZoomLevel = null;
+        const maxMarkers = 200;
+
         function onMapInteraction() {
-            const center = map.getCenter();
-            const zoom = map.getZoom();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                const center = map.getCenter();
-                fetchTrees(center.lat, center.lng);
-            }, 300); // Delay in milliseconds
+                const currentCenter = map.getCenter();
+                const currentZoom = map.getZoom();
 
-            console.log(`Map interaction detected. Center: ${center}, Zoom: ${zoom}`);
+                const distanceThreshold = 100; // Meters
+                const zoomThreshold = 2;
 
-            // Fetch trees for the current map center
-            fetchTrees(center.lat, center.lng);
+                if (
+                    !lastLoadedCenter ||
+                    currentCenter.distanceTo(lastLoadedCenter) > distanceThreshold ||
+                    Math.abs(currentZoom - lastZoomLevel) >= zoomThreshold
+                ) {
+                    lastLoadedCenter = currentCenter;
+                    lastZoomLevel = currentZoom;
+                    fetchTrees(currentCenter.lat, currentCenter.lng);
+                }
+            }, 300); // Debounce delay
         }
 
         // Toggle between OSM and OpenFreeMap
@@ -328,7 +336,10 @@
         }
 
         function addMarkers(data) {
-            treeMarkers = []; // Clear the previous markers
+            while (treeMarkers.length > maxMarkers) {
+                const marker = treeMarkers.shift();
+                map.removeLayer(marker);
+            }
 
             data.forEach((item, index) => {
                 const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
