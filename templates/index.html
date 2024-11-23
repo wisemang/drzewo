@@ -3,9 +3,20 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Nearest Trees</title>
+        <title>TreeSeek</title>
         <link rel="icon" href="/static/images/tree-gross-outline-svgrepo-com.svg" type="image/svg+xml">
         <style>
+            body {
+                font-family: "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+                font-size: 16px; /* Adjust as needed */
+                line-height: 1.5; /* Better readability */
+                color: #333; /* Neutral dark text color */
+            }
+
+            h1 {
+                color: #2a7b2a;   
+            }
+
             #map {
                 height: 400px;
             }
@@ -115,6 +126,8 @@
         <!-- Leaflet -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
+        <script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
 
         <!-- Maplibre GL -->
         <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
@@ -126,14 +139,14 @@
     </head>
     <body>
         <!-- Friendly Introduction -->
-        <h1>TreeSeek</h1>
+        <h1>🌳 TreeSeek 🌳</h1>
         <p>Learn more about the trees around you.</p>
     
         <!-- Main Map Interface -->
         <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
     
         <!-- Nearest Trees List with Friendlier Headers -->
-        <h2>Nearby Trees</h2>
+        <h2>🌳 Nearby Trees</h2>
         <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
         <table id="resultsTable">
             <thead>
@@ -176,7 +189,12 @@
 
         function initializeMap() {
             // Initialize the map with a default view (will be updated by geolocation)
-            map = L.map('map').setView([43.65107, -79.347015], 13);
+            map = L.map('map', {
+                fullscreenControl: true, // Enable fullscreen control
+                fullscreenControlOptions: {
+                    position: 'topleft' // Place it in the top-left corner
+                }
+            }).setView([43.65107, -79.347015], 13);
 
             // Define the OSM layer
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
