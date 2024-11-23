@@ -203,6 +203,10 @@
                     position: 'topleft' // Place it in the top-left corner
                 }
             }).setView([43.65107, -79.347015], 13);
+    
+            // Attach event listeners
+            map.on('zoomend', onMapInteraction);
+            map.on('moveend', onMapInteraction);
 
             // Define the OSM layer
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -222,6 +226,24 @@
 
             // Center map to user's location on load
             getLocation();
+        }
+
+        // Function to handle map interaction
+        let debounceTimer;
+        
+        function onMapInteraction() {
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const center = map.getCenter();
+                fetchTrees(center.lat, center.lng);
+            }, 300); // Delay in milliseconds
+
+            console.log(`Map interaction detected. Center: ${center}, Zoom: ${zoom}`);
+
+            // Fetch trees for the current map center
+            fetchTrees(center.lat, center.lng);
         }
 
         // Toggle between OSM and OpenFreeMap
