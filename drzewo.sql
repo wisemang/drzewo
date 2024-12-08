@@ -26,3 +26,5 @@ CREATE TABLE street_trees (
 );
 
 
+ALTER TABLE street_trees ADD CONSTRAINT unique_source_objectid UNIQUE (source, objectid);
+
