@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+
+import os
+import json
+import argparse
+from os import environ, path
+import psycopg2
+from psycopg2 import sql
+
+# Database connection parameters
+DB_PARAMS = {
+    "database": environ.get("DRZEWO_DB", "drzewo"),
+    "user": environ.get("DRZEWO_DB_USER", "greg"),
+    "password": environ.get("DRZEWO_DB_PW"),
+    "host": environ.get("DRZEWO_DB_HOST", "localhost"),
+    "port": environ.get("DRZEWO_DB_PORT", "5432"),
+}
+
+# Mappings for city-specific handlers
+CITY_HANDLERS = {
+    "toronto": {
+        "source_name": "Toronto Open Data Street Trees",
+        "loader": "load_toronto_data",
+        "enrichments": ["wikipedia_links", "human_readable_names"],
+    },
+    "ottawa": {
+        "source_name": "Ottawa Open Data Tree Inventory",
+        "loader": "load_ottawa_data",
+        "enrichments": ["wikipedia_links"],
+    },
+    "montreal": {
+        "source_name": "Montreal Open Data Tree Inventory",
+        "loader": "load_montreal_data",
+        "enrichments": ["wikipedia_links"],
+    },
+    "calgary": {
+        "source_name": "Calgary Open Data Tree Inventory",
+        "loader": "load_calgary_data",
+        "enrichments": ["tree_condition", "wikipedia_links"],
+    },
+}
+
+
+def connect_db():
+    """Create and return a database connection."""
+    return psycopg2.connect(**DB_PARAMS)
+
+
+def load_toronto_data(cursor, filename):
+    """Load Toronto data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    for feature in data["features"]:
+        insert_toronto_data(cursor, feature)
+
+
+def insert_toronto_data(cursor, feature):
+    """
+    Insert Toronto tree data into the database.
+    """
+    # Extract fields
+    source = "Toronto Open Data Street Trees"
+    properties = feature['properties']
+    geometry = json.dumps(feature['geometry'])  # Convert geometry to JSON string
+
+    objectid = properties.get('OBJECTID')
+    structid = properties.get('STRUCTID')
+    address = properties.get('ADDRESS')
+    streetname = properties.get('STREETNAME')
+    crossstreet1 = properties.get('CROSSSTREET1')
+    crossstreet2 = properties.get('CROSSSTREET2')
+    suffix = properties.get('SUFFIX')
+    unit_number = properties.get('UNIT_NUMBER')
+    tree_position_number = properties.get('TREE_POSITION_NUMBER')
+    site = properties.get('SITE')
+    ward = properties.get('WARD')
+    botanical_name = properties.get('BOTANICAL_NAME')
+    common_name = properties.get('COMMON_NAME')
+    dbh_trunk = properties.get('DBH_TRUNK')
+
+    # Create SQL query
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, structid, address, streetname, crossstreet1, crossstreet2, suffix,
+        unit_number, tree_position_number, site, ward, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
+    )
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    cursor.execute(sql_query, (
+        source,
+        objectid,
+        structid,
+        address,
+        streetname,
+        crossstreet1,
+        crossstreet2,
+        suffix,
+        unit_number,
+        tree_position_number,
+        site,
+        ward,
+        botanical_name,
+        common_name,
+        dbh_trunk,
+        geometry
+    ))
+
+def load_ottawa_data(cursor, filename):
+    """Load Ottawa data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    for feature in data["features"]:
+        insert_ottawa_data(cursor, feature)
+
+
+def insert_ottawa_data(cursor, feature):
+    """
+    Insert Ottawa tree data into the database.
+    """
+    source = "Ottawa Open Data Tree Inventory"
+    properties = feature['properties']
+    geometry = feature['geometry']
+
+    # Convert Point to MultiPoint if necessary
+    if geometry['type'] == 'Point':
+        geometry['type'] = 'MultiPoint'
+        geometry['coordinates'] = [geometry['coordinates']]
+    geometry_json = json.dumps(geometry)
+
+    objectid = properties.get('OBJECTID')
+    address = properties.get('ADDNUM')
+    streetname = properties.get('ADDSTR')
+    botanical_name = properties.get('SPECIES')  # Assuming 'SPECIES' maps to botanical_name
+    common_name = properties.get('SPECIES')  # Same as botanical_name for simplicity
+    dbh_trunk = properties.get('DBH')
+
+    # Create SQL query
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, streetname, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
+    )
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    cursor.execute(sql_query, (
+        source,
+        objectid,
+        address,
+        streetname,
+        botanical_name,
+        common_name,
+        dbh_trunk,
+        geometry_json
+    ))
+
+def load_montreal_data(cursor, filename):
+    """
+    Load Montreal data from a CSV file and insert it into the database.
+    """
+    import csv
+
+    with open(filename, 'r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            insert_montreal_data(cursor, row)
+
+
+def insert_montreal_data(cursor, row):
+    """
+    Insert Montreal tree data into the database.
+    """
+    # Extract fields
+    # INV_TYPE,EMP_NO,ARROND,ARROND_NOM,Rue,COTE,No_civique,Emplacement,Coord_X,Coord_Y,SIGLE,Essence_latin,Essence_fr,ESSENCE_ANG,DHP,Date_releve,Date_plantation,LOCALISATION,CODE_PARC,NOM_PARC,Longitude,Latitude
+    source = "Montreal Open Data Tree Inventory"
+    objectid = row['EMP_NO']
+    ward = f"{row['ARROND_NOM']}"
+    streetname = row['LOCALISATION']
+    site = row['Emplacement'] # Trottoir, Fond de Trottoir, Parterre Gazonné, ...
+    botanical_name = row['Essence_latin']
+    common_name = f"{row['Essence_fr']} ({row['ESSENCE_ANG']})"
+    if row['DHP']:
+        dbh = round(float(row['DHP']))
+    else:
+        dbh = None
+    longitude = row['Longitude']
+    latitude = row['Latitude']
+
+    # Skip rows without valid coordinates
+    if not longitude or not latitude:
+        return
+
+    # Create SQL query
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, ward, streetname, site, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326)
+    )
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    cursor.execute(sql_query, (
+        source,
+        objectid,
+        ward,
+        streetname,
+        site,
+        botanical_name,
+        common_name,
+        dbh,
+        longitude,
+        latitude
+    ))
+
+
+def load_calgary_data(cursor, filename):
+    """
+    Load Calgary data from a CSV file and insert it into the database.
+    """
+    import csv
+
+    with open(filename, 'r') as file:
+        reader = csv.DictReader(file)  # Adjust if a specific delimiter is needed
+        for row in reader:
+            insert_calgary_data(cursor, row)
+
+def insert_calgary_data(cursor, row):
+    """
+    Insert Calgary tree data into the database.
+    """
+    # Extract fields
+    objectid = row['TREE_ASSET_CD']
+    asset_type = row['ASSET_TYPE']
+    asset_subtype = row['ASSET_SUBTYPE']
+    common_name = row['COMMON_NAME']
+    botanical_name = f"{row['GENUS']} {row['SPECIES']} {row['CULTIVAR']}".strip()
+    dbh_trunk = row['DBH_CM']
+    address = row['LOCATION_DETAIL']
+    streetname = row['COMM_CODE']
+    date_added = row['ACTIVE_DT']
+    point_wkt = row['POINT']
+
+    # Parse WKT into PostGIS geometry
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, asset_type, asset_subtype, common_name, botanical_name, 
+        dbh_trunk, address, streetname, date_added, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326)
+    )
+    ON CONFLICT (objectid) DO NOTHING;
+    """
+    cursor.execute(sql_query, (
+        "Calgary Open Data Tree Inventory",
+        objectid,
+        asset_type,
+        asset_subtype,
+        common_name,
+        botanical_name,
+        dbh_trunk,
+        address,
+        streetname,
+        date_added,
+        point_wkt
+    ))
+
+
+def enrich_data(cursor, city_config):
+    """Apply data enrichments like Wikipedia links or human-readable names."""
+    if "wikipedia_links" in city_config["enrichments"]:
+        # Example: Add Wikipedia links
+        cursor.execute("""
+        UPDATE street_trees
+        SET wikipedia_url = sub.wikipedia_url
+        FROM species_links sub
+        WHERE street_trees.common_name = sub.common_name;
+        """)
+    if "human_readable_names" in city_config["enrichments"]:
+        # Example: Add human-readable names
+        cursor.execute("""
+        UPDATE street_trees
+        SET common_name = sub.readable_name
+        FROM species_names sub
+        WHERE street_trees.common_name = sub.original_common_name;
+        """)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Tree Data Import and Enrichment CLI")
+    parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
+    parser.add_argument("--file", required=True, help="Path to the data file")
+    parser.add_argument("--enrich", action="store_true", help="Apply data enrichments")
+
+    args = parser.parse_args()
+    city = args.city
+    filename = args.file
+    apply_enrichments = args.enrich
+
+    city_config = CITY_HANDLERS[city]
+
+    conn = connect_db()
+    try:
+        cursor = conn.cursor()
+
+        print(f"Loading data for {city}...")
+        if city == "toronto":
+            load_toronto_data(cursor, filename)
+        elif city == "ottawa":
+            load_ottawa_data(cursor, filename)
+        elif city == "montreal":
+            load_montreal_data(cursor, filename)
+
+        if apply_enrichments:
+            print(f"Applying enrichments for {city}...")
+            enrich_data(cursor, city_config)
+
+        conn.commit()
+        print("Data import and enrichment completed successfully.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+if __name__ == "__main__":
+    main()
