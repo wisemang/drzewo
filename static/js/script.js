@@ -256,13 +256,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
+    const menuLinks = menuDropdown.querySelectorAll('a');
 
-    // Toggle the dropdown on click
     menuIcon.addEventListener('click', () => {
-        const isVisible = menuDropdown.style.display === 'block';
-        menuDropdown.style.display = isVisible ? 'none' : 'block';
+        menuDropdown.classList.toggle('show');
     });
-
+    
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            menuDropdown.classList.remove('show');
+        });
+    });
+    
     function switchPage(target) {
         if (target === 'home') {
             homePage.style.display = 'block';
