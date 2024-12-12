@@ -254,6 +254,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const homePage = document.getElementById('home-page');
     const aboutPage = document.getElementById('about-page');
 
+    const menuIcon = document.querySelector('.menu-icon');
+    const menuDropdown = document.querySelector('.menu-dropdown');
+
+    // Toggle the dropdown on click
+    menuIcon.addEventListener('click', () => {
+        const isVisible = menuDropdown.style.display === 'block';
+        menuDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
     function switchPage(target) {
         if (target === 'home') {
             homePage.style.display = 'block';
