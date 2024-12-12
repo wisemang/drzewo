@@ -23,6 +23,15 @@ th, td {
     padding: 10px;
 }
 
+a {
+    color: #FFA500; /* Warm golden-orange */
+    text-decoration: none; /* Optional: remove underline for a cleaner look */
+}
+
+a:hover {
+    color: #FF8C00; /* Darker orange for hover effect */
+    text-decoration: underline; /* Optional: add underline on hover */
+}
 #location, #accuracy {
     font-size: 1.2em;
     margin: 5px 0;
@@ -105,4 +114,59 @@ th, td {
 .treedata tr td:first-child {
     text-align: right;
     color: #666;
+}
+
+
+/* Navigation Styles */
+.menu {
+    display: flex;
+    align-items: center;
+    background-color: #556B2F;
+    padding: 10px;
+    color: #F5F5DC;
+}
+
+.menu h1 {
+    margin: 0;
+    margin-left: 15px;
+    font-size: 1.8em;
+    color: #F5F5DC;
+}
+
+/* Adjust Menu Icon Size and Position */
+.menu-icon {
+    position: relative;
+    font-size: 1.8em;
+    cursor: pointer;
+}
+
+/* Dropdown Menu */
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    background-color: #A08040; /* Match your highlight color */
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    font-size: 0.7em;
+}
+
+.menu-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #F5F5DC; /* Beige text */
+    font-size: 1em;
+}
+
+.menu-dropdown a:hover {
+    background-color: #556B2F; /* Mossy green for hover */
+}
+
+/* Ensure Menu Icon Works on Touch */
+.menu-icon:active .menu-dropdown,
+.menu-icon:hover .menu-dropdown {
+    display: block;
 }

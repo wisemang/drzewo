@@ -247,3 +247,34 @@ function addCustomControls() {
 // Initialize the map and load location
 initializeMap();
 addCustomControls();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const homeLink = document.getElementById('home-link');
+    const aboutLink = document.getElementById('about-link');
+    const homePage = document.getElementById('home-page');
+    const aboutPage = document.getElementById('about-page');
+
+    function switchPage(target) {
+        if (target === 'home') {
+            homePage.style.display = 'block';
+            aboutPage.style.display = 'none';
+            homeLink.classList.add('active');
+            aboutLink.classList.remove('active');
+        } else if (target === 'about') {
+            homePage.style.display = 'none';
+            aboutPage.style.display = 'block';
+            aboutLink.classList.add('active');
+            homeLink.classList.remove('active');
+        }
+    }
+
+    homeLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchPage('home');
+    });
+
+    aboutLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchPage('about');
+    });
+});

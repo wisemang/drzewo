@@ -6,59 +6,85 @@
         <title>TreeSeek</title>
         <link rel="icon" href="/static/images/tree-gross-outline-svgrepo-com.svg" type="image/svg+xml">
 
-        <!-- OpenGraph Metadata -->
-        <meta property="og:title" content="🌳 TreeSeek: Explore Nearby Trees" />
-        <meta property="og:description" content="Learn about the trees around you. Currently supports city open data from Toronto and Ottawa." />
-        <meta property="og:url" content="https://treeseek.ca" />
-        <meta property="og:type" content="website" />
-        <meta property="og:locale" content="en_CA" />
-
-        <!-- Leaflet and Maplibre GL -->
+        <!-- Leaflet CSS and JS -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
-        <script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
+
+        <!-- Maplibre GL CSS and JS -->
         <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
         <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+
+        <!-- Maplibre GL Leaflet -->
         <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 
+        <!-- Leaflet Fullscreen Control -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
+        <script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
+
         <!-- Custom CSS -->
-        <link rel="stylesheet" href="/static/css/styles.css" />
+        <link rel="stylesheet" href="/static/css/styles.css">
     </head>
     <body>
-        <h1>🌳 TreeSeek</h1>
-        <p>Learn more about the trees around you.</p>
+        <!-- Navigation Menu -->
+        <header>
+            <nav class="menu">
+                <div class="menu-icon">
+                    🌳
+                    <div class="menu-dropdown">
+                        <a href="#" id="home-link" class="active">Home</a>
+                        <a href="#" id="about-link">About</a>
+                    </div>
+                </div>
+                <h1>TreeSeek</h1>
+            </nav>
+        </header>
 
-        <!-- Main Map Interface -->
-        <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
+        <!-- Main Content -->
+        <main>
+            <!-- Home Page Content -->
+            <section id="home-page">
+                <p>Learn more about the trees around you.</p>
+                <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
+                <h2>Nearby Trees</h2>
+                <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>Common Name</th>
+                            <th>Botanical Name</th>
+                            <th>DBH</th>
+                            <th>Distance (m)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be inserted here -->
+                    </tbody>
+                </table>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
+                        <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Nearest Trees Table -->
-        <h2>Nearby Trees</h2>
-        <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>Address</th>
-                    <th>Common Name</th>
-                    <th>Botanical Name</th>
-                    <th>DBH</th>
-                    <th>Distance (m)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Results will be inserted here -->
-            </tbody>
-        </table>
-
-        <!-- Actions & User Location Info -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
-                <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
-            </div>
-        </div>
+            <!-- About Page Content -->
+            <section id="about-page" style="display: none;">
+                <h3>About TreeSeek</h3>
+                <p>
+                    sometimes when i'm walking, i see a tree i like. i'm not great at identifying trees by sight, but i'd like to know what i'm looking at. this is a web application that might help with that.
+                </p>
+                <p>
+                    the tree data comes from city open data sites. right now there's just toronto, ottawa, and montreal because those are some cities i sometimes find myself walking and wondering about trees.
+                </p>
+                <p>
+                    mapping by <a href="http://leafletjs.com">Leaflet</a>. tile hosting by <a href="https://openfreemap.org">OpenFreeMap</a>.
+                </p>
+            </section>
+        </main>
 
         <!-- Custom JavaScript -->
-        <script src="/static/js/script.js"></script>
+        <script src="/static/js/script.js" defer></script>
     </body>
 </html>
