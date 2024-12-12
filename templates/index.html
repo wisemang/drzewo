@@ -13,146 +13,25 @@
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="en_CA" />
 
-        <style>
-            body {
-                font-family: "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
-                font-size: 16px; /* Adjust as needed */
-                line-height: 1.5; /* Better readability */
-                background-color: #556B2F;
-                color: #F5F5DC; /* Neutral dark text color */
-            }
-
-            h1 {
-                color: #F5F5DC;   
-            }
-
-            #map {
-                height: 400px;
-            }
-            table, th, td {
-                border: 1px solid black;
-                border-collapse: collapse;
-            }
-            th, td {
-                padding: 10px;
-            }
-            #location, #accuracy {
-                font-size: 1.2em;
-                margin: 5px 0;
-            }
-            .highlight {
-                background-color: #d9f9d9; /* Light green background for highlighted rows */
-            }
-            .button {
-                display: inline-block;
-                padding: 10px 10px;
-                margin: 5px;
-                font-size: 1em;
-                color: white;
-                background-color: #4CAF50;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                text-align: center;
-            }
-            .button:hover {
-                background-color: #45a049;
-            }
-            .button-icon {
-                font-size: 1.2em;
-            }
-            .map-icon-button {
-                display: flex; /* Use Flexbox for centering */
-                justify-content: center; /* Horizontally center */
-                align-items: center; /* Vertically center */
-                width: 32px; /* Match Leaflet zoom button size */
-                height: 32px; /* Match Leaflet zoom button size */
-                font-size: 22px; /* Adjust icon size */
-                cursor: pointer;
-                background: rgba(255, 255, 255, 0.7); /* Translucent background */
-                border: 1px solid #ccc; /* Border similar to zoom buttons */
-                border-radius: 3px; /* Rounded corners */
-                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65); /* Shadow for consistent style */
-                padding: 0; /* Remove padding */
-            }
-
-            .map-icon-button:hover {
-                background: rgba(255, 255, 255, 0.9); /* Slightly more opaque on hover */
-            }
-
-            .leaflet-control-zoom {
-                background: rgba(255, 255, 255, 0.7); /* Translucent background */
-                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65); /* Retain shadow */
-            }
-
-            .leaflet-control-zoom a {
-                color: #000; /* Icon color */
-            }
-
-            .leaflet-control-zoom a:hover {
-                background: rgba(255, 255, 255, 0.9); /* Slightly more opaque on hover */
-            }
-
-            .tree-marker-common-name {
-                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
-                font-weight: bold;
-                color: #2a7b2a;
-            }
-
-            .tree-marker-address {
-                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
-                font-size: 0.82em; /* Slightly smaller font for compact display */
-                font-style: italic;
-                color: #333; /* Neutral text color */
-            }
-
-            .treedata {
-                border-collapse: collapse; /* Remove gaps between table cells */
-                border: none;
-                width: 100%; /* Make the table take full width of the popup */
-                font-family: 'Lucida Sans', sans-serif; /* Clean, readable font */
-                font-size: 0.9em; /* Slightly smaller font for compact display */
-                color: #333; /* Neutral text color */
-            }
-
-            .treedata td {
-                padding: 4px 8px; /* Add spacing inside cells */
-                vertical-align: top; /* Align content to the top of each cell */
-                border: none;
-            }
-
-            .treedata tr td:last-child {
-                font-weight: bold; /* Emphasize the first column */
-                color: #2a7b2a; /* Use a subtle green for emphasis */
-            }
-
-            .treedata tr td:first-child {
-                text-align: right; /* Align the second column to the right */
-                color: #666; /* De-emphasize with lighter text color */
-            }
-        </style>
-
-        <!-- Leaflet -->
+        <!-- Leaflet and Maplibre GL -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
         <script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
-
-        <!-- Maplibre GL -->
         <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
         <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-
-        <!-- Maplibre GL Leaflet  -->
         <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="/static/css/styles.css" />
     </head>
     <body>
         <h1>🌳 TreeSeek</h1>
         <p>Learn more about the trees around you.</p>
-    
+
         <!-- Main Map Interface -->
         <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
-    
+
         <!-- Nearest Trees Table -->
         <h2>Nearby Trees</h2>
         <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
@@ -170,266 +49,16 @@
                 <!-- Results will be inserted here -->
             </tbody>
         </table>
-    
+
         <!-- Actions & User Location Info -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <!-- Location & Accuracy (for reference only, smaller text) -->
             <div>
                 <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
                 <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
             </div>
         </div>
 
-    <script>
-        let map; // Global map instance
-        let userMarker; // User marker
-        let treeMarkers = []; // Array to store tree markers
-        let currentProvider = 'openfreemap'; // Default map provider
-        let osmLayer, openFreeMapLayer;
-
-        // Custom tree icon
-        const treeIcon = L.icon({
-            iconUrl: 'static/images/tree-gross-outline-svgrepo-com.svg',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30]
-        });
-
-        function initializeMap() {
-            // Initialize the map with a default view (will be updated by geolocation)
-            map = L.map('map', {
-                fullscreenControl: true, // Enable fullscreen control
-                fullscreenControlOptions: {
-                    position: 'topleft' // Place it in the top-left corner
-                }
-            }).setView([43.65107, -79.347015], 13);
-    
-            // Attach event listeners
-            map.on('zoomend', onMapInteraction);
-            map.on('moveend', onMapInteraction);
-
-            // Define the OSM layer
-            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 21
-            });
-
-            // Define the OpenFreeMap layer using MapLibre GL
-            openFreeMapLayer = L.maplibreGL({
-                attribution: '© OpenStreetMap contributors, OpenFreeMap',
-                style: 'https://tiles.openfreemap.org/styles/liberty',
-            });
-
-            // Add the default layer to the map
-            // map.addLayer(osmLayer);
-            map.addLayer(openFreeMapLayer);
-
-            // Center map to user's location on load
-            getLocation();
-        }
-
-        let debounceTimer;
-        let lastLoadedCenter = null;
-        let lastZoomLevel = null;
-        const maxMarkers = 200;
-
-        function onMapInteraction() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                const currentCenter = map.getCenter();
-                const currentZoom = map.getZoom();
-
-                const distanceThreshold = 100; // Meters
-                const zoomThreshold = 2;
-
-                if (
-                    !lastLoadedCenter ||
-                    currentCenter.distanceTo(lastLoadedCenter) > distanceThreshold ||
-                    Math.abs(currentZoom - lastZoomLevel) >= zoomThreshold
-                ) {
-                    lastLoadedCenter = currentCenter;
-                    lastZoomLevel = currentZoom;
-                    fetchTrees(currentCenter.lat, currentCenter.lng);
-                }
-            }, 300); // Debounce delay
-        }
-
-        // Toggle between OSM and OpenFreeMap
-        function toggleMapProvider() {
-            if (currentProvider === 'osm') {
-                map.removeLayer(osmLayer);
-                map.addLayer(openFreeMapLayer);
-                currentProvider = 'openfreemap';
-                document.getElementById('toggle-provider').textContent = 'Switch to OSM';
-            } else {
-                map.removeLayer(openFreeMapLayer);
-                map.addLayer(osmLayer);
-                currentProvider = 'osm';
-                document.getElementById('toggle-provider').textContent = 'Switch to OpenFreeMap';
-            }
-        }
-
-        function getTreesAtCenter() {
-            const center = map.getCenter();
-            fetchTrees(center.lat, center.lng);
-        }
-
-
-        // Use Geolocation API to center map on user's location
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    position => displayLocation(position),
-                    error => showError(error)
-                );
-            } else {
-                document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
-            }
-        }
-
-        function displayLocation(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
-
-            document.getElementById('location').textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
-            document.getElementById('accuracy').textContent = `Accuracy: ±${accuracy.toFixed(1)} meters`;
-
-            // Update the map view
-            map.setView([latitude, longitude], 19);
-
-            // Add or update the user's location marker
-            if (!userMarker) {
-                userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("You are here");
-            } else {
-                userMarker.setLatLng([latitude, longitude]);
-            }
-
-            // Fetch nearby trees
-            fetchTrees(latitude, longitude);
-        }
-
-        function showError(error) {
-            let message = "An unknown error occurred.";
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    message = "User denied the request for Geolocation.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    message = "Location information is unavailable.";
-                    break;
-                case error.TIMEOUT:
-                    message = "The request to get user location timed out.";
-                    break;
-            }
-            document.getElementById('location').textContent = message;
-        }
-
-        function fetchTrees(latitude, longitude) {
-            fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=40`)
-                .then(response => response.json())
-                .then(data => {
-                    updateTable(data);
-                    addMarkers(data);
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-
-        function addMarkers(data) {
-            while (treeMarkers.length > maxMarkers) {
-                const marker = treeMarkers.shift();
-                map.removeLayer(marker);
-            }
-
-            data.forEach((item, index) => {
-                const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
-
-                const popupContent = `
-                    <div class="tree-marker">
-                        <span class="tree-marker-common-name">${item.common_name}</span><br>
-                        <span class="tree-marker-address">${item.address} ${item.streetname}</span><br>
-                        <hr>
-                        <table class="treedata">
-                            <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
-                            <tr><td>Diameter at breast height</td><td>${item.dbh} cm</td></tr>
-                        </table>
-                    </div>
-                `;
-
-                marker.bindPopup(popupContent);
-
-                // Add the marker to the global array
-                treeMarkers.push(marker);
-
-                // Highlight the corresponding row when the marker is clicked
-                marker.on('click', () => highlightRow(index));
-            });
-        }
-
-        function highlightMarker(index) {
-            const marker = treeMarkers[index];
-            if (marker) {
-                map.setView(marker.getLatLng(), 18); // Center the map on the marker
-                marker.openPopup();
-                highlightRow(index);
-            }
-        }
-
-        function highlightRow(index) {
-            document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight')); // Remove existing highlights
-            const row = document.getElementById(`tree-row-${index}`);
-            if (row) row.classList.add('highlight'); // Add highlight to the clicked row
-        }
-
-        function updateTable(data) {
-            const tableBody = document.getElementById('resultsTable').querySelector('tbody');
-            tableBody.innerHTML = '';
-
-            data.forEach((item, index) => {
-                const row = document.createElement('tr');
-                row.id = `tree-row-${index}`;
-                row.innerHTML = `
-                    <td>${item.address} ${item.streetname}</td>
-                    <td>${item.common_name}</td>
-                    <td>${item.botanical_name}</td>
-                    <td>${item.dbh}</td>
-                    <td>${item.distance.toFixed(2)}</td>
-                `;
-
-                // Add click event to highlight the marker
-                row.addEventListener('click', () => highlightMarker(index));
-
-                tableBody.appendChild(row);
-            });
-        }
-
-        function addCustomControls() {
-            // Current Location Button
-            const currentLocationControl = L.control({ position: 'topleft' });
-            currentLocationControl.onAdd = function () {
-                const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
-                div.innerHTML = `<button id="current-location" class="map-icon-button" title="Go to current location">📍</button>`;
-                return div;
-            };
-            currentLocationControl.addTo(map);
-
-            // Load More Trees Button
-            const loadTreesControl = L.control({ position: 'topleft' });
-            loadTreesControl.onAdd = function () {
-                const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
-                div.innerHTML = `<button id="load-more-trees" class="map-icon-button" title="Load more trees">🌳</button>`;
-                return div;
-            };
-            loadTreesControl.addTo(map);
-
-            // Add Event Listeners
-            document.getElementById('current-location').addEventListener('click', getLocation);
-            document.getElementById('load-more-trees').addEventListener('click', getTreesAtCenter);
-        }
-
-        // Initialize the map and load location
-        initializeMap();
-        addCustomControls();
-    </script>
-</body>
+        <!-- Custom JavaScript -->
+        <script src="/static/js/script.js"></script>
+    </body>
 </html>

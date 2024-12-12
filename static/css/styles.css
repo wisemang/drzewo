@@ -1,0 +1,108 @@
+body {
+    font-family: "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: #556B2F;
+    color: #F5F5DC;
+}
+
+h1 {
+    color: #F5F5DC;
+}
+
+#map {
+    height: 400px;
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+#location, #accuracy {
+    font-size: 1.2em;
+    margin: 5px 0;
+}
+
+.highlight {
+    background-color: #A08040;
+    color: #F5F5DC;
+}
+.button {
+    display: inline-block;
+    padding: 10px;
+    margin: 5px;
+    font-size: 1em;
+    color: white;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.button:hover {
+    background-color: #45a049;
+}
+
+.button-icon {
+    font-size: 1.2em;
+}
+
+.map-icon-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+}
+
+.map-icon-button:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Additional CSS for tree marker popups */
+.tree-marker-common-name {
+    font-weight: bold;
+    color: #2a7b2a;
+}
+
+.tree-marker-address {
+    font-size: 0.82em;
+    font-style: italic;
+    color: #333;
+}
+
+.treedata {
+    border-collapse: collapse;
+    border: none;
+    width: 100%;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.treedata td {
+    padding: 4px 8px;
+    vertical-align: top;
+    border: none;
+}
+
+.treedata tr td:last-child {
+    font-weight: bold;
+    color: #2a7b2a;
+}
+
+.treedata tr td:first-child {
+    text-align: right;
+    color: #666;
+}
