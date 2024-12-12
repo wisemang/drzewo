@@ -18,11 +18,12 @@
                 font-family: "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
                 font-size: 16px; /* Adjust as needed */
                 line-height: 1.5; /* Better readability */
-                color: #333; /* Neutral dark text color */
+                background-color: #556B2F;
+                color: #F5F5DC; /* Neutral dark text color */
             }
 
             h1 {
-                color: #2a7b2a;   
+                color: #F5F5DC;   
             }
 
             #map {
@@ -146,15 +147,14 @@
 
     </head>
     <body>
-        <!-- Friendly Introduction -->
-        <h1>🌳 TreeSeek 🌳</h1>
+        <h1>🌳 TreeSeek</h1>
         <p>Learn more about the trees around you.</p>
     
         <!-- Main Map Interface -->
         <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
     
-        <!-- Nearest Trees List with Friendlier Headers -->
-        <h2>🌳 Nearby Trees</h2>
+        <!-- Nearest Trees Table -->
+        <h2>Nearby Trees</h2>
         <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
         <table id="resultsTable">
             <thead>
@@ -352,7 +352,6 @@
                         <table class="treedata">
                             <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
                             <tr><td>Diameter at breast height</td><td>${item.dbh} cm</td></tr>
-                            <tr><td>Distance from your location</td><td>${item.distance.toFixed(2)} m</td></tr>
                         </table>
                     </div>
                 `;
