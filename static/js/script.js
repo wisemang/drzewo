@@ -97,7 +97,8 @@ function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             position => displayLocation(position),
-            error => showError(error)
+            error => showError(error),
+            { enableHighAccuracy: true }
         );
     } else {
         document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
@@ -267,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menuDropdown.classList.remove('show');
         });
     });
-    
+
     function switchPage(target) {
         if (target === 'home') {
             homePage.style.display = 'block';
