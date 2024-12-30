@@ -321,10 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let userOrientation = 0;
 
     // Listen for orientation events
-    window.addEventListener('deviceorientation', (event) => {
-        userOrientation = event.alpha; // Alpha is the compass heading
-        if (userMarker) {
-            userMarker.setRotationAngle(userOrientation); // Rotate the marker
-        }
-    });
+    // window.addEventListener('deviceorientation', (event) => {
+    //     userOrientation = event.alpha; // Alpha is the compass heading
+    //     if (userMarker) {
+    //         userMarker.setRotationAngle(userOrientation); // Rotate the marker
+    //     }
+    // });
 });
