@@ -43,6 +43,13 @@ function initializeMap() {
 
     // Center map to user's location on load
     getLocation();
+
+    // Start watching the user's position
+    navigator.geolocation.watchPosition(
+        (position) => updateLocation(position), // Success callback
+        (error) => console.error('Error watching position:', error), // Error callback
+        { enableHighAccuracy: true }
+    );
 }
 
 let debounceTimer;
@@ -91,6 +98,22 @@ function getTreesAtCenter() {
     fetchTrees(center.lat, center.lng);
 }
 
+function updateLocation(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    // Update the user's location marker
+    if (!userMarker) {
+        userMarker = L.marker([latitude, longitude], {
+            icon: L.icon.pulse({ iconSize: [12, 12], color: 'steelblue', fillColor: 'steelblue', heartbeat: 4, animate: false })
+        }).addTo(map);
+    } else {
+        userMarker.setLatLng([latitude, longitude]); // Move the marker
+    }
+
+    // Optional: Keep the map centered on the user's position
+    // map.setView([latitude, longitude]);
+}
 
 // Use Geolocation API to center map on user's location
 function getLocation() {
@@ -118,7 +141,9 @@ function displayLocation(position) {
 
     // Add or update the user's location marker
     if (!userMarker) {
-        userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("You are here");
+        userMarker = L.marker([latitude, longitude], {
+            icon: L.icon.pulse({ iconSize: [12, 12], color: 'steelblue', fillColor: 'steelblue', heartbeat: 4, animate: false }) // Pulsing circle
+        }).addTo(map);
     } else {
         userMarker.setLatLng([latitude, longitude]);
     }
@@ -291,5 +316,15 @@ document.addEventListener('DOMContentLoaded', () => {
     aboutLink.addEventListener('click', (e) => {
         e.preventDefault();
         switchPage('about');
+    });
+
+    let userOrientation = 0;
+
+    // Listen for orientation events
+    window.addEventListener('deviceorientation', (event) => {
+        userOrientation = event.alpha; // Alpha is the compass heading
+        if (userMarker) {
+            userMarker.setRotationAngle(userOrientation); // Rotate the marker
+        }
     });
 });
