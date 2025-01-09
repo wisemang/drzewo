@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 from os import environ
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
 import psycopg2
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -18,8 +21,8 @@ def nearest():
 
     db_params = {
         "database": environ.get('DRZEWO_DB', 'drzewo'),
-        "user": environ.get('DRZEWO_DB_USER', 'greg'),
-        "password": environ.get('DRZEWO_DB_PW', None),
+        "user": environ.get('DRZEWO_DB_USER'),
+        "password": environ.get('DRZEWO_DB_PW'),
         "host": environ.get('DRZEWO_DB_HOST', 'localhost'),
         "port": environ.get('DRZEWO_DB_PORT', '5432')
     }

@@ -3,6 +3,7 @@ let userMarker; // User marker
 let treeMarkers = []; // Array to store tree markers
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
+let hasInitialLocation = false;
 
 // Custom tree icon
 const treeIcon = L.icon({
@@ -13,11 +14,11 @@ const treeIcon = L.icon({
 });
 
 function initializeMap() {
-    // Initialize the map with a default view (will be updated by geolocation)
+    // Initialize the map with a default view
     map = L.map('map', {
-        fullscreenControl: true, // Enable fullscreen control
+        fullscreenControl: true,
         fullscreenControlOptions: {
-            position: 'topleft' // Place it in the top-left corner
+            position: 'topleft'
         }
     }).setView([43.65107, -79.347015], 13);
 
@@ -25,31 +26,52 @@ function initializeMap() {
     map.on('zoomend', onMapInteraction);
     map.on('moveend', onMapInteraction);
 
-    // Define the OSM layer
+    // Define layers
     osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 21
     });
 
-    // Define the OpenFreeMap layer using MapLibre GL
     openFreeMapLayer = L.maplibreGL({
         attribution: '© OpenStreetMap contributors, OpenFreeMap',
         style: 'https://tiles.openfreemap.org/styles/liberty',
     });
 
-    // Add the default layer to the map
-    // map.addLayer(osmLayer);
     map.addLayer(openFreeMapLayer);
 
-    // Center map to user's location on load
-    getLocation();
+    // Start location tracking
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latlng = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                
+                // Set initial view
+                map.setView(latlng, 16);
+                
+                // Create initial marker
+                userMarker = L.marker(latlng, {
+                    icon: L.icon.pulse({ 
+                        iconSize: [12, 12], 
+                        color: 'steelblue', 
+                        fillColor: 'steelblue', 
+                        heartbeat: 4, 
+                        animate: false 
+                    })
+                }).addTo(map);
 
-    // Start watching the user's position
-    navigator.geolocation.watchPosition(
-        (position) => updateLocation(position), // Success callback
-        (error) => console.error('Error watching position:', error), // Error callback
-        { enableHighAccuracy: true }
-    );
+                // Start continuous tracking
+                startLocationTracking();
+                
+                // Initial tree fetch
+                fetchTrees(latlng.lat, latlng.lng);
+            },
+            (error) => console.error('Error getting initial position:', error),
+            { enableHighAccuracy: true }
+        );
+    }
 }
 
 let debounceTimer;
@@ -63,19 +85,19 @@ function onMapInteraction() {
         const currentCenter = map.getCenter();
         const currentZoom = map.getZoom();
 
-        const distanceThreshold = 100; // Meters
-        const zoomThreshold = 2;
+        const distanceThreshold = 300; // Increase threshold to avoid minor updates
+        const zoomThreshold = 3; // Require more significant zoom changes
 
         if (
             !lastLoadedCenter ||
-            currentCenter.distanceTo(lastLoadedCenter) > distanceThreshold ||
+            map.distance(currentCenter, lastLoadedCenter) > distanceThreshold ||
             Math.abs(currentZoom - lastZoomLevel) >= zoomThreshold
         ) {
             lastLoadedCenter = currentCenter;
             lastZoomLevel = currentZoom;
             fetchTrees(currentCenter.lat, currentCenter.lng);
         }
-    }, 300); // Debounce delay
+    }, 500); // Slightly increase debounce delay for smoother performance
 }
 
 // Toggle between OSM and OpenFreeMap
@@ -118,11 +140,8 @@ function updateLocation(position) {
 // Use Geolocation API to center map on user's location
 function getLocation() {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            position => displayLocation(position),
-            error => showError(error),
-            { enableHighAccuracy: true }
-        );
+        // Instead of getting a one-time position, just ensure tracking is started
+        startLocationTracking();
     } else {
         document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
     }
@@ -328,3 +347,24 @@ document.addEventListener('DOMContentLoaded', () => {
     //     }
     // });
 });
+
+function startLocationTracking() {
+    navigator.geolocation.watchPosition(
+        (position) => {
+            const latlng = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            
+            if (userMarker) {
+                userMarker.setLatLng(latlng);
+            }
+        },
+        (error) => console.error('Error watching position:', error),
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
+        }
+    );
+}
