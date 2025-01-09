@@ -3,7 +3,6 @@ let userMarker; // User marker
 let treeMarkers = []; // Array to store tree markers
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
-let hasInitialLocation = false;
 
 // Custom tree icon
 const treeIcon = L.icon({
@@ -14,7 +13,6 @@ const treeIcon = L.icon({
 });
 
 function initializeMap() {
-    // Initialize the map with a default view
     map = L.map('map', {
         fullscreenControl: true,
         fullscreenControlOptions: {
@@ -22,11 +20,10 @@ function initializeMap() {
         }
     }).setView([43.65107, -79.347015], 13);
 
-    // Attach event listeners
-    map.on('zoomend', onMapInteraction);
+    // Just keep the essential event listeners for tree loading
     map.on('moveend', onMapInteraction);
+    map.on('zoomend', onMapInteraction);
 
-    // Define layers
     osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 21
@@ -35,43 +32,24 @@ function initializeMap() {
     openFreeMapLayer = L.maplibreGL({
         attribution: '© OpenStreetMap contributors, OpenFreeMap',
         style: 'https://tiles.openfreemap.org/styles/liberty',
+        interactive: true,  // Keep interactions enabled
+        dragRotate: false,  // Keep 3D rotation disabled
+        pitchWithRotate: false,
+        inertia: false,     // Disable inertial scrolling
+        dragPan: {
+            inertia: false  // Also disable inertia in drag-pan
+        },
+        pane: 'tilePane'    // Keep the layer in the tile pane
     });
+    
+    // Create a separate pane for markers to ensure proper layering
+    map.createPane('markerPane');
+    map.getPane('markerPane').style.zIndex = 600;
 
-    map.addLayer(openFreeMapLayer);
-
-    // Start location tracking
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const latlng = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                // Set initial view
-                map.setView(latlng, 16);
-                
-                // Create initial marker
-                userMarker = L.marker(latlng, {
-                    icon: L.icon.pulse({ 
-                        iconSize: [12, 12], 
-                        color: 'steelblue', 
-                        fillColor: 'steelblue', 
-                        heartbeat: 4, 
-                        animate: false 
-                    })
-                }).addTo(map);
-
-                // Start continuous tracking
-                startLocationTracking();
-                
-                // Initial tree fetch
-                fetchTrees(latlng.lat, latlng.lng);
-            },
-            (error) => console.error('Error getting initial position:', error),
-            { enableHighAccuracy: true }
-        );
-    }
+    map.addLayer(osmLayer);
+    
+    // Get initial location
+    getLocation();
 }
 
 let debounceTimer;
@@ -85,22 +63,25 @@ function onMapInteraction() {
         const currentCenter = map.getCenter();
         const currentZoom = map.getZoom();
 
-        const distanceThreshold = 300; // Increase threshold to avoid minor updates
-        const zoomThreshold = 3; // Require more significant zoom changes
+        // Store new center and zoom level
+        if (!lastLoadedCenter) {
+            lastLoadedCenter = currentCenter;
+            lastZoomLevel = currentZoom;
+        }
 
-        if (
-            !lastLoadedCenter ||
-            map.distance(currentCenter, lastLoadedCenter) > distanceThreshold ||
-            Math.abs(currentZoom - lastZoomLevel) >= zoomThreshold
-        ) {
+        const distanceThreshold = 100; // Meters
+        const zoomThreshold = 2;
+
+        // Only fetch new trees if we've moved significantly
+        if (currentCenter.distanceTo(lastLoadedCenter) > distanceThreshold ||
+            Math.abs(currentZoom - lastZoomLevel) >= zoomThreshold) {
             lastLoadedCenter = currentCenter;
             lastZoomLevel = currentZoom;
             fetchTrees(currentCenter.lat, currentCenter.lng);
         }
-    }, 500); // Slightly increase debounce delay for smoother performance
+    }, 300); // Debounce delay
 }
 
-// Toggle between OSM and OpenFreeMap
 function toggleMapProvider() {
     if (currentProvider === 'osm') {
         map.removeLayer(osmLayer);
@@ -120,34 +101,19 @@ function getTreesAtCenter() {
     fetchTrees(center.lat, center.lng);
 }
 
-function updateLocation(position) {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-
-    // Update the user's location marker
-    if (!userMarker) {
-        userMarker = L.marker([latitude, longitude], {
-            icon: L.icon.pulse({ iconSize: [12, 12], color: 'steelblue', fillColor: 'steelblue', heartbeat: 4, animate: false })
-        }).addTo(map);
-    } else {
-        userMarker.setLatLng([latitude, longitude]); // Move the marker
-    }
-
-    // Optional: Keep the map centered on the user's position
-    // map.setView([latitude, longitude]);
-}
-
-// Use Geolocation API to center map on user's location
 function getLocation() {
     if (navigator.geolocation) {
-        // Instead of getting a one-time position, just ensure tracking is started
-        startLocationTracking();
+        navigator.geolocation.getCurrentPosition(
+            position => displayLocation(position, true),
+            error => showError(error),
+            { enableHighAccuracy: true }
+        );
     } else {
         document.getElementById('location').textContent = "Geolocation is not supported by this browser.";
     }
 }
 
-function displayLocation(position) {
+function displayLocation(position, centerMap = false) {
     const latitude = position.coords.latitude;
     const longitude = position.coords.longitude;
     const accuracy = position.coords.accuracy;
@@ -155,14 +121,16 @@ function displayLocation(position) {
     document.getElementById('location').textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
     document.getElementById('accuracy').textContent = `Accuracy: ±${accuracy.toFixed(1)} meters`;
 
-    // Update the map view
-    map.setView([latitude, longitude], 19);
+    // Only set view on initial location or when explicitly requested
+    if (!userMarker || centerMap) {
+        map.setView([latitude, longitude], 19);
+    }
 
     // Add or update the user's location marker
     if (!userMarker) {
         userMarker = L.marker([latitude, longitude], {
-            icon: L.icon.pulse({ iconSize: [12, 12], color: 'steelblue', fillColor: 'steelblue', heartbeat: 4, animate: false }) // Pulsing circle
-        }).addTo(map);
+            pane: 'markerPane'
+        }).addTo(map).bindPopup("You are here");
     } else {
         userMarker.setLatLng([latitude, longitude]);
     }
@@ -198,13 +166,17 @@ function fetchTrees(latitude, longitude) {
 }
 
 function addMarkers(data) {
+    // Clear old markers if we're over the limit
     while (treeMarkers.length > maxMarkers) {
         const marker = treeMarkers.shift();
         map.removeLayer(marker);
     }
 
     data.forEach((item, index) => {
-        const marker = L.marker([item.latitude, item.longitude], { icon: treeIcon }).addTo(map);
+        const marker = L.marker([item.latitude, item.longitude], { 
+            icon: treeIcon,
+            pane: 'markerPane'  // Use the marker pane
+        }).addTo(map);
 
         const popupContent = `
             <div class="tree-marker">
@@ -219,11 +191,7 @@ function addMarkers(data) {
         `;
 
         marker.bindPopup(popupContent);
-
-        // Add the marker to the global array
         treeMarkers.push(marker);
-
-        // Highlight the corresponding row when the marker is clicked
         marker.on('click', () => highlightRow(index));
     });
 }
@@ -231,16 +199,17 @@ function addMarkers(data) {
 function highlightMarker(index) {
     const marker = treeMarkers[index];
     if (marker) {
-        map.setView(marker.getLatLng(), 18); // Center the map on the marker
+        // Use panTo instead of setView to maintain zoom level
+        map.panTo(marker.getLatLng());
         marker.openPopup();
         highlightRow(index);
     }
 }
 
 function highlightRow(index) {
-    document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight')); // Remove existing highlights
+    document.querySelectorAll('tr').forEach(row => row.classList.remove('highlight'));
     const row = document.getElementById(`tree-row-${index}`);
-    if (row) row.classList.add('highlight'); // Add highlight to the clicked row
+    if (row) row.classList.add('highlight');
 }
 
 function updateTable(data) {
@@ -258,9 +227,7 @@ function updateTable(data) {
             <td>${item.distance.toFixed(2)}</td>
         `;
 
-        // Add click event to highlight the marker
         row.addEventListener('click', () => highlightMarker(index));
-
         tableBody.appendChild(row);
     });
 }
@@ -293,6 +260,7 @@ function addCustomControls() {
 initializeMap();
 addCustomControls();
 
+// Menu handling
 document.addEventListener('DOMContentLoaded', () => {
     const homeLink = document.getElementById('home-link');
     const aboutLink = document.getElementById('about-link');
@@ -336,35 +304,4 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         switchPage('about');
     });
-
-    let userOrientation = 0;
-
-    // Listen for orientation events
-    // window.addEventListener('deviceorientation', (event) => {
-    //     userOrientation = event.alpha; // Alpha is the compass heading
-    //     if (userMarker) {
-    //         userMarker.setRotationAngle(userOrientation); // Rotate the marker
-    //     }
-    // });
 });
-
-function startLocationTracking() {
-    navigator.geolocation.watchPosition(
-        (position) => {
-            const latlng = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-            };
-            
-            if (userMarker) {
-                userMarker.setLatLng(latlng);
-            }
-        },
-        (error) => console.error('Error watching position:', error),
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 5000
-        }
-    );
-}
