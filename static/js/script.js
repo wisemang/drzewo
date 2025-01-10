@@ -175,17 +175,20 @@ function addMarkers(data) {
     data.forEach((item, index) => {
         const marker = L.marker([item.latitude, item.longitude], { 
             icon: treeIcon,
-            pane: 'markerPane'  // Use the marker pane
+            pane: 'markerPane'
         }).addTo(map);
+
+        const dbhDisplay = item.dbh ? `${item.dbh} cm` : 'N/A';
+        const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;
 
         const popupContent = `
             <div class="tree-marker">
                 <span class="tree-marker-common-name">${item.common_name}</span><br>
-                <span class="tree-marker-address">${item.address} ${item.streetname}</span><br>
+                <span class="tree-marker-address">${addressDisplay}</span><br>
                 <hr>
                 <table class="treedata">
                     <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
-                    <tr><td>Diameter at breast height</td><td>${item.dbh} cm</td></tr>
+                    <tr><td>Diameter</td><td>${dbhDisplay}</td></tr>
                 </table>
             </div>
         `;
@@ -219,11 +222,13 @@ function updateTable(data) {
     data.forEach((item, index) => {
         const row = document.createElement('tr');
         row.id = `tree-row-${index}`;
+        const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;
+        
         row.innerHTML = `
-            <td>${item.address} ${item.streetname}</td>
+            <td>${addressDisplay}</td>
             <td>${item.common_name}</td>
             <td>${item.botanical_name}</td>
-            <td>${item.dbh}</td>
+            <td>${item.dbh ? item.dbh : 'N/A'}</td>
             <td>${item.distance.toFixed(2)}</td>
         `;
 

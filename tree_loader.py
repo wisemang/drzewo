@@ -42,6 +42,11 @@ CITY_HANDLERS = {
         "loader": "load_calgary_data",
         "enrichments": ["tree_condition", "wikipedia_links"],
     },
+    "waterloo": {
+        "source_name": "Waterloo Open Data Tree Inventory",
+        "loader": "load_waterloo_data",
+        "enrichments": [],
+    },
 }
 
 
@@ -293,55 +298,46 @@ def enrich_data(cursor, city_config):
         """)
 
 
-def load_waterloo_data():
-    """Load tree data from Waterloo's open data portal"""
-    with open('data/waterloo/Street_Tree_Inventory.geojson', 'r') as f:
-        return json.load(f)
+def load_waterloo_data(cursor, filename):
+    """Load Waterloo data and insert it into the database."""
+    with open(filename, 'r') as file:
+        data = json.load(file)
 
-def insert_waterloo_data(data):
-    """Insert Waterloo tree data into the database"""
-    conn = psycopg2.connect(**DB_PARAMS)
-    cur = conn.cursor()
-    
     for feature in data['features']:
-        props = feature['properties']
-        geom = feature['geometry']
-        
-        # Map Waterloo's fields to our schema
-        tree_data = {
-            'source': 'waterloo',
-            'objectid': props.get('ASSET_ID'),
-            'common_name': props.get('COM_NAME'),
-            'botanical_name': props.get('LATIN_NAME'),
-            'address': props.get('ADDRESS'),
-            'streetname': '',  # Extracted from ADDRESS if needed
-            'dbh_trunk': props.get('DBH_CM'),
-            'longitude': geom['coordinates'][0],
-            'latitude': geom['coordinates'][1]
-        }
-        
-        # Insert into database
-        cur.execute("""
-            INSERT INTO street_trees (
-                source, objectid, common_name, botanical_name,
-                address, streetname, dbh_trunk, geom
-            ) VALUES (
-                %(source)s, %(objectid)s, %(common_name)s, %(botanical_name)s,
-                %(address)s, %(streetname)s, %(dbh_trunk)s,
-                ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326)
-            )
-            ON CONFLICT (source, objectid) DO UPDATE SET
-                common_name = EXCLUDED.common_name,
-                botanical_name = EXCLUDED.botanical_name,
-                address = EXCLUDED.address,
-                streetname = EXCLUDED.streetname,
-                dbh_trunk = EXCLUDED.dbh_trunk,
-                geom = EXCLUDED.geom
-            """, tree_data)
-    
-    conn.commit()
-    cur.close()
-    conn.close()
+        insert_waterloo_data(cursor, feature)
+
+def insert_waterloo_data(cursor, feature):
+    """Insert Waterloo tree data into the database."""
+    source = "Waterloo Open Data Tree Inventory"
+    properties = feature['properties']
+    geometry = feature['geometry']
+
+    objectid = properties.get('ASSET_ID')
+    common_name = properties.get('COM_NAME')
+    botanical_name = properties.get('LATIN_NAME')
+    address = properties.get('ADDRESS')
+    dbh_trunk = properties.get('DBH_CM')
+    if dbh_trunk == 'null':
+        dbh_trunk = None
+
+    # Create SQL query
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, common_name, botanical_name, address, dbh_trunk, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
+    )
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    cursor.execute(sql_query, (
+        source,
+        objectid,
+        common_name,
+        botanical_name,
+        address,
+        dbh_trunk,
+        json.dumps(geometry)
+    ))
 
 
 def main():
@@ -368,6 +364,10 @@ def main():
             load_ottawa_data(cursor, filename)
         elif city == "montreal":
             load_montreal_data(cursor, filename)
+        elif city == "calgary":
+            load_calgary_data(cursor, filename)
+        elif city == "waterloo":
+            load_waterloo_data(cursor, filename)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")
