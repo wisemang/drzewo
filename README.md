@@ -1,17 +1,39 @@
 # drzewo
 
-sometimes when i'm walking, i see a tree i like. i'm not great at identifying trees by sight, but i'd like to be. this is a web application that will hopefully help with that.
+When walking around cities, sometimes you see a tree and want to know what it is.
+`drzewo` serves nearby public tree inventory data from city open datasets.
 
-not by taking pictures and using ML like iNaturalist or so, but a much more pedestrian approach of downloading datasets from city open data sites. toronto and ottawa to start because those are two cities i sometimes find myself walking and wondering about trees.
+## Quick start
 
+1. Create a PostgreSQL database with PostGIS and apply schema:
+   `psql -f drzewo.sql`
+2. Copy environment settings:
+   `cp .env.example .env`
+3. Install dependencies:
+   `make setup`
+4. Run the app:
+   `make run`
 
-## From scratch
+The app starts on `http://127.0.0.1:5000`.
 
-Fire up `psql` and run the commands in `drzewo.sql`
+## Data loading
 
-Install python3, make a venv if you want, run:
+Use `tree_loader.py` to import city data:
+
+```bash
+.venv/bin/python tree_loader.py toronto --file /path/to/toronto.geojson
+.venv/bin/python tree_loader.py ottawa --file /path/to/ottawa.geojson
+.venv/bin/python tree_loader.py montreal --file /path/to/montreal.csv
+.venv/bin/python tree_loader.py calgary --file /path/to/calgary.csv
+.venv/bin/python tree_loader.py waterloo --file /path/to/waterloo.geojson
 ```
-pip install -r requirements.txt
-./load.py
-```
 
+## Quality checks
+
+- `make lint`: static analysis with `ruff`
+- `make test`: API smoke tests with `pytest`
+- `make check`: lint + tests (recommended pre-commit)
+
+## Agent-friendly workflow
+
+For Codex and other coding agents, use the guardrails in `AGENTS.md`.
