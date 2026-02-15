@@ -37,3 +37,4 @@ Use `tree_loader.py` to import city data:
 ## Agent-friendly workflow
 
 For Codex and other coding agents, use the guardrails in `AGENTS.md`.
+Capture session summaries in `docs/agent-log.md`.
