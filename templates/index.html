@@ -28,10 +28,6 @@
         <!-- Maplibre GL Leaflet -->
         <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 
-        <!-- Leaflet Fullscreen Control -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
-        <script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
-
         <!-- Custom CSS -->
         <link rel="stylesheet" href="/static/css/styles.css">
     </head>
@@ -54,28 +50,32 @@
         <main>
             <!-- Home Page Content -->
             <section id="home-page">
-                <p>Learn more about the trees around you.</p>
-                <div id="map" style="height: 500px; margin-bottom: 1em;"></div>
-                <h2>Nearby Trees</h2>
-                <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
-                <table id="resultsTable">
-                    <thead>
-                        <tr>
-                            <th>Address</th>
-                            <th>Common Name</th>
-                            <th>Botanical Name</th>
-                            <th>DBH</th>
-                            <th>Distance (m)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Results will be inserted here -->
-                    </tbody>
-                </table>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
-                        <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+                <p id="home-intro">Learn more about the trees around you.</p>
+                <div id="map-shell">
+                    <div id="map"></div>
+                </div>
+                <div id="home-details">
+                    <h2>Nearby Trees</h2>
+                    <p>Here’s a list of the trees closest to you. Tap on a row to highlight its location on the map.</p>
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>Common Name</th>
+                                <th>Botanical Name</th>
+                                <th>DBH</th>
+                                <th>Distance (m)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Results will be inserted here -->
+                        </tbody>
+                    </table>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p id="location" style="font-size: 0.9em; color: #666;">Finding your location...</p>
+                            <p id="accuracy" style="font-size: 0.9em; color: #666;"></p>
+                        </div>
                     </div>
                 </div>
             </section>

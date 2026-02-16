@@ -11,7 +11,11 @@ h1 {
 }
 
 #map {
-    height: 400px;
+    height: 500px;
+}
+
+#map-shell {
+    margin-bottom: 1em;
 }
 
 table, th, td {
@@ -78,6 +82,12 @@ a:hover {
 
 .map-icon-button:hover {
     background: rgba(255, 255, 255, 0.9);
+}
+
+.map-icon-button svg {
+    width: 16px;
+    height: 16px;
+    display: block;
 }
 
 /* Additional CSS for tree marker popups */
@@ -169,4 +179,32 @@ a:hover {
 .menu-icon:active .menu-dropdown,
 .menu-icon:hover .menu-dropdown {
     display: block;
+}
+
+body.map-fullscreen-active {
+    overflow: hidden;
+}
+
+body.map-fullscreen-active header,
+body.map-fullscreen-active #home-intro,
+body.map-fullscreen-active #home-details {
+    display: none;
+}
+
+body.map-fullscreen-active main,
+body.map-fullscreen-active #home-page {
+    margin: 0;
+    padding: 0;
+}
+
+body.map-fullscreen-active #map-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    margin: 0;
+}
+
+body.map-fullscreen-active #map {
+    height: 100vh;
+    margin: 0;
 }

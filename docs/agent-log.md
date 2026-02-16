@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Map fullscreen mode and icon polish
+- Prompt summary: Add a map-only fullscreen toggle and refine the exit icon to use provided SVG.
+- Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
+- Decisions: Implemented app-level fullscreen mode that hides header/table content, added a dedicated map control toggle, kept `⛶` for enter, and switched exit icon to inline Bootstrap `fullscreen-exit` SVG.
+- Validation: `make test` passed (`3 passed`).
+- Follow-ups: none.
+
 ## 2026-02-16 - Read latency schema improvements
 - Prompt summary: Improve read latency without changing geometry type semantics.
 - Scope: `drzewo.sql`, `tree_loader.py`.

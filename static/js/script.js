@@ -13,12 +13,7 @@ const treeIcon = L.icon({
 });
 
 function initializeMap() {
-    map = L.map('map', {
-        fullscreenControl: true,
-        fullscreenControlOptions: {
-            position: 'topleft'
-        }
-    }).setView([43.65107, -79.347015], 13);
+    map = L.map('map').setView([43.65107, -79.347015], 13);
 
     // Just keep the essential event listeners for tree loading
     map.on('moveend', onMapInteraction);
@@ -56,6 +51,12 @@ let debounceTimer;
 let lastLoadedCenter = null;
 let lastZoomLevel = null;
 const maxMarkers = 200;
+let isMapFullscreen = false;
+const FULLSCREEN_ENTER_ICON = '⛶';
+const FULLSCREEN_EXIT_ICON = `
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
+  <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
+</svg>`;
 
 function onMapInteraction() {
     clearTimeout(debounceTimer);
@@ -256,9 +257,41 @@ function addCustomControls() {
     };
     loadTreesControl.addTo(map);
 
+    // Fullscreen Map Mode Button
+    const mapFullscreenControl = L.control({ position: 'topleft' });
+    mapFullscreenControl.onAdd = function () {
+        const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
+        div.innerHTML = `<button id="toggle-map-fullscreen" class="map-icon-button" title="Enter fullscreen map" aria-label="Enter fullscreen map">${FULLSCREEN_ENTER_ICON}</button>`;
+        return div;
+    };
+    mapFullscreenControl.addTo(map);
+
     // Add Event Listeners
     document.getElementById('current-location').addEventListener('click', getLocation);
     document.getElementById('load-more-trees').addEventListener('click', getTreesAtCenter);
+    document.getElementById('toggle-map-fullscreen').addEventListener('click', () => {
+        setMapFullscreen(!isMapFullscreen);
+    });
+}
+
+function setMapFullscreen(enabled) {
+    isMapFullscreen = enabled;
+    document.body.classList.toggle('map-fullscreen-active', enabled);
+
+    const button = document.getElementById('toggle-map-fullscreen');
+    if (button) {
+        if (enabled) {
+            button.innerHTML = FULLSCREEN_EXIT_ICON;
+        } else {
+            button.textContent = FULLSCREEN_ENTER_ICON;
+        }
+        button.title = enabled ? 'Exit fullscreen map' : 'Enter fullscreen map';
+        button.setAttribute('aria-label', button.title);
+    }
+
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 50);
 }
 
 // Initialize the map and load location
@@ -287,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function switchPage(target) {
+        if (target !== 'home' && isMapFullscreen) {
+            setMapFullscreen(false);
+        }
         if (target === 'home') {
             homePage.style.display = 'block';
             aboutPage.style.display = 'none';
@@ -308,5 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
     aboutLink.addEventListener('click', (e) => {
         e.preventDefault();
         switchPage('about');
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isMapFullscreen) {
+            setMapFullscreen(false);
+        }
     });
 });
