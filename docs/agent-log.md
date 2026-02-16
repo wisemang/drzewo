@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - API query guardrails for nearest-tree lookup
+- Prompt summary: Add API-side input and query guardrails to protect latency and stability.
+- Scope: `api.py`, `tests/test_api.py`.
+- Decisions: Added coordinate bounds validation, bounded `limit`, optional bounded `max_distance_m` radius filter (`ST_DWithin`), and explicit 400 responses for invalid parameters.
+- Validation: `make test` passed (`6 passed`).
+- Follow-ups: Optional: add request-level latency logging for `/nearest` in production.
+
 ## 2026-02-16 - Additive marker lifecycle with mobile-safe cap
 - Prompt summary: Keep marker behavior additive to avoid visual churn, while protecting map performance on older phones.
 - Scope: `static/js/script.js`.

@@ -6,10 +6,12 @@ class FakeCursor:
         self.rows = rows
         self.executed = None
         self.params = None
+        self.calls = []
 
     def execute(self, query, params):
         self.executed = query
         self.params = params
+        self.calls.append((query, params))
 
     def fetchall(self):
         return self.rows
@@ -74,3 +76,35 @@ def test_nearest_returns_rows(monkeypatch):
     assert len(payload) == 1
     assert payload[0]["common_name"] == "Maple"
     assert fake_conn.closed is True
+
+
+def test_nearest_rejects_out_of_bounds_coordinates():
+    client = api.app.test_client()
+    response = client.get("/nearest?lat=120&lng=-79.38")
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "lat/lng are out of bounds"}
+
+
+def test_nearest_rejects_non_numeric_radius():
+    client = api.app.test_client()
+    response = client.get("/nearest?lat=43.65&lng=-79.38&max_distance_m=abc")
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "max_distance_m must be a number"}
+
+
+def test_nearest_clamps_limit_and_radius(monkeypatch):
+    fake_conn = FakeConnection([])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/nearest?lat=43.65&lng=-79.38&limit=999&max_distance_m=99999")
+
+    assert response.status_code == 200
+    assert "ST_DWithin" in fake_conn.cursor_instance.executed
+    params = fake_conn.cursor_instance.params
+    assert params[-1] == api.MAX_LIMIT
+    assert api.MAX_RADIUS_M in params
