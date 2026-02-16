@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Read latency schema improvements
+- Prompt summary: Improve read latency without changing geometry type semantics.
+- Scope: `drzewo.sql`, `tree_loader.py`.
+- Decisions: Added GiST index on `street_trees.geom`, enforced `NOT NULL` on `source/objectid/geom`, and run post-import `ANALYZE` after successful commits.
+- Validation: `python3 -m compileall tree_loader.py` passed.
+- Follow-ups: Apply equivalent `ALTER TABLE` + `CREATE INDEX CONCURRENTLY` statements on existing databases.
+
 ## 2026-02-15 - Agent coding baseline
 - Prompt summary: Set up repo optimally for agent-based coding.
 - Scope: `Makefile`, `pyproject.toml`, `requirements-dev.txt`, `README.md`, `AGENTS.md`, `tests/`, `.env.example`, `api.py`.

@@ -6,9 +6,9 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 
 CREATE TABLE street_trees (
-    source TEXT,
+    source TEXT NOT NULL,
     city_id INTEGER,
-    objectid INTEGER,
+    objectid INTEGER NOT NULL,
     structid TEXT,
     address TEXT,
     streetname TEXT,
@@ -22,9 +22,10 @@ CREATE TABLE street_trees (
     botanical_name TEXT,
     common_name TEXT,
     dbh_trunk INTEGER,
-    geom GEOMETRY(MultiPoint, 4326) -- WGS 84
+    geom GEOMETRY(MultiPoint, 4326) NOT NULL -- WGS 84
 );
 
 
 ALTER TABLE street_trees ADD CONSTRAINT unique_source_objectid UNIQUE (source, objectid);
 
+CREATE INDEX idx_street_trees_geom_gist ON street_trees USING GIST (geom);

@@ -374,6 +374,14 @@ def main():
             enrich_data(cursor, city_config)
 
         conn.commit()
+        # Refresh table stats after bulk writes so nearest-neighbor plans stay fast.
+        try:
+            analyze_cursor = conn.cursor()
+            analyze_cursor.execute("ANALYZE street_trees;")
+            analyze_cursor.close()
+        except Exception as analyze_error:
+            print(f"ANALYZE failed (data import still committed): {analyze_error}")
+
         print("Data import and enrichment completed successfully.")
 
     except Exception as e:
