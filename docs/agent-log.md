@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Safer fullscreen transition polish
+- Prompt summary: Improve fullscreen transition feel without reintroducing map interaction glitches.
+- Scope: `static/css/styles.css`, `static/js/script.js`.
+- Decisions: Animated only non-map UI (`header`, intro/details) with opacity/slide, kept map geometry changes instant, and switched to a single `map.invalidateSize({ pan: false })` on next frame.
+- Validation: `make test` passed (`6 passed`).
+- Follow-ups: Optionally test on older iOS Safari devices for touch behavior parity.
+
 ## 2026-02-16 - API query guardrails for nearest-tree lookup
 - Prompt summary: Add API-side input and query guardrails to protect latency and stability.
 - Scope: `api.py`, `tests/test_api.py`.

@@ -363,9 +363,9 @@ function setMapFullscreen(enabled) {
         button.setAttribute('aria-label', button.title);
     }
 
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 50);
+    requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false });
+    });
 }
 
 // Initialize the map and load location
