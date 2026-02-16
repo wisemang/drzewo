@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Persist map fullscreen preference
+- Prompt summary: Remember fullscreen mode across page reloads.
+- Scope: `static/js/script.js`.
+- Decisions: Added `localStorage` persistence (`treeseek.map.fullscreen`) with safe read/write wrappers and automatic restore after map controls initialize.
+- Validation: `make lint` passed; `make test` passed (`6 passed`).
+- Follow-ups: none.
+
 ## 2026-02-16 - Lint remediation and style normalization
 - Prompt summary: Fix failing lint gate and confirm tests remain green.
 - Scope: `api.py`, `tree_loader.py`, `tests/conftest.py`.

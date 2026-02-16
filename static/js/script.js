@@ -7,6 +7,7 @@ let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
+const FULLSCREEN_PREF_KEY = 'treeseek.map.fullscreen';
 const markerMetrics = {
     fetches: 0,
     createdTotal: 0,
@@ -72,6 +73,22 @@ const FULLSCREEN_EXIT_ICON = `
 <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
   <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
 </svg>`;
+
+function readFullscreenPreference() {
+    try {
+        return window.localStorage.getItem(FULLSCREEN_PREF_KEY) === 'true';
+    } catch (_error) {
+        return false;
+    }
+}
+
+function writeFullscreenPreference(enabled) {
+    try {
+        window.localStorage.setItem(FULLSCREEN_PREF_KEY, String(enabled));
+    } catch (_error) {
+        // Ignore storage errors (e.g., private mode restrictions).
+    }
+}
 
 function onMapInteraction() {
     clearTimeout(debounceTimer);
@@ -350,6 +367,7 @@ function addCustomControls() {
 
 function setMapFullscreen(enabled) {
     isMapFullscreen = enabled;
+    writeFullscreenPreference(enabled);
     document.body.classList.toggle('map-fullscreen-active', enabled);
 
     const button = document.getElementById('toggle-map-fullscreen');
@@ -371,6 +389,9 @@ function setMapFullscreen(enabled) {
 // Initialize the map and load location
 initializeMap();
 addCustomControls();
+if (readFullscreenPreference()) {
+    setMapFullscreen(true);
+}
 
 // Menu handling
 document.addEventListener('DOMContentLoaded', () => {
