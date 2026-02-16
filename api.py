@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from os import environ
-from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify
+
 import psycopg2
+from dotenv import load_dotenv
+from flask import Flask, jsonify, render_template, request
 
 load_dotenv()
 
@@ -83,7 +84,23 @@ def nearest():
     finally:
         conn.close()
 
-    return jsonify([{'source': row[0], 'objectid': row[1], 'common_name': row[2], 'botanical_name':row[3], 'address':row[4], 'streetname': row[5], 'dbh':row[6], 'pos':row[7], 'distance': row[8], 'longitude': row[9], 'latitude': row[10]} for row in results])
+    response = [
+        {
+            "source": row[0],
+            "objectid": row[1],
+            "common_name": row[2],
+            "botanical_name": row[3],
+            "address": row[4],
+            "streetname": row[5],
+            "dbh": row[6],
+            "pos": row[7],
+            "distance": row[8],
+            "longitude": row[9],
+            "latitude": row[10],
+        }
+        for row in results
+    ]
+    return jsonify(response)
 
 
 

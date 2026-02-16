@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import os
-import json
 import argparse
-from os import environ, path
+import json
+from os import environ
+
 import psycopg2
-from psycopg2 import sql
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -94,7 +93,8 @@ def insert_toronto_data(cursor, feature):
         source, objectid, structid, address, streetname, crossstreet1, crossstreet2, suffix,
         unit_number, tree_position_number, site, ward, botanical_name, common_name, dbh_trunk, geom
     ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+        ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
     )
     ON CONFLICT (source, objectid) DO NOTHING;
     """
@@ -184,7 +184,10 @@ def insert_montreal_data(cursor, row):
     Insert Montreal tree data into the database.
     """
     # Extract fields
-    # INV_TYPE,EMP_NO,ARROND,ARROND_NOM,Rue,COTE,No_civique,Emplacement,Coord_X,Coord_Y,SIGLE,Essence_latin,Essence_fr,ESSENCE_ANG,DHP,Date_releve,Date_plantation,LOCALISATION,CODE_PARC,NOM_PARC,Longitude,Latitude
+    # Columns include:
+    # INV_TYPE, EMP_NO, ARROND, ARROND_NOM, Rue, COTE, No_civique, Emplacement,
+    # Coord_X, Coord_Y, SIGLE, Essence_latin, Essence_fr, ESSENCE_ANG, DHP,
+    # Date_releve, Date_plantation, LOCALISATION, CODE_PARC, NOM_PARC, Longitude, Latitude
     source = "Montreal Open Data Tree Inventory"
     objectid = row['EMP_NO']
     ward = f"{row['ARROND_NOM']}"
@@ -256,7 +259,7 @@ def insert_calgary_data(cursor, row):
     # Parse WKT into PostGIS geometry
     sql_query = """
     INSERT INTO street_trees (
-        source, objectid, asset_type, asset_subtype, common_name, botanical_name, 
+        source, objectid, asset_type, asset_subtype, common_name, botanical_name,
         dbh_trunk, address, streetname, date_added, geom
     ) VALUES (
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326)

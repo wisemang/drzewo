@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Lint remediation and style normalization
+- Prompt summary: Fix failing lint gate and confirm tests remain green.
+- Scope: `api.py`, `tree_loader.py`, `tests/conftest.py`.
+- Decisions: Applied Ruff auto-fixes for import ordering/unused imports, then manually fixed residual long-line and trailing-whitespace findings with no behavioral changes.
+- Validation: `make lint` passed; `make test` passed (`6 passed`).
+- Follow-ups: none.
+
 ## 2026-02-16 - Safer fullscreen transition polish
 - Prompt summary: Improve fullscreen transition feel without reintroducing map interaction glitches.
 - Scope: `static/css/styles.css`, `static/js/script.js`.
