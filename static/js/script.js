@@ -1,8 +1,24 @@
 let map; // Global map instance
 let userMarker; // User marker
-let treeMarkers = []; // Array to store tree markers
+let markerByKey = new Map(); // Active tree markers keyed by source/objectid
+let markerInsertionOrder = []; // FIFO order for cap-based pruning
+let resultKeys = []; // Keys for current table rows by index
+let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
+const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
+const markerMetrics = {
+    fetches: 0,
+    createdTotal: 0,
+    updatedTotal: 0,
+    removedTotal: 0,
+    lastSync: {
+        created: 0,
+        updated: 0,
+        removed: 0,
+        active: 0
+    }
+};
 
 // Custom tree icon
 const treeIcon = L.icon({
@@ -50,7 +66,6 @@ function initializeMap() {
 let debounceTimer;
 let lastLoadedCenter = null;
 let lastZoomLevel = null;
-const maxMarkers = 200;
 let isMapFullscreen = false;
 const FULLSCREEN_ENTER_ICON = '⛶';
 const FULLSCREEN_EXIT_ICON = `
@@ -161,23 +176,26 @@ function fetchTrees(latitude, longitude) {
         .then(response => response.json())
         .then(data => {
             updateTable(data);
-            addMarkers(data);
+            syncMarkers(data);
         })
         .catch(error => console.error('Error fetching data:', error));
 }
 
-function addMarkers(data) {
-    // Clear old markers if we're over the limit
-    while (treeMarkers.length > maxMarkers) {
-        const marker = treeMarkers.shift();
-        map.removeLayer(marker);
+function getTreeKey(item) {
+    if (item.source !== null && item.source !== undefined &&
+        item.objectid !== null && item.objectid !== undefined) {
+        return `${item.source}::${item.objectid}`;
     }
+    return `${item.latitude},${item.longitude},${item.common_name || ''}`;
+}
 
-    data.forEach((item, index) => {
-        const marker = L.marker([item.latitude, item.longitude], { 
-            icon: treeIcon,
-            pane: 'markerPane'
-        }).addTo(map);
+function syncMarkers(data) {
+    let created = 0;
+    let updated = 0;
+    let removed = 0;
+
+    data.forEach((item) => {
+        const key = getTreeKey(item);
 
         const dbhDisplay = item.dbh ? `${item.dbh} cm` : 'N/A';
         const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;
@@ -194,14 +212,64 @@ function addMarkers(data) {
             </div>
         `;
 
+        let marker = markerByKey.get(key);
+        if (!marker) {
+            marker = L.marker([item.latitude, item.longitude], {
+                icon: treeIcon,
+                pane: 'markerPane'
+            }).addTo(map);
+            marker.on('click', () => {
+                const rowIndex = rowIndexByKey.get(key);
+                if (rowIndex !== undefined) {
+                    highlightRow(rowIndex);
+                }
+            });
+            markerByKey.set(key, marker);
+            markerInsertionOrder.push(key);
+            created += 1;
+        } else {
+            marker.setLatLng([item.latitude, item.longitude]);
+            updated += 1;
+        }
         marker.bindPopup(popupContent);
-        treeMarkers.push(marker);
-        marker.on('click', () => highlightRow(index));
     });
+
+    while (markerByKey.size > MAX_PERSISTENT_MARKERS) {
+        const oldestKey = markerInsertionOrder.shift();
+        if (!oldestKey) {
+            break;
+        }
+        const oldestMarker = markerByKey.get(oldestKey);
+        if (oldestMarker) {
+            map.removeLayer(oldestMarker);
+            markerByKey.delete(oldestKey);
+            removed += 1;
+        }
+    }
+
+    markerMetrics.fetches += 1;
+    markerMetrics.createdTotal += created;
+    markerMetrics.updatedTotal += updated;
+    markerMetrics.removedTotal += removed;
+    markerMetrics.lastSync = {
+        created,
+        updated,
+        removed,
+        active: markerByKey.size
+    };
+
+    window.treeSeekMarkerMetrics = markerMetrics;
+    console.debug(
+        `[markers] fetch #${markerMetrics.fetches} created=${created} updated=${updated} removed=${removed} active=${markerByKey.size}`
+    );
 }
 
 function highlightMarker(index) {
-    const marker = treeMarkers[index];
+    const key = resultKeys[index];
+    if (!key) {
+        return;
+    }
+    const marker = markerByKey.get(key);
     if (marker) {
         // Use panTo instead of setView to maintain zoom level
         map.panTo(marker.getLatLng());
@@ -219,8 +287,14 @@ function highlightRow(index) {
 function updateTable(data) {
     const tableBody = document.getElementById('resultsTable').querySelector('tbody');
     tableBody.innerHTML = '';
+    resultKeys = [];
+    rowIndexByKey.clear();
 
     data.forEach((item, index) => {
+        const key = getTreeKey(item);
+        resultKeys[index] = key;
+        rowIndexByKey.set(key, index);
+
         const row = document.createElement('tr');
         row.id = `tree-row-${index}`;
         const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;

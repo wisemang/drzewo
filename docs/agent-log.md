@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - Additive marker lifecycle with mobile-safe cap
+- Prompt summary: Keep marker behavior additive to avoid visual churn, while protecting map performance on older phones.
+- Scope: `static/js/script.js`.
+- Decisions: Switched to additive marker persistence with dedupe by stable key and FIFO pruning only after a cap (`MAX_PERSISTENT_MARKERS=600`) is exceeded; retained marker sync metrics logging.
+- Validation: `make test` passed (`3 passed`).
+- Follow-ups: Tune marker cap using real-device profiling if needed.
+
 ## 2026-02-16 - Map fullscreen mode and icon polish
 - Prompt summary: Add a map-only fullscreen toggle and refine the exit icon to use provided SVG.
 - Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
