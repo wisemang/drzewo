@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Add Boston GeoJSON ingestion support
+- Prompt summary: Prioritize loading newly downloaded Boston tree GeoJSON and make Boston a supported city in the app/docs.
+- Scope: `tree_loader.py`, `README.md`, `templates/index.html`.
+- Decisions: Added a Boston city handler and loader using `OBJECTID` as identity, mapped species/address/neighborhood fields from `bprd_trees.geojson`, normalized `dbh` to integer when parseable, and converted GeoJSON `Point` to `MultiPoint` to match current schema.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`); `.venv/bin/python tree_loader.py boston --file data/boston/bprd_trees.geojson` completed successfully.
+- Follow-ups: Consider city-scoped refresh mode (`delete then reload`) so reruns can replace Boston rows instead of only inserting new `(source, objectid)` records.
+
 ## 2026-02-17 - Increase nearest-tree query limit post-GiST
 - Prompt summary: Increase trees returned per `/nearest` query now that GiST indexing is in place, and keep confidence on performance.
 - Scope: `api.py`, `static/js/script.js`, `tests/test_api.py`.

@@ -46,6 +46,11 @@ CITY_HANDLERS = {
         "loader": "load_waterloo_data",
         "enrichments": [],
     },
+    "boston": {
+        "source_name": "Boston Open Data Tree Inventory",
+        "loader": "load_boston_data",
+        "enrichments": [],
+    },
 }
 
 
@@ -343,6 +348,70 @@ def insert_waterloo_data(cursor, feature):
     ))
 
 
+def load_boston_data(cursor, filename):
+    """Load Boston data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    for feature in data["features"]:
+        insert_boston_data(cursor, feature)
+
+
+def insert_boston_data(cursor, feature):
+    """Insert Boston tree data into the database."""
+    source = "Boston Open Data Tree Inventory"
+    properties = feature["properties"]
+    geometry = feature["geometry"]
+
+    # Schema currently stores MultiPoint geometries.
+    if geometry and geometry.get("type") == "Point":
+        geometry = {
+            "type": "MultiPoint",
+            "coordinates": [geometry.get("coordinates")],
+        }
+
+    objectid = properties.get("OBJECTID")
+    address = str(properties.get("address") or "").strip() or None
+    streetname = properties.get("street")
+    suffix = properties.get("suffix")
+    ward = properties.get("neighborhood")
+    botanical_name = properties.get("spp_bot")
+    common_name = properties.get("spp_com")
+    dbh_raw = properties.get("dbh")
+    dbh_trunk = None
+
+    if dbh_raw not in (None, "", "--"):
+        try:
+            dbh_trunk = round(float(dbh_raw))
+        except (TypeError, ValueError):
+            dbh_trunk = None
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, streetname, suffix, ward,
+        botanical_name, common_name, dbh_trunk, geom
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
+    )
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    cursor.execute(
+        sql_query,
+        (
+            source,
+            objectid,
+            address,
+            streetname,
+            suffix,
+            ward,
+            botanical_name,
+            common_name,
+            dbh_trunk,
+            json.dumps(geometry),
+        ),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tree Data Import and Enrichment CLI")
     parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
@@ -371,6 +440,8 @@ def main():
             load_calgary_data(cursor, filename)
         elif city == "waterloo":
             load_waterloo_data(cursor, filename)
+        elif city == "boston":
+            load_boston_data(cursor, filename)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")
