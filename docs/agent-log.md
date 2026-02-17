@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - First-load welcome modal with persistent dismiss
+- Prompt summary: Add a first-impression landing/splash modal on initial load (similar tone to About), with dismissal persisted in localStorage, and style cues aligned with marker popup/info UI.
+- Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
+- Decisions: Implemented a modal that appears only until dismissed (`treeseek.welcome.dismissed`), supports dismiss button/icon, outside-click and `Escape`, includes a direct About shortcut, and uses popup-inspired beige/green styling with onboarding hints (including inline icon cue next to "View tree details").
+- Validation: `make lint` passed; `make test` passed (`6 passed`); `make check` passed.
+- Follow-ups: none.
+
 ## 2026-02-16 - PWA baseline and home-screen icon iteration
 - Prompt summary: Add first-pass PWA support (manifest, service worker, offline shell) and improve mobile home-screen icon behavior.
 - Scope: `api.py`, `templates/index.html`, `static/js/script.js`, `static/manifest.webmanifest`, `static/sw.js`, `static/offline.html`, `static/images/`.

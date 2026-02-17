@@ -8,6 +8,7 @@ let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
 const FULLSCREEN_PREF_KEY = 'treeseek.map.fullscreen';
+const WELCOME_DISMISSED_KEY = 'treeseek.welcome.dismissed';
 const markerMetrics = {
     fetches: 0,
     createdTotal: 0,
@@ -88,6 +89,42 @@ function writeFullscreenPreference(enabled) {
     } catch (_error) {
         // Ignore storage errors (e.g., private mode restrictions).
     }
+}
+
+function hasDismissedWelcomeModal() {
+    try {
+        return window.localStorage.getItem(WELCOME_DISMISSED_KEY) === 'true';
+    } catch (_error) {
+        return false;
+    }
+}
+
+function dismissWelcomeModal() {
+    try {
+        window.localStorage.setItem(WELCOME_DISMISSED_KEY, 'true');
+    } catch (_error) {
+        // Ignore storage errors (e.g., private mode restrictions).
+    }
+
+    const welcomeModal = document.getElementById('welcome-modal');
+    if (welcomeModal) {
+        welcomeModal.setAttribute('hidden', '');
+    }
+    document.body.classList.remove('welcome-modal-open');
+}
+
+function showWelcomeModal() {
+    const welcomeModal = document.getElementById('welcome-modal');
+    if (!welcomeModal) {
+        return;
+    }
+    welcomeModal.removeAttribute('hidden');
+    document.body.classList.add('welcome-modal-open');
+}
+
+function isWelcomeModalOpen() {
+    const welcomeModal = document.getElementById('welcome-modal');
+    return welcomeModal ? !welcomeModal.hasAttribute('hidden') : false;
 }
 
 function onMapInteraction() {
@@ -415,6 +452,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
     const menuLinks = menuDropdown.querySelectorAll('a');
+    const welcomeDismissButton = document.getElementById('welcome-dismiss');
+    const welcomeDismissIcon = document.getElementById('welcome-dismiss-icon');
+    const welcomeAboutLink = document.getElementById('welcome-about-link');
+    const welcomeModal = document.getElementById('welcome-modal');
 
     menuIcon.addEventListener('click', () => {
         menuDropdown.classList.toggle('show');
@@ -453,7 +494,35 @@ document.addEventListener('DOMContentLoaded', () => {
         switchPage('about');
     });
 
+    if (welcomeDismissButton) {
+        welcomeDismissButton.addEventListener('click', dismissWelcomeModal);
+    }
+    if (welcomeDismissIcon) {
+        welcomeDismissIcon.addEventListener('click', dismissWelcomeModal);
+    }
+    if (welcomeAboutLink) {
+        welcomeAboutLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            dismissWelcomeModal();
+            switchPage('about');
+        });
+    }
+    if (welcomeModal) {
+        welcomeModal.addEventListener('click', (event) => {
+            if (event.target === welcomeModal) {
+                dismissWelcomeModal();
+            }
+        });
+    }
+    if (!hasDismissedWelcomeModal()) {
+        showWelcomeModal();
+    }
+
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isWelcomeModalOpen()) {
+            dismissWelcomeModal();
+            return;
+        }
         if (event.key === 'Escape' && isMapFullscreen) {
             setMapFullscreen(false);
         }
