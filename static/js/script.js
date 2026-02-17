@@ -458,7 +458,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeAboutLink = document.getElementById('welcome-about-link');
     const welcomeModal = document.getElementById('welcome-modal');
 
-    menuIcon.addEventListener('click', () => {
+    menuIcon.addEventListener('click', (event) => {
+        if (event.target.closest('.menu-dropdown')) {
+            return;
+        }
         menuDropdown.classList.toggle('show');
     });
     
@@ -466,6 +469,12 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', () => {
             menuDropdown.classList.remove('show');
         });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!menuIcon.contains(event.target)) {
+            menuDropdown.classList.remove('show');
+        }
     });
 
     function switchPage(target) {
@@ -526,6 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && menuDropdown.classList.contains('show')) {
+            menuDropdown.classList.remove('show');
+            return;
+        }
         if (event.key === 'Escape' && isWelcomeModalOpen()) {
             dismissWelcomeModal();
             return;

@@ -276,12 +276,6 @@ body.welcome-modal-open {
     display: block;
 }
 
-/* Ensure Menu Icon Works on Touch */
-.menu-icon:active .menu-dropdown,
-.menu-icon:hover .menu-dropdown {
-    display: block;
-}
-
 .about-actions {
     margin-top: 1rem;
 }

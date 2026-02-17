@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Fix sticky Home/About dropdown state
+- Prompt summary: Resolve issue where the Home/About dropdown stayed open and felt stuck.
+- Scope: `static/js/script.js`, `static/css/styles.css`.
+- Decisions: Prevented menu toggle on clicks originating inside the dropdown, added outside-click and `Escape` close behavior, and removed hover/active CSS auto-open so visibility is driven solely by `.show`.
+- Validation: `make check` passed (`ruff` + `pytest`, `6 passed`).
+- Follow-ups: none.
+
 ## 2026-02-17 - Restore About-to-Home navigation path
 - Prompt summary: Fix inability to return from About page to the map/table experience.
 - Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
