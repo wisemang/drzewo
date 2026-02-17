@@ -1,4 +1,4 @@
-const CACHE_NAME = "treeseek-v3";
+const CACHE_NAME = "treeseek-v4";
 const APP_SHELL = [
     "/",
     "/offline",
@@ -64,16 +64,22 @@ self.addEventListener("fetch", (event) => {
 
     if (url.origin === self.location.origin) {
         event.respondWith(
-            caches.match(request).then((cached) => {
-                if (cached) {
-                    return cached;
-                }
-                return fetch(request).then((response) => {
+            fetch(request)
+                .then((response) => {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
                     return response;
-                });
-            })
+                })
+                .catch(async () => {
+                    const cached = await caches.match(request);
+                    if (cached) {
+                        return cached;
+                    }
+                    if (request.destination === "document") {
+                        return caches.match("/offline");
+                    }
+                    throw new Error("Network unavailable and no cached asset found.");
+                })
         );
     }
 });

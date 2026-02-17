@@ -214,6 +214,15 @@ body.welcome-modal-open {
     fill: #2a7b2a;
 }
 
+.welcome-modal-content p.welcome-disclaimer {
+    margin: 1.55rem 0 0.08rem;
+    font-size: 0.62rem;
+    line-height: 1.2;
+    color: #7a7a7a;
+    opacity: 0.85;
+    letter-spacing: 0.01em;
+}
+
 
 /* Navigation Styles */
 .menu {

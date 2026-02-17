@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Welcome modal polish and cache freshness fix
+- Prompt summary: Refine onboarding modal details (inline tree cue placement, low-key supported-cities disclaimer, spacing/typography tuning) and resolve stale CSS behavior during reloads.
+- Scope: `templates/index.html`, `static/css/styles.css`, `static/sw.js`.
+- Decisions: Moved the tree cue into the right-column action text, repositioned disclaimer below actions, reduced disclaimer visual weight, fixed selector specificity conflict (`.welcome-modal-content p` vs disclaimer class), and switched service-worker same-origin assets to network-first with cache fallback plus cache bump (`treeseek-v4`) to prevent stale styles.
+- Validation: `make check` passed (`ruff` + `pytest`, `6 passed`).
+- Follow-ups: none.
+
 ## 2026-02-17 - First-load welcome modal with persistent dismiss
 - Prompt summary: Add a first-impression landing/splash modal on initial load (similar tone to About), with dismissal persisted in localStorage, and style cues aligned with marker popup/info UI.
 - Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
