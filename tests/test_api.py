@@ -108,3 +108,19 @@ def test_nearest_clamps_limit_and_radius(monkeypatch):
     params = fake_conn.cursor_instance.params
     assert params[-1] == api.MAX_LIMIT
     assert api.MAX_RADIUS_M in params
+
+
+def test_nearest_uses_default_limit_when_missing(monkeypatch):
+    fake_conn = FakeConnection([])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/nearest?lat=43.65&lng=-79.38")
+
+    assert response.status_code == 200
+    params = fake_conn.cursor_instance.params
+    assert params[-1] == api.DEFAULT_LIMIT

@@ -9,8 +9,8 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 load_dotenv()
 
 app = Flask(__name__)
-DEFAULT_LIMIT = 10
-MAX_LIMIT = 100
+DEFAULT_LIMIT = 60
+MAX_LIMIT = 150
 MIN_RADIUS_M = 1.0
 MAX_RADIUS_M = 5000.0
 

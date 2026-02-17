@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Increase nearest-tree query limit post-GiST
+- Prompt summary: Increase trees returned per `/nearest` query now that GiST indexing is in place, and keep confidence on performance.
+- Scope: `api.py`, `static/js/script.js`, `tests/test_api.py`.
+- Decisions: Raised API defaults (`DEFAULT_LIMIT=60`, `MAX_LIMIT=150`), replaced frontend hardcoded `limit=40` with `TREE_QUERY_LIMIT=60`, and added a test to lock in default-limit behavior.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`).
+- Follow-ups: Optional: run `EXPLAIN (ANALYZE, BUFFERS)` on `/nearest` query at common limit values (40/60/100) to quantify p95 impact.
+
 ## 2026-02-17 - Fix sticky Home/About dropdown state
 - Prompt summary: Resolve issue where the Home/About dropdown stayed open and felt stuck.
 - Scope: `static/js/script.js`, `static/css/styles.css`.

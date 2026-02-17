@@ -7,6 +7,7 @@ let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
+const TREE_QUERY_LIMIT = 60;
 const FULLSCREEN_PREF_KEY = 'treeseek.map.fullscreen';
 const WELCOME_DISMISSED_KEY = 'treeseek.welcome.dismissed';
 const markerMetrics = {
@@ -226,7 +227,7 @@ function showError(error) {
 }
 
 function fetchTrees(latitude, longitude) {
-    fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=40`)
+    fetch(`/nearest?lat=${latitude}&lng=${longitude}&limit=${TREE_QUERY_LIMIT}`)
         .then(response => response.json())
         .then(data => {
             updateTable(data);
