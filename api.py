@@ -4,7 +4,7 @@ from os import environ
 
 import psycopg2
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 load_dotenv()
 
@@ -17,6 +17,23 @@ MAX_RADIUS_M = 5000.0
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route('/manifest.webmanifest')
+def manifest():
+    return send_from_directory("static", "manifest.webmanifest")
+
+
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory("static", "sw.js")
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
+@app.route('/offline')
+def offline():
+    return send_from_directory("static", "offline.html")
 
 @app.route('/nearest', methods=['GET'])
 def nearest():

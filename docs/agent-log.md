@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-16 - PWA baseline and home-screen icon iteration
+- Prompt summary: Add first-pass PWA support (manifest, service worker, offline shell) and improve mobile home-screen icon behavior.
+- Scope: `api.py`, `templates/index.html`, `static/js/script.js`, `static/manifest.webmanifest`, `static/sw.js`, `static/offline.html`, `static/images/`.
+- Decisions: Added manifest/service-worker/offline routes and registration, iOS web-app meta tags, generated install icon sizes, and used versioned icon filenames + cache bump (`treeseek-v3`) to reduce stale icon caching.
+- Validation: `make lint` passed; `make test` passed (`6 passed`).
+- Follow-ups: If icon still appears stale on iOS, rotate icon filenames again and reinstall from Safari.
+
 ## 2026-02-16 - Persist map fullscreen preference
 - Prompt summary: Remember fullscreen mode across page reloads.
 - Scope: `static/js/script.js`.
