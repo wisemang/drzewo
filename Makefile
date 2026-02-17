@@ -6,7 +6,7 @@ PY := $(BIN)/python
 RUFF := $(BIN)/ruff
 PYTEST := $(BIN)/pytest
 
-.PHONY: help setup install-dev run test lint format check
+.PHONY: help setup install-dev run test lint format check load-prod
 
 help:
 	@echo "Targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  lint        Run static checks"
 	@echo "  format      Auto-fix style/import issues with ruff"
 	@echo "  check       Run lint + tests"
+	@echo "  load-prod   Load city data into prod DB from local machine (CITY=... FILE=...)"
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -35,3 +36,8 @@ format:
 	$(RUFF) check . --fix
 
 check: lint test
+
+load-prod:
+	@test -n "$(CITY)" || (echo "CITY is required (e.g. CITY=boston)" && exit 1)
+	@test -n "$(FILE)" || (echo "FILE is required (e.g. FILE=data/boston/bprd_trees.geojson)" && exit 1)
+	./scripts/load_prod.sh "$(CITY)" "$(FILE)"

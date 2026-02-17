@@ -29,6 +29,20 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py boston --file /path/to/boston.geojson
 ```
 
+### Load directly to production DB from your laptop
+
+Create `.env.prod` with production DB credentials, then run:
+
+```bash
+make load-prod CITY=boston FILE=data/boston/bprd_trees.geojson
+```
+
+`scripts/load_prod.sh` will:
+- source `.env.prod`
+- open an SSH tunnel via `drzewo-user` when DB host is local (`127.0.0.1`/`localhost`)
+- run `tree_loader.py` against prod DB
+- print a source row-count verification query
+
 ## Quality checks
 
 - `make lint`: static analysis with `ruff`

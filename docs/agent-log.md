@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Add laptop-driven production loader workflow
+- Prompt summary: Standardize running imports from laptop to production DB because the droplet cannot handle local import compute.
+- Scope: `scripts/load_prod.sh`, `Makefile`, `README.md`.
+- Decisions: Added `load_prod.sh` wrapper to source `.env.prod`, optionally establish SSH tunnel via `drzewo-user` when DB host is local, execute `tree_loader.py`, and run a per-source row-count verification query; added `make load-prod CITY=... FILE=...` target and documented usage.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`).
+- Follow-ups: Add optional lockfile/idempotency guard to prevent concurrent prod imports from overlapping.
+
 ## 2026-02-17 - Add Boston GeoJSON ingestion support
 - Prompt summary: Prioritize loading newly downloaded Boston tree GeoJSON and make Boston a supported city in the app/docs.
 - Scope: `tree_loader.py`, `README.md`, `templates/index.html`.
