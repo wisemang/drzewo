@@ -272,10 +272,18 @@ body.welcome-modal-open {
     background-color: #556B2F; /* Mossy green for hover */
 }
 
+.menu-dropdown.show {
+    display: block;
+}
+
 /* Ensure Menu Icon Works on Touch */
 .menu-icon:active .menu-dropdown,
 .menu-icon:hover .menu-dropdown {
     display: block;
+}
+
+.about-actions {
+    margin-top: 1rem;
 }
 
 body.map-fullscreen-active {

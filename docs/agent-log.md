@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-17 - Restore About-to-Home navigation path
+- Prompt summary: Fix inability to return from About page to the map/table experience.
+- Scope: `templates/index.html`, `static/css/styles.css`, `static/js/script.js`.
+- Decisions: Fixed menu dropdown click behavior by adding missing `.menu-dropdown.show` CSS rule and added an explicit `Back to map` link in About as a reliable navigation fallback.
+- Validation: `make check` passed (`ruff` + `pytest`, `6 passed`).
+- Follow-ups: none.
+
 ## 2026-02-17 - Welcome modal polish and cache freshness fix
 - Prompt summary: Refine onboarding modal details (inline tree cue placement, low-key supported-cities disclaimer, spacing/typography tuning) and resolve stale CSS behavior during reloads.
 - Scope: `templates/index.html`, `static/css/styles.css`, `static/sw.js`.

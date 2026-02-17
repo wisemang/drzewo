@@ -452,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
     const menuLinks = menuDropdown.querySelectorAll('a');
+    const aboutHomeLink = document.getElementById('about-home-link');
     const welcomeDismissButton = document.getElementById('welcome-dismiss');
     const welcomeDismissIcon = document.getElementById('welcome-dismiss-icon');
     const welcomeAboutLink = document.getElementById('welcome-about-link');
@@ -493,6 +494,12 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         switchPage('about');
     });
+    if (aboutHomeLink) {
+        aboutHomeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPage('home');
+        });
+    }
 
     if (welcomeDismissButton) {
         welcomeDismissButton.addEventListener('click', dismissWelcomeModal);
