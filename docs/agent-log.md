@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Add Markham ingestion and harden prod loader script
+- Prompt summary: Ingest newly downloaded Markham tree data and ensure production load workflow works cleanly on macOS and limited environments.
+- Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.
+- Decisions: Added `markham` city handler/loader mapping `Street_Trees.geojson` fields into existing schema (including Point->MultiPoint conversion and DBH parsing), updated docs/UI supported-city list, added Markham source verification mapping in `load_prod.sh`, replaced Bash associative-array usage with portable `case` logic, and made post-load `psql` verification conditional when `psql` is unavailable.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`); local run `.venv/bin/python tree_loader.py markham --file data/markham/Street_Trees.geojson` completed successfully; production import run reached `Data import and enrichment completed successfully.` before optional verification failed due to missing `psql` (now handled gracefully).
+- Follow-ups: Consider adding batch progress logging in `tree_loader.py` for long-running city imports.
+
 ## 2026-02-17 - Add laptop-driven production loader workflow
 - Prompt summary: Standardize running imports from laptop to production DB because the droplet cannot handle local import compute.
 - Scope: `scripts/load_prod.sh`, `Makefile`, `README.md`.

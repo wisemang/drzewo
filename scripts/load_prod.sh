@@ -66,13 +66,18 @@ case "$CITY" in
   calgary) SOURCE_NAME="Calgary Open Data Tree Inventory" ;;
   waterloo) SOURCE_NAME="Waterloo Open Data Tree Inventory" ;;
   boston) SOURCE_NAME="Boston Open Data Tree Inventory" ;;
+  markham) SOURCE_NAME="Markham Open Data Street Trees" ;;
 esac
 
 if [[ -n "$SOURCE_NAME" ]]; then
-  echo "Verifying row count for source: $SOURCE_NAME"
-  PGPASSWORD="$DRZEWO_DB_PW" psql \
-    "host=$DRZEWO_DB_HOST port=$DRZEWO_DB_PORT dbname=$DRZEWO_DB user=$DRZEWO_DB_USER" \
-    -c "SELECT source, COUNT(*) FROM street_trees WHERE source = '$SOURCE_NAME' GROUP BY source;"
+  if command -v psql >/dev/null 2>&1; then
+    echo "Verifying row count for source: $SOURCE_NAME"
+    PGPASSWORD="$DRZEWO_DB_PW" psql \
+      "host=$DRZEWO_DB_HOST port=$DRZEWO_DB_PORT dbname=$DRZEWO_DB user=$DRZEWO_DB_USER" \
+      -c "SELECT source, COUNT(*) FROM street_trees WHERE source = '$SOURCE_NAME' GROUP BY source;"
+  else
+    echo "Skipping verification query because 'psql' is not installed."
+  fi
 else
   echo "No source-name mapping for city '$CITY'; skipping verification query."
 fi

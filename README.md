@@ -27,6 +27,7 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py calgary --file /path/to/calgary.csv
 .venv/bin/python tree_loader.py waterloo --file /path/to/waterloo.geojson
 .venv/bin/python tree_loader.py boston --file /path/to/boston.geojson
+.venv/bin/python tree_loader.py markham --file /path/to/markham.geojson
 ```
 
 ### Load directly to production DB from your laptop
