@@ -58,17 +58,16 @@ fi
 echo "Loading city '$CITY' from '$DATA_FILE'..."
 .venv/bin/python tree_loader.py "$CITY" --file "$DATA_FILE"
 
-declare -A SOURCE_NAMES
-SOURCE_NAMES=(
-  [toronto]="Toronto Open Data Street Trees"
-  [ottawa]="Ottawa Open Data Tree Inventory"
-  [montreal]="Montreal Open Data Tree Inventory"
-  [calgary]="Calgary Open Data Tree Inventory"
-  [waterloo]="Waterloo Open Data Tree Inventory"
-  [boston]="Boston Open Data Tree Inventory"
-)
+SOURCE_NAME=""
+case "$CITY" in
+  toronto) SOURCE_NAME="Toronto Open Data Street Trees" ;;
+  ottawa) SOURCE_NAME="Ottawa Open Data Tree Inventory" ;;
+  montreal) SOURCE_NAME="Montreal Open Data Tree Inventory" ;;
+  calgary) SOURCE_NAME="Calgary Open Data Tree Inventory" ;;
+  waterloo) SOURCE_NAME="Waterloo Open Data Tree Inventory" ;;
+  boston) SOURCE_NAME="Boston Open Data Tree Inventory" ;;
+esac
 
-SOURCE_NAME="${SOURCE_NAMES[$CITY]:-}"
 if [[ -n "$SOURCE_NAME" ]]; then
   echo "Verifying row count for source: $SOURCE_NAME"
   PGPASSWORD="$DRZEWO_DB_PW" psql \
