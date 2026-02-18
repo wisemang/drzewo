@@ -35,7 +35,7 @@ Use `tree_loader.py` to import city data:
 Create `.env.prod` with production DB credentials, then run:
 
 ```bash
-make load-prod CITY=boston FILE=data/boston/bprd_trees.geojson
+make load-prod CITY=toronto FILE=data/toronto/Street\ Tree\ Data.geojson
 ```
 
 `scripts/load_prod.sh` will:
