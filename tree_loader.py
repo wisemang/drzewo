@@ -60,6 +60,11 @@ CITY_HANDLERS = {
         "loader": "load_markham_data",
         "enrichments": [],
     },
+    "oakville": {
+        "source_name": "Oakville Parks Tree Forestry",
+        "loader": "load_oakville_data",
+        "enrichments": [],
+    },
 }
 
 
@@ -509,6 +514,88 @@ def markham_row_tuple(feature):
     )
 
 
+def load_oakville_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Oakville data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, streetname, crossstreet1, site, ward,
+        botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = oakville_row_tuple(feature)
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Oakville features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def oakville_row_tuple(feature):
+    """Build one Oakville insert row."""
+    source = "Oakville Parks Tree Forestry"
+    properties = feature["properties"]
+    geometry = feature["geometry"]
+
+    # Schema currently stores MultiPoint geometries.
+    if geometry and geometry.get("type") == "Point":
+        geometry = {
+            "type": "MultiPoint",
+            "coordinates": [geometry.get("coordinates")],
+        }
+
+    def clean_text(value):
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        return text
+
+    objectid = properties.get("OBJECTID")
+    street_number = clean_text(properties.get("STREET_NUMBER"))
+    street_name = clean_text(properties.get("STREET_NAME"))
+    address = " ".join(part for part in [street_number, street_name] if part) or None
+    streetname = street_name
+    crossstreet1 = clean_text(properties.get("CROSS_ROADS"))
+    site = clean_text(properties.get("LOCSITE"))
+    ward = clean_text(properties.get("FORESTRY_ZONE"))
+    species = clean_text(properties.get("SPECIES"))
+    common_name = species
+    botanical_name = None
+    dbh_trunk = properties.get("DBH")
+
+    if species and " - " in species:
+        common_part, botanical_part = species.split(" - ", 1)
+        common_name = clean_text(common_part)
+        botanical_name = clean_text(botanical_part)
+
+    return (
+        source,
+        objectid,
+        address,
+        streetname,
+        crossstreet1,
+        site,
+        ward,
+        botanical_name,
+        common_name,
+        dbh_trunk,
+        json.dumps(geometry),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tree Data Import and Enrichment CLI")
     parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
@@ -548,6 +635,8 @@ def main():
             load_boston_data(cursor, filename, batch_size=batch_size)
         elif city == "markham":
             load_markham_data(cursor, filename, batch_size=batch_size)
+        elif city == "oakville":
+            load_oakville_data(cursor, filename, batch_size=batch_size)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")

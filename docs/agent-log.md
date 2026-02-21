@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Add Oakville ingestion with batching and local validation
+- Prompt summary: Ingest newly downloaded Oakville tree inventory before production load.
+- Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.
+- Decisions: Added `oakville` city handler and batched loader for `Parks_Tree_Forestry.geojson` (216k+ features), mapped Oakville fields into existing schema, split `SPECIES` into common/botanical name when formatted as `Common - Botanical`, retained Point->MultiPoint conversion, and added Oakville source mapping for `load_prod.sh` verification.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`); local run `.venv/bin/python tree_loader.py oakville --file data/Parks_Tree_Forestry.geojson --batch-size 2000` completed successfully with progress output through 210k.
+- Follow-ups: Consider mapping `FORESTRY_ZONE` to a more user-friendly label if zone metadata becomes available.
+
 ## 2026-02-18 - Speed up large city imports with batched inserts
 - Prompt summary: Improve import speed before loading additional large city datasets.
 - Scope: `tree_loader.py`, `scripts/load_prod.sh`, `README.md`.
