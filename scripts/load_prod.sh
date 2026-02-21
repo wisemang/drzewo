@@ -11,6 +11,7 @@ DATA_FILE="$2"
 ENV_FILE="${3:-.env.prod}"
 SSH_HOST="${4:-drzewo-user}"
 LOCAL_PORT="${DRZEWO_TUNNEL_LOCAL_PORT:-6543}"
+IMPORT_BATCH_SIZE="${DRZEWO_IMPORT_BATCH_SIZE:-2000}"
 TUNNEL_PID=""
 
 cleanup() {
@@ -56,7 +57,7 @@ if [[ "$DRZEWO_DB_HOST" == "127.0.0.1" || "$DRZEWO_DB_HOST" == "localhost" ]]; t
 fi
 
 echo "Loading city '$CITY' from '$DATA_FILE'..."
-.venv/bin/python tree_loader.py "$CITY" --file "$DATA_FILE"
+.venv/bin/python tree_loader.py "$CITY" --file "$DATA_FILE" --batch-size "$IMPORT_BATCH_SIZE"
 
 SOURCE_NAME=""
 case "$CITY" in

@@ -41,7 +41,7 @@ make load-prod CITY=toronto FILE=data/toronto/Street\ Tree\ Data.geojson
 `scripts/load_prod.sh` will:
 - source `.env.prod`
 - open an SSH tunnel via `drzewo-user` when DB host is local (`127.0.0.1`/`localhost`)
-- run `tree_loader.py` against prod DB
+- run `tree_loader.py` against prod DB with batched inserts (`DRZEWO_IMPORT_BATCH_SIZE`, default `2000`)
 - print a source row-count verification query
 
 ## Quality checks

@@ -6,6 +6,7 @@ from os import environ
 
 import psycopg2
 from dotenv import load_dotenv
+from psycopg2.extras import execute_values
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +19,9 @@ DB_PARAMS = {
     "host": environ.get("DRZEWO_DB_HOST", "localhost"),
     "port": environ.get("DRZEWO_DB_PORT", "5432"),
 }
+
+DEFAULT_BATCH_SIZE = 1000
+PROGRESS_INTERVAL = 10000
 
 # Mappings for city-specific handlers
 CITY_HANDLERS = {
@@ -353,17 +357,44 @@ def insert_waterloo_data(cursor, feature):
     ))
 
 
-def load_boston_data(cursor, filename):
+def _flush_batch(cursor, sql_query, rows, template, batch_size):
+    """Insert buffered rows using batched VALUES clauses."""
+    if not rows:
+        return
+    execute_values(cursor, sql_query, rows, template=template, page_size=batch_size)
+    rows.clear()
+
+
+def load_boston_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
     """Load Boston data and insert it into the database."""
     with open(filename, "r") as file:
         data = json.load(file)
 
-    for feature in data["features"]:
-        insert_boston_data(cursor, feature)
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, streetname, suffix, ward,
+        botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = boston_row_tuple(feature)
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Boston features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
 
 
-def insert_boston_data(cursor, feature):
-    """Insert Boston tree data into the database."""
+def boston_row_tuple(feature):
+    """Build one Boston insert row."""
     source = "Boston Open Data Tree Inventory"
     properties = feature["properties"]
     geometry = feature["geometry"]
@@ -391,43 +422,50 @@ def insert_boston_data(cursor, feature):
         except (TypeError, ValueError):
             dbh_trunk = None
 
-    sql_query = """
-    INSERT INTO street_trees (
-        source, objectid, address, streetname, suffix, ward,
-        botanical_name, common_name, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
-    )
-    ON CONFLICT (source, objectid) DO NOTHING;
-    """
-    cursor.execute(
-        sql_query,
-        (
-            source,
-            objectid,
-            address,
-            streetname,
-            suffix,
-            ward,
-            botanical_name,
-            common_name,
-            dbh_trunk,
-            json.dumps(geometry),
-        ),
+    return (
+        source,
+        objectid,
+        address,
+        streetname,
+        suffix,
+        ward,
+        botanical_name,
+        common_name,
+        dbh_trunk,
+        json.dumps(geometry),
     )
 
 
-def load_markham_data(cursor, filename):
+def load_markham_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
     """Load Markham data and insert it into the database."""
     with open(filename, "r") as file:
         data = json.load(file)
 
-    for feature in data["features"]:
-        insert_markham_data(cursor, feature)
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, streetname, crossstreet1, crossstreet2, site, ward,
+        botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = markham_row_tuple(feature)
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Markham features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
 
 
-def insert_markham_data(cursor, feature):
-    """Insert Markham tree data into the database."""
+def markham_row_tuple(feature):
+    """Build one Markham insert row."""
     source = "Markham Open Data Street Trees"
     properties = feature["properties"]
     geometry = feature["geometry"]
@@ -456,30 +494,18 @@ def insert_markham_data(cursor, feature):
         except (TypeError, ValueError):
             dbh_trunk = None
 
-    sql_query = """
-    INSERT INTO street_trees (
-        source, objectid, streetname, crossstreet1, crossstreet2, site, ward,
-        botanical_name, common_name, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
-    )
-    ON CONFLICT (source, objectid) DO NOTHING;
-    """
-    cursor.execute(
-        sql_query,
-        (
-            source,
-            objectid,
-            streetname,
-            crossstreet1,
-            crossstreet2,
-            site,
-            ward,
-            botanical_name,
-            common_name,
-            dbh_trunk,
-            json.dumps(geometry),
-        ),
+    return (
+        source,
+        objectid,
+        streetname,
+        crossstreet1,
+        crossstreet2,
+        site,
+        ward,
+        botanical_name,
+        common_name,
+        dbh_trunk,
+        json.dumps(geometry),
     )
 
 
@@ -488,11 +514,18 @@ def main():
     parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
     parser.add_argument("--file", required=True, help="Path to the data file")
     parser.add_argument("--enrich", action="store_true", help="Apply data enrichments")
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_BATCH_SIZE,
+        help="Rows per batched INSERT for large imports (default: 1000)",
+    )
 
     args = parser.parse_args()
     city = args.city
     filename = args.file
     apply_enrichments = args.enrich
+    batch_size = max(1, args.batch_size)
 
     city_config = CITY_HANDLERS[city]
 
@@ -512,9 +545,9 @@ def main():
         elif city == "waterloo":
             load_waterloo_data(cursor, filename)
         elif city == "boston":
-            load_boston_data(cursor, filename)
+            load_boston_data(cursor, filename, batch_size=batch_size)
         elif city == "markham":
-            load_markham_data(cursor, filename)
+            load_markham_data(cursor, filename, batch_size=batch_size)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")

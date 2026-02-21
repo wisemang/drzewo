@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Speed up large city imports with batched inserts
+- Prompt summary: Improve import speed before loading additional large city datasets.
+- Scope: `tree_loader.py`, `scripts/load_prod.sh`, `README.md`.
+- Decisions: Added batched insert support for Boston/Markham via `psycopg2.extras.execute_values`, introduced `--batch-size` CLI option (default `1000`), added periodic progress logging every 10k features for long runs, and set `load_prod.sh` to pass `DRZEWO_IMPORT_BATCH_SIZE` (default `2000`).
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`); `tree_loader.py --help` shows new `--batch-size` option.
+- Follow-ups: Apply same batching strategy to other high-volume loaders (Toronto/Ottawa) and consider COPY-based staging for further speed.
+
 ## 2026-02-18 - Add Markham ingestion and harden prod loader script
 - Prompt summary: Ingest newly downloaded Markham tree data and ensure production load workflow works cleanly on macOS and limited environments.
 - Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.
