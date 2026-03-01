@@ -13,6 +13,13 @@ LOG_PATTERN = re.compile(
 
 BOT_MARKERS = ("bot", "spider", "crawler", "curl", "wget", "python-requests", "uptime")
 BROWSER_MARKERS = ("mozilla", "safari", "chrome", "firefox", "edg", "iphone", "android")
+SCANNER_PATH_PATTERNS = (
+    re.compile(r"^/\.env$"),
+    re.compile(r"\.php$", re.IGNORECASE),
+    re.compile(r"^/(wp-admin|wp-content|wp-includes|wordpress|xmlrpc\.php)\b", re.IGNORECASE),
+    re.compile(r"^/(admin\.php|file\.php|index\.php|ioxi.*)\b", re.IGNORECASE),
+    re.compile(r"^/(cgi-bin|vendor/phpunit|phpunit|boaform|shell|login)\b", re.IGNORECASE),
+)
 
 
 def parse_log_line(line):
@@ -23,7 +30,7 @@ def parse_log_line(line):
 
     payload = match.groupdict()
     split_target = urlsplit(payload["target"])
-    payload["path"] = split_target.path
+    payload["path"] = split_target.path or "<empty>"
     payload["query"] = parse_qs(split_target.query)
     payload["status"] = int(payload["status"])
     payload["day"] = payload["timestamp"].split(":", 1)[0]
@@ -40,6 +47,11 @@ def is_browser_user_agent(user_agent):
     return any(marker in user_agent for marker in BROWSER_MARKERS) and not is_bot_user_agent(
         user_agent
     )
+
+
+def is_scanner_path(path):
+    path = path or ""
+    return any(pattern.search(path) for pattern in SCANNER_PATH_PATTERNS)
 
 
 def iter_log_lines(path):
@@ -69,9 +81,14 @@ def analyze_logs(paths, top_n=10):
     ip_counts = Counter()
     user_agent_counts = Counter()
     nearest_query_cells = Counter()
+    scanner_path_counts = Counter()
+    suspicious_requests_by_day = defaultdict(Counter)
+    status_counts = Counter()
     estimated_users_by_day = defaultdict(set)
     bot_requests = 0
     malformed = 0
+    scanner_requests = 0
+    empty_user_agent_requests = 0
 
     for path in paths:
         for line in iter_log_lines(path):
@@ -84,29 +101,44 @@ def analyze_logs(paths, top_n=10):
             ip = record["ip"]
             user_agent = record["user_agent"]
             endpoint = record["path"]
+            status = record["status"]
 
             totals["requests"] += 1
             by_day[day]["requests"] += 1
             endpoint_counts[endpoint] += 1
             ip_counts[ip] += 1
             user_agent_counts[user_agent] += 1
+            status_counts[status] += 1
+
+            if user_agent in {"", "-"}:
+                empty_user_agent_requests += 1
+                by_day[day]["empty_user_agent_requests"] += 1
 
             if is_bot_user_agent(user_agent):
                 bot_requests += 1
                 by_day[day]["bot_requests"] += 1
 
+            if is_scanner_path(endpoint):
+                scanner_requests += 1
+                scanner_path_counts[endpoint] += 1
+                suspicious_requests_by_day[day]["scanner_requests"] += 1
+
             if endpoint == "/nearest":
                 totals["nearest_requests"] += 1
                 by_day[day]["nearest_requests"] += 1
-                if record["status"] < 400:
+                if status < 400:
                     totals["nearest_success"] += 1
                     by_day[day]["nearest_success"] += 1
                 lat = record["query"].get("lat", [None])[0]
                 lng = record["query"].get("lng", [None])[0]
                 if lat and lng:
-                    cell = f"{round(float(lat), 2)},{round(float(lng), 2)}"
-                    nearest_query_cells[cell] += 1
-                if record["status"] < 400 and is_browser_user_agent(user_agent) and lat and lng:
+                    try:
+                        cell = f"{round(float(lat), 2)},{round(float(lng), 2)}"
+                    except ValueError:
+                        cell = None
+                    if cell:
+                        nearest_query_cells[cell] += 1
+                if status < 400 and is_browser_user_agent(user_agent) and lat and lng:
                     estimated_users_by_day[day].add((ip, user_agent))
 
     return {
@@ -116,10 +148,15 @@ def analyze_logs(paths, top_n=10):
         "ip_counts": ip_counts,
         "user_agent_counts": user_agent_counts,
         "nearest_query_cells": nearest_query_cells,
+        "scanner_path_counts": scanner_path_counts,
+        "status_counts": status_counts,
         "estimated_users_by_day": {
             day: len(users) for day, users in estimated_users_by_day.items()
         },
         "bot_requests": bot_requests,
+        "scanner_requests": scanner_requests,
+        "empty_user_agent_requests": empty_user_agent_requests,
+        "suspicious_requests_by_day": suspicious_requests_by_day,
         "malformed_lines": malformed,
         "top_n": top_n,
     }
@@ -134,21 +171,33 @@ def format_summary(summary):
     lines.append(f"  /nearest requests: {totals['nearest_requests']}")
     lines.append(f"  Successful /nearest requests: {totals['nearest_success']}")
     lines.append(f"  Bot-like requests: {summary['bot_requests']}")
+    lines.append(f"  Scanner-path requests: {summary['scanner_requests']}")
+    lines.append(f"  Empty user-agent requests: {summary['empty_user_agent_requests']}")
     lines.append(f"  Malformed lines skipped: {summary['malformed_lines']}")
     lines.append("")
     lines.append("Daily")
     for day in sorted(summary["by_day"]):
         counters = summary["by_day"][day]
         estimated_users = summary["estimated_users_by_day"].get(day, 0)
+        scanner_requests = summary["suspicious_requests_by_day"][day]["scanner_requests"]
         lines.append(
             f"  {day}: requests={counters['requests']} "
             f"nearest={counters['nearest_requests']} "
             f"nearest_success={counters['nearest_success']} "
-            f"estimated_users={estimated_users}"
+            f"estimated_users={estimated_users} "
+            f"scanner_requests={scanner_requests}"
         )
+    lines.append("")
+    lines.append("Status Codes")
+    for status, count in summary["status_counts"].most_common(summary["top_n"]):
+        lines.append(f"  {count:>6} {status}")
     lines.append("")
     lines.append("Top Endpoints")
     for endpoint, count in summary["endpoint_counts"].most_common(summary["top_n"]):
+        lines.append(f"  {count:>6} {endpoint}")
+    lines.append("")
+    lines.append("Top Scanner Paths")
+    for endpoint, count in summary["scanner_path_counts"].most_common(summary["top_n"]):
         lines.append(f"  {count:>6} {endpoint}")
     lines.append("")
     lines.append("Top IPs")

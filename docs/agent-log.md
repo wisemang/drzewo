@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Improve analyzer with scanner-path and status breakdowns
+- Prompt summary: Make the Nginx usage report more decision-useful after the first prod run exposed lots of scanner noise and blank endpoints.
+- Scope: `nginx_log_analysis.py`, `tests/test_nginx_log_analysis.py`.
+- Decisions: Normalized empty paths to `<empty>`, added explicit scanner-path classification, tracked empty user-agent requests and status-code distribution, added daily scanner counts plus a `Top Scanner Paths` section, and made `/nearest` cell parsing resilient to bad coordinate values.
+- Validation: `make check` passed (`ruff` + `pytest`, `19 passed`); rerunning on prod showed scanner traffic dominating requests (`74k+` scanner-path requests) and gave a cleaner split between nuisance traffic and real `/nearest` use.
+- Follow-ups: Optional: add higher-level traffic buckets (`scanner`, `api`, `static`, `page`) or JSON output if you want to trend this over time.
+
 ## 2026-02-18 - Capture live production service config and rebuild notes
 - Prompt summary: Reduce single-droplet tribal knowledge by recording the current production setup in the repo.
 - Scope: `ops/systemd/gunicorn.service`, `ops/nginx/treeseek.ca.conf`, `ops/nginx/http-rate-limit.conf`, `docs/prod-setup.md`, `README.md`.
