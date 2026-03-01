@@ -92,3 +92,12 @@ The report uses successful browser-like `/nearest` requests with `lat` and `lng`
 
 For Codex and other coding agents, use the guardrails in `AGENTS.md`.
 Capture session summaries in `docs/agent-log.md`.
+
+## Ops references
+
+The repo includes snapshots of the current production service configuration and rebuild notes:
+
+- `ops/systemd/gunicorn.service`
+- `ops/nginx/treeseek.ca.conf`
+- `ops/nginx/http-rate-limit.conf`
+- `docs/prod-setup.md`

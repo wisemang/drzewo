@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve drzewo
+After=network.target
+
+[Service]
+User=drzewo
+Group=www-data
+WorkingDirectory=/home/drzewo/webapp/drzewo
+Environment="PATH=/home/drzewo/webapp/drzewo/venv/bin"
+ExecStart=/home/drzewo/webapp/drzewo/venv/bin/gunicorn --workers 3 --bind unix:/home/drzewo/webapp/drzewo/drzewo.sock --umask 007 api:app
+
+[Install]
+WantedBy=multi-user.target

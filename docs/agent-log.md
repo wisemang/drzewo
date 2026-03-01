@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Capture live production service config and rebuild notes
+- Prompt summary: Reduce single-droplet tribal knowledge by recording the current production setup in the repo.
+- Scope: `ops/systemd/gunicorn.service`, `ops/nginx/treeseek.ca.conf`, `ops/nginx/http-rate-limit.conf`, `docs/prod-setup.md`, `README.md`.
+- Decisions: Copied the live Gunicorn systemd unit and Nginx site config from the droplet into `ops/`, added the separate top-level Nginx `http` rate-limit snippet that is not stored in the site file, and wrote a concise production setup/rebuild guide documenting paths, checks, restore steps, and the single-failure-domain nature of the current architecture.
+- Validation: `make check` passed (`ruff` + `pytest`, `17 passed`).
+- Follow-ups: Add automated off-droplet Postgres backups and document where `.env` recovery material is stored.
+
 ## 2026-02-18 - Fix analyzer invocation path and deploy supporting files
 - Prompt summary: Make the Nginx log analyzer runnable on the droplet and ensure deploys include the files it depends on.
 - Scope: `Makefile`, `README.md`, `deploy.sh`.
