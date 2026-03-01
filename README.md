@@ -74,6 +74,12 @@ Analyze Nginx access logs to estimate usage, top endpoints, top IPs, bot-like tr
 make analyze-logs PATHS="/var/log/nginx/access.log /var/log/nginx/access.log*.gz" TOP=15
 ```
 
+Or directly with the project Python:
+
+```bash
+.venv/bin/python -m nginx_log_analysis /var/log/nginx/access.log /var/log/nginx/access.log*.gz --top 15
+```
+
 The report uses successful browser-like `/nearest` requests with `lat` and `lng` as a rough daily real-user proxy.
 
 ## Quality checks

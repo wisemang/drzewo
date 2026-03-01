@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Fix analyzer invocation path and deploy supporting files
+- Prompt summary: Make the Nginx log analyzer runnable on the droplet and ensure deploys include the files it depends on.
+- Scope: `Makefile`, `README.md`, `deploy.sh`.
+- Decisions: Switched `make analyze-logs` to run `python -m nginx_log_analysis` from the repo root so imports resolve correctly on the server, updated README examples to match, and expanded `deploy.sh` payload to include `scripts/`, `Makefile`, `drzewo.sql`, and `README.md`.
+- Validation: `make check` passed (`ruff` + `pytest`, `17 passed`).
+- Follow-ups: none.
+
 ## 2026-02-18 - Add Nginx access-log analysis utility
 - Prompt summary: Create a lightweight way to estimate real usage and traffic shape before adding heavier observability.
 - Scope: `nginx_log_analysis.py`, `scripts/analyze_nginx_logs.py`, `tests/test_nginx_log_analysis.py`, `Makefile`, `README.md`.

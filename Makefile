@@ -50,4 +50,4 @@ archive-data:
 	./scripts/archive_dataset.py "$(CITY)" "$(FILE)" $(if $(DATE),--date "$(DATE)") $(if $(COPY),--copy) $(if $(APPLY),--apply)
 
 analyze-logs:
-	./scripts/analyze_nginx_logs.py $(if $(PATHS),$(PATHS)) $(if $(TOP),--top $(TOP))
+	$(PY) -m nginx_log_analysis $(if $(PATHS),$(PATHS)) $(if $(TOP),--top $(TOP))
