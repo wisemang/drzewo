@@ -29,3 +29,19 @@ CREATE TABLE street_trees (
 ALTER TABLE street_trees ADD CONSTRAINT unique_source_objectid UNIQUE (source, objectid);
 
 CREATE INDEX idx_street_trees_geom_gist ON street_trees USING GIST (geom);
+
+CREATE TABLE import_runs (
+    id BIGSERIAL PRIMARY KEY,
+    city TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    source_file TEXT NOT NULL,
+    refresh_mode BOOLEAN NOT NULL DEFAULT FALSE,
+    row_count INTEGER,
+    status TEXT NOT NULL,
+    error_message TEXT,
+    started_at TIMESTAMPTZ NOT NULL,
+    finished_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX idx_import_runs_city_finished_at
+    ON import_runs (city, finished_at DESC);

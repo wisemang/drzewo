@@ -32,6 +32,25 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py peterborough --file /path/to/peterborough.geojson
 ```
 
+To replace all existing rows for one city source before loading, add `--refresh`:
+
+```bash
+.venv/bin/python tree_loader.py oakville --file data/Parks_Tree_Forestry.geojson --refresh
+```
+
+Successful and failed imports are recorded in the `import_runs` table with source file, refresh mode, timestamps, and final row count.
+
+### Archive local raw datasets
+
+Keep manually downloaded files in a stable layout under `data/raw/<city>/<YYYY-MM-DD>/` using filesystem metadata for the date:
+
+```bash
+make archive-data CITY=oakville FILE=data/Parks_Tree_Forestry.geojson
+make archive-data CITY=oakville FILE=data/Parks_Tree_Forestry.geojson APPLY=1
+```
+
+The first command is a dry run. Use `APPLY=1` to move the file, `COPY=1` to copy instead, or `DATE=2026-02-18` to override the inferred date.
+
 ### Load directly to production DB from your laptop
 
 Create `.env.prod` with production DB credentials, then run:
@@ -44,6 +63,7 @@ make load-prod CITY=toronto FILE=data/toronto/Street\ Tree\ Data.geojson
 - source `.env.prod`
 - open an SSH tunnel via `drzewo-user` when DB host is local (`127.0.0.1`/`localhost`)
 - run `tree_loader.py` against prod DB with batched inserts (`DRZEWO_IMPORT_BATCH_SIZE`, default `2000`)
+- pass `--refresh` when `DRZEWO_REFRESH=1`
 - print a source row-count verification query
 
 ## Quality checks

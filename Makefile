@@ -6,7 +6,7 @@ PY := $(BIN)/python
 RUFF := $(BIN)/ruff
 PYTEST := $(BIN)/pytest
 
-.PHONY: help setup install-dev run test lint format check load-prod
+.PHONY: help setup install-dev run test lint format check load-prod archive-data
 
 help:
 	@echo "Targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  format      Auto-fix style/import issues with ruff"
 	@echo "  check       Run lint + tests"
 	@echo "  load-prod   Load city data into prod DB from local machine (CITY=... FILE=...)"
+	@echo "  archive-data Archive a local dataset into data/raw/<city>/<date>/ (CITY=... FILE=... APPLY=1)"
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -41,3 +42,8 @@ load-prod:
 	@test -n "$(CITY)" || (echo "CITY is required (e.g. CITY=boston)" && exit 1)
 	@test -n "$(FILE)" || (echo "FILE is required (e.g. FILE=data/boston/bprd_trees.geojson)" && exit 1)
 	./scripts/load_prod.sh "$(CITY)" "$(FILE)"
+
+archive-data:
+	@test -n "$(CITY)" || (echo "CITY is required (e.g. CITY=oakville)" && exit 1)
+	@test -n "$(FILE)" || (echo "FILE is required (e.g. FILE=data/Parks_Tree_Forestry.geojson)" && exit 1)
+	./scripts/archive_dataset.py "$(CITY)" "$(FILE)" $(if $(DATE),--date "$(DATE)") $(if $(COPY),--copy) $(if $(APPLY),--apply)

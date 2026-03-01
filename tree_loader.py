@@ -2,7 +2,9 @@
 
 import argparse
 import json
+from datetime import datetime, timezone
 from os import environ
+from pathlib import Path
 
 import psycopg2
 from dotenv import load_dotenv
@@ -76,6 +78,109 @@ CITY_HANDLERS = {
 def connect_db():
     """Create and return a database connection."""
     return psycopg2.connect(**DB_PARAMS)
+
+
+def ensure_import_runs_table(cursor):
+    """Create the import audit table if it does not already exist."""
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS import_runs (
+        id BIGSERIAL PRIMARY KEY,
+        city TEXT NOT NULL,
+        source_name TEXT NOT NULL,
+        source_file TEXT NOT NULL,
+        refresh_mode BOOLEAN NOT NULL DEFAULT FALSE,
+        row_count INTEGER,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        started_at TIMESTAMPTZ NOT NULL,
+        finished_at TIMESTAMPTZ NOT NULL
+    );
+    """)
+    cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_import_runs_city_finished_at
+    ON import_runs (city, finished_at DESC);
+    """)
+
+
+def delete_city_rows(cursor, source_name):
+    """Delete all rows for one city source before a refresh load."""
+    cursor.execute("DELETE FROM street_trees WHERE source = %s;", (source_name,))
+
+
+def count_city_rows(cursor, source_name):
+    """Return total rows currently stored for the source."""
+    cursor.execute("SELECT COUNT(*) FROM street_trees WHERE source = %s;", (source_name,))
+    return cursor.fetchone()[0]
+
+
+def record_import_run(
+    cursor,
+    *,
+    city,
+    source_name,
+    source_file,
+    refresh_mode,
+    row_count,
+    status,
+    started_at,
+    finished_at,
+    error_message=None,
+):
+    """Insert one import audit row."""
+    cursor.execute(
+        """
+        INSERT INTO import_runs (
+            city, source_name, source_file, refresh_mode, row_count, status,
+            error_message, started_at, finished_at
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s
+        );
+        """,
+        (
+            city,
+            source_name,
+            source_file,
+            refresh_mode,
+            row_count,
+            status,
+            error_message,
+            started_at,
+            finished_at,
+        ),
+    )
+
+
+def log_failed_import(city, city_config, filename, refresh_mode, started_at, error_message):
+    """Persist failure metadata after the main transaction rolls back."""
+    failure_conn = connect_db()
+    try:
+        failure_cursor = failure_conn.cursor()
+        ensure_import_runs_table(failure_cursor)
+        record_import_run(
+            failure_cursor,
+            city=city,
+            source_name=city_config["source_name"],
+            source_file=str(Path(filename).resolve()),
+            refresh_mode=refresh_mode,
+            row_count=None,
+            status="failed",
+            error_message=error_message,
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+        )
+        failure_conn.commit()
+        failure_cursor.close()
+    finally:
+        failure_conn.close()
+
+
+def load_city_data(cursor, city, city_config, filename, batch_size):
+    """Dispatch to the configured city loader."""
+    loader = globals()[city_config["loader"]]
+    if city in {"boston", "markham", "oakville", "peterborough"}:
+        loader(cursor, filename, batch_size=batch_size)
+        return
+    loader(cursor, filename)
 
 
 def load_toronto_data(cursor, filename):
@@ -666,6 +771,11 @@ def main():
     parser.add_argument("--file", required=True, help="Path to the data file")
     parser.add_argument("--enrich", action="store_true", help="Apply data enrichments")
     parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Delete existing rows for this city source before loading",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=DEFAULT_BATCH_SIZE,
@@ -676,38 +786,43 @@ def main():
     city = args.city
     filename = args.file
     apply_enrichments = args.enrich
+    refresh_mode = args.refresh
     batch_size = max(1, args.batch_size)
 
     city_config = CITY_HANDLERS[city]
+    source_name = city_config["source_name"]
+    source_file = str(Path(filename).resolve())
+    started_at = datetime.now(timezone.utc)
 
     conn = connect_db()
     try:
         cursor = conn.cursor()
+        ensure_import_runs_table(cursor)
 
         print(f"Loading data for {city}...")
-        if city == "toronto":
-            load_toronto_data(cursor, filename)
-        elif city == "ottawa":
-            load_ottawa_data(cursor, filename)
-        elif city == "montreal":
-            load_montreal_data(cursor, filename)
-        elif city == "calgary":
-            load_calgary_data(cursor, filename)
-        elif city == "waterloo":
-            load_waterloo_data(cursor, filename)
-        elif city == "boston":
-            load_boston_data(cursor, filename, batch_size=batch_size)
-        elif city == "markham":
-            load_markham_data(cursor, filename, batch_size=batch_size)
-        elif city == "oakville":
-            load_oakville_data(cursor, filename, batch_size=batch_size)
-        elif city == "peterborough":
-            load_peterborough_data(cursor, filename, batch_size=batch_size)
+        if refresh_mode:
+            print(f"Refreshing existing rows for {source_name}...")
+            delete_city_rows(cursor, source_name)
+
+        load_city_data(cursor, city, city_config, filename, batch_size)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")
             enrich_data(cursor, city_config)
 
+        row_count = count_city_rows(cursor, source_name)
+        record_import_run(
+            cursor,
+            city=city,
+            source_name=source_name,
+            source_file=source_file,
+            refresh_mode=refresh_mode,
+            row_count=row_count,
+            status="completed",
+            error_message=None,
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+        )
         conn.commit()
         # Refresh table stats after bulk writes so nearest-neighbor plans stay fast.
         try:
@@ -722,6 +837,10 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
         conn.rollback()
+        try:
+            log_failed_import(city, city_config, filename, refresh_mode, started_at, str(e))
+        except Exception as log_error:
+            print(f"Failed to write import_runs failure entry: {log_error}")
     finally:
         conn.close()
 

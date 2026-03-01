@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Add import audit logging, refresh mode, and raw dataset archiving
+- Prompt summary: Improve data management without changing the manual-download workflow.
+- Scope: `drzewo.sql`, `tree_loader.py`, `data_management.py`, `scripts/archive_dataset.py`, `scripts/load_prod.sh`, `Makefile`, `README.md`, `tests/`.
+- Decisions: Added `import_runs` table for import provenance and status, added `--refresh` city reload mode, recorded both successful and failed import attempts with source file/timestamps/row counts, introduced a dry-run-first archive helper to normalize manually downloaded files into `data/raw/<city>/<YYYY-MM-DD>/` using filesystem metadata, and added tests for the new helper and audit functions.
+- Validation: `make check` passed (`ruff` + `pytest`, `12 passed`).
+- Follow-ups: Apply the new schema changes to existing local/prod databases so `import_runs` exists everywhere before relying on audit history.
+
 ## 2026-02-18 - Add Peterborough ingestion and validate locally
 - Prompt summary: Ingest newly added Peterborough tree inventory and confirm the loader path works before production use.
 - Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.
