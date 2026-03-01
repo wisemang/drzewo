@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Make import audit table check safe for restricted prod DB users
+- Prompt summary: Fix production reloads after `import_runs` auditing introduced a schema-privilege error for the app DB user.
+- Scope: `tree_loader.py`.
+- Decisions: Changed `ensure_import_runs_table()` to check `to_regclass('public.import_runs')` first and only attempt `CREATE TABLE`/`CREATE INDEX` when the table is absent, avoiding unnecessary DDL privilege checks on production loads where the table already exists.
+- Validation: `make check` passed (`ruff` + `pytest`, `14 passed`); production Calgary refresh with `DRZEWO_REFRESH=1 make load-prod CITY=calgary FILE=data/calgary/Public_Trees_20241128.csv` completed successfully.
+- Follow-ups: none.
+
 ## 2026-02-18 - Unify all city loaders on batched insert pattern
 - Prompt summary: Bring the remaining older city loaders onto the same operational pattern as the newer ones.
 - Scope: `tree_loader.py`, `tests/test_tree_loader.py`.

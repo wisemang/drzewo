@@ -82,6 +82,9 @@ def connect_db():
 
 def ensure_import_runs_table(cursor):
     """Create the import audit table if it does not already exist."""
+    cursor.execute("SELECT to_regclass('public.import_runs');")
+    if cursor.fetchone()[0] is not None:
+        return
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS import_runs (
         id BIGSERIAL PRIMARY KEY,
