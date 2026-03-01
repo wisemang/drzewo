@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Unify all city loaders on batched insert pattern
+- Prompt summary: Bring the remaining older city loaders onto the same operational pattern as the newer ones.
+- Scope: `tree_loader.py`, `tests/test_tree_loader.py`.
+- Decisions: Converted Toronto, Ottawa, Montreal, Waterloo, and Calgary to the shared batched row-tuple loader pattern with progress logging and consistent `(source, objectid)` conflicts; normalized Toronto geometry through the shared Point->MultiPoint helper; and fixed Calgary to use a stable numeric `objectid` derived from `WAM_ID`, preserve original asset code in `structid`, and coerce empty DBH values to `NULL` so it fits the shared schema.
+- Validation: `make check` passed (`ruff` + `pytest`, `14 passed`); local Calgary run `.venv/bin/python tree_loader.py calgary --file data/calgary/Public_Trees_20241128.csv --batch-size 2000` completed successfully with progress output through 560k rows.
+- Follow-ups: Consider applying the same row-tuple helper factoring to reduce repeated SQL/template boilerplate across city loaders.
+
 ## 2026-02-18 - Add import audit logging, refresh mode, and raw dataset archiving
 - Prompt summary: Improve data management without changing the manual-download workflow.
 - Scope: `drzewo.sql`, `tree_loader.py`, `data_management.py`, `scripts/archive_dataset.py`, `scripts/load_prod.sh`, `Makefile`, `README.md`, `tests/`.

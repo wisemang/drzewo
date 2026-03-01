@@ -55,3 +55,57 @@ def test_record_import_run_writes_expected_values():
     assert params[3] is True
     assert params[4] == 29455
     assert params[5] == "completed"
+
+
+def test_calgary_row_tuple_uses_shared_schema_fields():
+    row = {
+        "TREE_ASSET_CD": "123",
+        "COMMON_NAME": "Honey Locust",
+        "GENUS": "Gleditsia",
+        "SPECIES": "triacanthos",
+        "CULTIVAR": "",
+        "DBH_CM": "22",
+        "LOCATION_DETAIL": "123 Example St",
+        "COMM_CODE": "DOWNTOWN",
+        "ASSET_TYPE": "Tree",
+        "ASSET_SUBTYPE": "Boulevard",
+        "WAM_ID": "T-32114228",
+        "POINT": "POINT (-114.0719 51.0447)",
+    }
+
+    result = tree_loader.calgary_row_tuple(row)
+
+    assert result[0] == "Calgary Open Data Tree Inventory"
+    assert result[1] == 32114228
+    assert result[2] == "123"
+    assert result[3] == "Honey Locust"
+    assert result[4] == "Gleditsia triacanthos"
+    assert result[8] == "Boulevard"
+    assert result[9] == "POINT (-114.0719 51.0447)"
+
+
+def test_toronto_row_tuple_normalizes_point_geometry():
+    feature = {
+        "properties": {
+            "OBJECTID": 1,
+            "STRUCTID": "abc",
+            "ADDRESS": "10",
+            "STREETNAME": "King",
+            "CROSSSTREET1": "Bay",
+            "CROSSSTREET2": "Yonge",
+            "SUFFIX": "St",
+            "UNIT_NUMBER": None,
+            "TREE_POSITION_NUMBER": 2,
+            "SITE": "Boulevard",
+            "WARD": "1",
+            "BOTANICAL_NAME": "Acer saccharum",
+            "COMMON_NAME": "Sugar Maple",
+            "DBH_TRUNK": 20,
+        },
+        "geometry": {"type": "Point", "coordinates": [-79.38, 43.65]},
+    }
+
+    result = tree_loader.toronto_row_tuple(feature)
+
+    assert result[0] == "Toronto Open Data Street Trees"
+    assert '"type": "MultiPoint"' in result[-1]

@@ -177,237 +177,226 @@ def log_failed_import(city, city_config, filename, refresh_mode, started_at, err
 def load_city_data(cursor, city, city_config, filename, batch_size):
     """Dispatch to the configured city loader."""
     loader = globals()[city_config["loader"]]
-    if city in {"boston", "markham", "oakville", "peterborough"}:
-        loader(cursor, filename, batch_size=batch_size)
-        return
-    loader(cursor, filename)
+    loader(cursor, filename, batch_size=batch_size)
 
 
-def load_toronto_data(cursor, filename):
-    """Load Toronto data and insert it into the database."""
+def point_to_multipoint_json(geometry):
+    """Normalize Point geometries to the MultiPoint schema shape."""
+    normalized = geometry
+    if normalized and normalized.get("type") == "Point":
+        normalized = {
+            "type": "MultiPoint",
+            "coordinates": [normalized.get("coordinates")],
+        }
+    return json.dumps(normalized)
+
+
+def load_toronto_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Toronto data using batched inserts."""
     with open(filename, "r") as file:
         data = json.load(file)
 
-    for feature in data["features"]:
-        insert_toronto_data(cursor, feature)
-
-
-def insert_toronto_data(cursor, feature):
-    """
-    Insert Toronto tree data into the database.
-    """
-    # Extract fields
-    source = "Toronto Open Data Street Trees"
-    properties = feature['properties']
-    geometry = json.dumps(feature['geometry'])  # Convert geometry to JSON string
-
-    objectid = properties.get('OBJECTID')
-    structid = properties.get('STRUCTID')
-    address = properties.get('ADDRESS')
-    streetname = properties.get('STREETNAME')
-    crossstreet1 = properties.get('CROSSSTREET1')
-    crossstreet2 = properties.get('CROSSSTREET2')
-    suffix = properties.get('SUFFIX')
-    unit_number = properties.get('UNIT_NUMBER')
-    tree_position_number = properties.get('TREE_POSITION_NUMBER')
-    site = properties.get('SITE')
-    ward = properties.get('WARD')
-    botanical_name = properties.get('BOTANICAL_NAME')
-    common_name = properties.get('COMMON_NAME')
-    dbh_trunk = properties.get('DBH_TRUNK')
-
-    # Create SQL query
     sql_query = """
     INSERT INTO street_trees (
         source, objectid, structid, address, streetname, crossstreet1, crossstreet2, suffix,
         unit_number, tree_position_number, site, ward, botanical_name, common_name, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
-    )
+    ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
-    cursor.execute(sql_query, (
-        source,
-        objectid,
-        structid,
-        address,
-        streetname,
-        crossstreet1,
-        crossstreet2,
-        suffix,
-        unit_number,
-        tree_position_number,
-        site,
-        ward,
-        botanical_name,
-        common_name,
-        dbh_trunk,
-        geometry
-    ))
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+    ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
 
-def load_ottawa_data(cursor, filename):
-    """Load Ottawa data and insert it into the database."""
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        rows.append(toronto_row_tuple(feature))
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Toronto features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def toronto_row_tuple(feature):
+    """Build one Toronto insert row."""
+    source = "Toronto Open Data Street Trees"
+    properties = feature["properties"]
+    return (
+        source,
+        properties.get("OBJECTID"),
+        properties.get("STRUCTID"),
+        properties.get("ADDRESS"),
+        properties.get("STREETNAME"),
+        properties.get("CROSSSTREET1"),
+        properties.get("CROSSSTREET2"),
+        properties.get("SUFFIX"),
+        properties.get("UNIT_NUMBER"),
+        properties.get("TREE_POSITION_NUMBER"),
+        properties.get("SITE"),
+        properties.get("WARD"),
+        properties.get("BOTANICAL_NAME"),
+        properties.get("COMMON_NAME"),
+        properties.get("DBH_TRUNK"),
+        point_to_multipoint_json(feature["geometry"]),
+    )
+
+
+def load_ottawa_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Ottawa data using batched inserts."""
     with open(filename, "r") as file:
         data = json.load(file)
 
-    for feature in data["features"]:
-        insert_ottawa_data(cursor, feature)
-
-
-def insert_ottawa_data(cursor, feature):
-    """
-    Insert Ottawa tree data into the database.
-    """
-    source = "Ottawa Open Data Tree Inventory"
-    properties = feature['properties']
-    geometry = feature['geometry']
-
-    # Convert Point to MultiPoint if necessary
-    if geometry['type'] == 'Point':
-        geometry['type'] = 'MultiPoint'
-        geometry['coordinates'] = [geometry['coordinates']]
-    geometry_json = json.dumps(geometry)
-
-    objectid = properties.get('OBJECTID')
-    address = properties.get('ADDNUM')
-    streetname = properties.get('ADDSTR')
-    botanical_name = properties.get('SPECIES')  # Assuming 'SPECIES' maps to botanical_name
-    common_name = properties.get('SPECIES')  # Same as botanical_name for simplicity
-    dbh_trunk = properties.get('DBH')
-
-    # Create SQL query
     sql_query = """
     INSERT INTO street_trees (
         source, objectid, address, streetname, botanical_name, common_name, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
-    )
+    ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
-    cursor.execute(sql_query, (
-        source,
-        objectid,
-        address,
-        streetname,
-        botanical_name,
-        common_name,
-        dbh_trunk,
-        geometry_json
-    ))
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
 
-def load_montreal_data(cursor, filename):
-    """
-    Load Montreal data from a CSV file and insert it into the database.
-    """
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        rows.append(ottawa_row_tuple(feature))
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Ottawa features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def ottawa_row_tuple(feature):
+    """Build one Ottawa insert row."""
+    source = "Ottawa Open Data Tree Inventory"
+    properties = feature["properties"]
+    return (
+        source,
+        properties.get("OBJECTID"),
+        properties.get("ADDNUM"),
+        properties.get("ADDSTR"),
+        properties.get("SPECIES"),
+        properties.get("SPECIES"),
+        properties.get("DBH"),
+        point_to_multipoint_json(feature["geometry"]),
+    )
+
+
+def load_montreal_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Montreal data using batched inserts."""
     import csv
 
-    with open(filename, 'r') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            insert_montreal_data(cursor, row)
-
-
-def insert_montreal_data(cursor, row):
-    """
-    Insert Montreal tree data into the database.
-    """
-    # Extract fields
-    # Columns include:
-    # INV_TYPE, EMP_NO, ARROND, ARROND_NOM, Rue, COTE, No_civique, Emplacement,
-    # Coord_X, Coord_Y, SIGLE, Essence_latin, Essence_fr, ESSENCE_ANG, DHP,
-    # Date_releve, Date_plantation, LOCALISATION, CODE_PARC, NOM_PARC, Longitude, Latitude
-    source = "Montreal Open Data Tree Inventory"
-    objectid = row['EMP_NO']
-    ward = f"{row['ARROND_NOM']}"
-    streetname = row['LOCALISATION']
-    site = row['Emplacement'] # Trottoir, Fond de Trottoir, Parterre Gazonné, ...
-    botanical_name = row['Essence_latin']
-    common_name = f"{row['Essence_fr']} ({row['ESSENCE_ANG']})"
-    if row['DHP']:
-        dbh = round(float(row['DHP']))
-    else:
-        dbh = None
-    longitude = row['Longitude']
-    latitude = row['Latitude']
-
-    # Skip rows without valid coordinates
-    if not longitude or not latitude:
-        return
-
-    # Create SQL query
     sql_query = """
     INSERT INTO street_trees (
         source, objectid, ward, streetname, site, botanical_name, common_name, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326)
-    )
+    ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
-    cursor.execute(sql_query, (
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326))
+    """
+
+    rows = []
+    with open(filename, "r") as file:
+        reader = csv.DictReader(file)
+        for idx, row in enumerate(reader, start=1):
+            row_tuple = montreal_row_tuple(row)
+            if row_tuple is None:
+                continue
+            rows.append(row_tuple)
+            if len(rows) >= batch_size:
+                _flush_batch(cursor, sql_query, rows, template, batch_size)
+            if idx % PROGRESS_INTERVAL == 0:
+                print(f"Processed {idx} Montreal rows...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def montreal_row_tuple(row):
+    """Build one Montreal insert row."""
+    source = "Montreal Open Data Tree Inventory"
+    if row["DHP"]:
+        dbh = round(float(row['DHP']))
+    else:
+        dbh = None
+    longitude = row["Longitude"]
+    latitude = row["Latitude"]
+    if not longitude or not latitude:
+        return
+    return (
         source,
-        objectid,
-        ward,
-        streetname,
-        site,
-        botanical_name,
-        common_name,
+        row["EMP_NO"],
+        f"{row['ARROND_NOM']}",
+        row["LOCALISATION"],
+        row["Emplacement"],
+        row["Essence_latin"],
+        f"{row['Essence_fr']} ({row['ESSENCE_ANG']})",
         dbh,
         longitude,
-        latitude
-    ))
+        latitude,
+    )
 
 
-def load_calgary_data(cursor, filename):
-    """
-    Load Calgary data from a CSV file and insert it into the database.
-    """
+def load_calgary_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Calgary data using batched inserts."""
     import csv
 
-    with open(filename, 'r') as file:
-        reader = csv.DictReader(file)  # Adjust if a specific delimiter is needed
-        for row in reader:
-            insert_calgary_data(cursor, row)
-
-def insert_calgary_data(cursor, row):
-    """
-    Insert Calgary tree data into the database.
-    """
-    # Extract fields
-    objectid = row['TREE_ASSET_CD']
-    asset_type = row['ASSET_TYPE']
-    asset_subtype = row['ASSET_SUBTYPE']
-    common_name = row['COMMON_NAME']
-    botanical_name = f"{row['GENUS']} {row['SPECIES']} {row['CULTIVAR']}".strip()
-    dbh_trunk = row['DBH_CM']
-    address = row['LOCATION_DETAIL']
-    streetname = row['COMM_CODE']
-    date_added = row['ACTIVE_DT']
-    point_wkt = row['POINT']
-
-    # Parse WKT into PostGIS geometry
     sql_query = """
     INSERT INTO street_trees (
-        source, objectid, asset_type, asset_subtype, common_name, botanical_name,
-        dbh_trunk, address, streetname, date_added, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326)
-    )
-    ON CONFLICT (objectid) DO NOTHING;
+        source, objectid, structid, common_name, botanical_name,
+        dbh_trunk, address, streetname, site, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
     """
-    cursor.execute(sql_query, (
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326))
+    """
+
+    rows = []
+    with open(filename, "r") as file:
+        reader = csv.DictReader(file)
+        for idx, row in enumerate(reader, start=1):
+            rows.append(calgary_row_tuple(row))
+            if len(rows) >= batch_size:
+                _flush_batch(cursor, sql_query, rows, template, batch_size)
+            if idx % PROGRESS_INTERVAL == 0:
+                print(f"Processed {idx} Calgary rows...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def calgary_row_tuple(row):
+    """Build one Calgary insert row using only columns present in the shared schema."""
+    species_parts = [row.get("GENUS"), row.get("SPECIES"), row.get("CULTIVAR")]
+    botanical_name = " ".join(part for part in species_parts if part and part.strip()).strip()
+    wam_id = row.get("WAM_ID", "")
+    objectid = "".join(ch for ch in wam_id if ch.isdigit())
+    if not objectid:
+        objectid = "".join(ch for ch in row.get("TREE_ASSET_CD", "") if ch.isdigit())
+    if not objectid:
+        raise ValueError(f"Calgary row is missing a numeric identifier: {row.get('TREE_ASSET_CD')}")
+    dbh_raw = row.get("DBH_CM")
+    dbh_trunk = None
+    if dbh_raw not in (None, ""):
+        try:
+            dbh_trunk = round(float(dbh_raw))
+        except (TypeError, ValueError):
+            dbh_trunk = None
+    return (
         "Calgary Open Data Tree Inventory",
-        objectid,
-        asset_type,
-        asset_subtype,
-        common_name,
-        botanical_name,
+        int(objectid),
+        row.get("TREE_ASSET_CD"),
+        row.get("COMMON_NAME"),
+        botanical_name or None,
         dbh_trunk,
-        address,
-        streetname,
-        date_added,
-        point_wkt
-    ))
+        row.get("LOCATION_DETAIL"),
+        row.get("COMM_CODE"),
+        row.get("ASSET_SUBTYPE") or row.get("ASSET_TYPE"),
+        row["POINT"],
+    )
 
 
 def enrich_data(cursor, city_config):
@@ -430,46 +419,48 @@ def enrich_data(cursor, city_config):
         """)
 
 
-def load_waterloo_data(cursor, filename):
-    """Load Waterloo data and insert it into the database."""
-    with open(filename, 'r') as file:
+def load_waterloo_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Waterloo data using batched inserts."""
+    with open(filename, "r") as file:
         data = json.load(file)
 
-    for feature in data['features']:
-        insert_waterloo_data(cursor, feature)
-
-def insert_waterloo_data(cursor, feature):
-    """Insert Waterloo tree data into the database."""
-    source = "Waterloo Open Data Tree Inventory"
-    properties = feature['properties']
-    geometry = feature['geometry']
-
-    objectid = properties.get('ASSET_ID')
-    common_name = properties.get('COM_NAME')
-    botanical_name = properties.get('LATIN_NAME')
-    address = properties.get('ADDRESS')
-    dbh_trunk = properties.get('DBH_CM')
-    if dbh_trunk == 'null':
-        dbh_trunk = None
-
-    # Create SQL query
     sql_query = """
     INSERT INTO street_trees (
         source, objectid, common_name, botanical_name, address, dbh_trunk, geom
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)
-    )
+    ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
-    cursor.execute(sql_query, (
+    template = """
+    (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        rows.append(waterloo_row_tuple(feature))
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Waterloo features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def waterloo_row_tuple(feature):
+    """Build one Waterloo insert row."""
+    source = "Waterloo Open Data Tree Inventory"
+    properties = feature["properties"]
+    dbh_trunk = properties.get("DBH_CM")
+    if dbh_trunk == "null":
+        dbh_trunk = None
+    return (
         source,
-        objectid,
-        common_name,
-        botanical_name,
-        address,
+        properties.get("ASSET_ID"),
+        properties.get("COM_NAME"),
+        properties.get("LATIN_NAME"),
+        properties.get("ADDRESS"),
         dbh_trunk,
-        json.dumps(geometry)
-    ))
+        point_to_multipoint_json(feature["geometry"]),
+    )
 
 
 def _flush_batch(cursor, sql_query, rows, template, batch_size):
