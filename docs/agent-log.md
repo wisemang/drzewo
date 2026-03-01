@@ -149,6 +149,13 @@ Do not log secrets, tokens, or private user data.
 - Validation: `make lint` passed; `make test` passed (`6 passed`).
 - Follow-ups: If icon still appears stale on iOS, rotate icon filenames again and reinstall from Safari.
 
+## 2026-03-01 - Welcome/About copy refresh
+- Prompt summary: Update the welcome modal and About page copy to reflect the actual supported cities, simplify modal onboarding, add a GitHub link, and clarify map controls/loading behavior.
+- Scope: `templates/index.html`, `static/css/styles.css`.
+- Decisions: Expanded supported-city copy to match configured loaders, moved detailed usage guidance from the modal to the About page, made supported cities the primary modal callout, added a GitHub repo link, and added a compact controls reference row using the same symbols as the map UI.
+- Validation: `make lint` passed; `make test` passed (`19 passed`); `make check` passed.
+- Follow-ups: Optionally test the revised modal/About balance on mobile to confirm the new supported-cities block is prominent without crowding the dialog.
+
 ## 2026-02-16 - Persist map fullscreen preference
 - Prompt summary: Remember fullscreen mode across page reloads.
 - Scope: `static/js/script.js`.
