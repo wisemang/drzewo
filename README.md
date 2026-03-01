@@ -66,6 +66,16 @@ make load-prod CITY=toronto FILE=data/toronto/Street\ Tree\ Data.geojson
 - pass `--refresh` when `DRZEWO_REFRESH=1`
 - print a source row-count verification query
 
+## Log analysis
+
+Analyze Nginx access logs to estimate usage, top endpoints, top IPs, bot-like traffic, and `/nearest` activity:
+
+```bash
+make analyze-logs PATHS="/var/log/nginx/access.log /var/log/nginx/access.log*.gz" TOP=15
+```
+
+The report uses successful browser-like `/nearest` requests with `lat` and `lng` as a rough daily real-user proxy.
+
 ## Quality checks
 
 - `make lint`: static analysis with `ruff`

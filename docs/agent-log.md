@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Add Nginx access-log analysis utility
+- Prompt summary: Create a lightweight way to estimate real usage and traffic shape before adding heavier observability.
+- Scope: `nginx_log_analysis.py`, `scripts/analyze_nginx_logs.py`, `tests/test_nginx_log_analysis.py`, `Makefile`, `README.md`.
+- Decisions: Added a dependency-free Nginx combined-log parser that handles plain and `.gz` rotated logs, reports request totals, `/nearest` usage, top endpoints/IPs/UAs, bot-like traffic, and a rough daily real-user proxy based on successful browser-like `/nearest` requests with `lat`/`lng`; exposed it via `make analyze-logs`.
+- Validation: `make check` passed (`ruff` + `pytest`, `17 passed`).
+- Follow-ups: Optional: add CSV/JSON output mode if you want to archive or graph the summaries over time.
+
 ## 2026-02-18 - Make import audit table check safe for restricted prod DB users
 - Prompt summary: Fix production reloads after `import_runs` auditing introduced a schema-privilege error for the app DB user.
 - Scope: `tree_loader.py`.

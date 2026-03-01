@@ -6,7 +6,7 @@ PY := $(BIN)/python
 RUFF := $(BIN)/ruff
 PYTEST := $(BIN)/pytest
 
-.PHONY: help setup install-dev run test lint format check load-prod archive-data
+.PHONY: help setup install-dev run test lint format check load-prod archive-data analyze-logs
 
 help:
 	@echo "Targets:"
@@ -18,6 +18,7 @@ help:
 	@echo "  check       Run lint + tests"
 	@echo "  load-prod   Load city data into prod DB from local machine (CITY=... FILE=...)"
 	@echo "  archive-data Archive a local dataset into data/raw/<city>/<date>/ (CITY=... FILE=... APPLY=1)"
+	@echo "  analyze-logs Analyze Nginx access logs (PATHS=... TOP=...)"
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -47,3 +48,6 @@ archive-data:
 	@test -n "$(CITY)" || (echo "CITY is required (e.g. CITY=oakville)" && exit 1)
 	@test -n "$(FILE)" || (echo "FILE is required (e.g. FILE=data/Parks_Tree_Forestry.geojson)" && exit 1)
 	./scripts/archive_dataset.py "$(CITY)" "$(FILE)" $(if $(DATE),--date "$(DATE)") $(if $(COPY),--copy) $(if $(APPLY),--apply)
+
+analyze-logs:
+	./scripts/analyze_nginx_logs.py $(if $(PATHS),$(PATHS)) $(if $(TOP),--top $(TOP))
