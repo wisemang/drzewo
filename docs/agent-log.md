@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-02-18 - Add Peterborough ingestion and validate locally
+- Prompt summary: Ingest newly added Peterborough tree inventory and confirm the loader path works before production use.
+- Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.
+- Decisions: Added `peterborough` city handler and batched loader for `Tree_Inventory.geojson`, mapped address/street/site/zone/species fields into the current schema, retained Point->MultiPoint conversion, and added Peterborough source mapping for `load_prod.sh`.
+- Validation: `make check` passed (`ruff` + `pytest`, `7 passed`); local run `.venv/bin/python tree_loader.py peterborough --file data/peterborough/Tree_Inventory.geojson --batch-size 2000` completed successfully with progress output through 20k.
+- Follow-ups: Consider storing `FAMILY`/`GENUS` later if taxonomy-specific browsing becomes part of the app.
+
 ## 2026-02-18 - Add Oakville ingestion with batching and local validation
 - Prompt summary: Ingest newly downloaded Oakville tree inventory before production load.
 - Scope: `tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`.

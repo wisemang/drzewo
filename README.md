@@ -29,6 +29,7 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py boston --file /path/to/boston.geojson
 .venv/bin/python tree_loader.py markham --file /path/to/markham.geojson
 .venv/bin/python tree_loader.py oakville --file /path/to/oakville.geojson
+.venv/bin/python tree_loader.py peterborough --file /path/to/peterborough.geojson
 ```
 
 ### Load directly to production DB from your laptop

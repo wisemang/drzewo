@@ -65,6 +65,11 @@ CITY_HANDLERS = {
         "loader": "load_oakville_data",
         "enrichments": [],
     },
+    "peterborough": {
+        "source_name": "Peterborough Open Data Tree Inventory",
+        "loader": "load_peterborough_data",
+        "enrichments": [],
+    },
 }
 
 
@@ -596,6 +601,65 @@ def oakville_row_tuple(feature):
     )
 
 
+def load_peterborough_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Peterborough data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, streetname, site, ward,
+        botanical_name, common_name, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = peterborough_row_tuple(feature)
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Peterborough features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def peterborough_row_tuple(feature):
+    """Build one Peterborough insert row."""
+    source = "Peterborough Open Data Tree Inventory"
+    properties = feature["properties"]
+    geometry = feature["geometry"]
+
+    # Schema currently stores MultiPoint geometries.
+    if geometry and geometry.get("type") == "Point":
+        geometry = {
+            "type": "MultiPoint",
+            "coordinates": [geometry.get("coordinates")],
+        }
+
+    address = properties.get("ADDNUM")
+    streetname = properties.get("STREET")
+    site = properties.get("INVENTORY_LOC") or properties.get("TREE_LOCATION")
+    ward = str(properties.get("ZONE")) if properties.get("ZONE") is not None else None
+
+    return (
+        source,
+        properties.get("OBJECTID"),
+        address,
+        streetname,
+        site,
+        ward,
+        properties.get("BOTANICAL"),
+        properties.get("COMMON"),
+        json.dumps(geometry),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tree Data Import and Enrichment CLI")
     parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
@@ -637,6 +701,8 @@ def main():
             load_markham_data(cursor, filename, batch_size=batch_size)
         elif city == "oakville":
             load_oakville_data(cursor, filename, batch_size=batch_size)
+        elif city == "peterborough":
+            load_peterborough_data(cursor, filename, batch_size=batch_size)
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")
