@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-03-05 - Add Mississauga ingestion and fix null popup rendering
+- Prompt summary: Add newly downloaded Mississauga GeoJSON to the canonical dataset layout, support it in loaders/lists, and resolve awkward popup values compared to Toronto.
+- Scope: `tree_loader.py`, `tests/test_tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`, `static/js/script.js`, `static/sw.js`.
+- Decisions: Added a Mississauga city handler/loader and archived dataset path (`data/raw/mississauga/2026-03-05/City_Owned_Tree_Inventory.geojson`), mapped `BOTDESC` to user-facing common names while suppressing internal-code fields (`BOTNAME`, `ADDRKEY`) from botanical/address output, updated supported-city lists + prod source mapping, and hardened UI rendering to normalize `null`-like values with safe fallbacks (plus service-worker cache bump `treeseek-v5`).
+- Validation: `make check` passed (`ruff` + `pytest`, `21 passed`); local import and local refresh completed successfully for Mississauga; production import and production refresh import completed successfully via `make load-prod`/`DRZEWO_REFRESH=1 make load-prod` (post-load SQL verification skipped because `psql` is not installed).
+- Follow-ups: Deploy app code when ready so frontend fallback rendering updates are served to all clients.
+
 ## 2026-02-18 - Improve analyzer with scanner-path and status breakdowns
 - Prompt summary: Make the Nginx usage report more decision-useful after the first prod run exposed lots of scanner noise and blank endpoints.
 - Scope: `nginx_log_analysis.py`, `tests/test_nginx_log_analysis.py`.

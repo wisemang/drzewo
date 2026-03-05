@@ -72,6 +72,11 @@ CITY_HANDLERS = {
         "loader": "load_peterborough_data",
         "enrichments": [],
     },
+    "mississauga": {
+        "source_name": "Mississauga City-Owned Tree Inventory",
+        "loader": "load_mississauga_data",
+        "enrichments": [],
+    },
 }
 
 
@@ -755,6 +760,87 @@ def peterborough_row_tuple(feature):
         ward,
         properties.get("BOTANICAL"),
         properties.get("COMMON"),
+        json.dumps(geometry),
+    )
+
+
+def load_mississauga_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Mississauga data and insert it into the database."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, structid, address, site, ward,
+        botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = mississauga_row_tuple(feature)
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Mississauga features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def mississauga_row_tuple(feature):
+    """Build one Mississauga insert row."""
+    source = "Mississauga City-Owned Tree Inventory"
+    properties = feature["properties"]
+    geometry = feature["geometry"]
+
+    # Schema currently stores MultiPoint geometries.
+    if geometry and geometry.get("type") == "Point":
+        geometry = {
+            "type": "MultiPoint",
+            "coordinates": [geometry.get("coordinates")],
+        }
+
+    def clean_text(value):
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        return text
+
+    diameter = properties.get("DIAM")
+    dbh_trunk = None
+    if diameter not in (None, ""):
+        try:
+            dbh_trunk = round(float(diameter))
+        except (TypeError, ValueError):
+            dbh_trunk = None
+
+    site_parts = [
+        clean_text(properties.get("LOC")),
+        clean_text(properties.get("SPACETYPE")),
+        clean_text(properties.get("SERVSTAT")),
+    ]
+    site = " | ".join(part for part in site_parts if part) or None
+    common_name = clean_text(properties.get("BOTDESC"))
+    if common_name:
+        common_name = common_name.title()
+
+    return (
+        source,
+        properties.get("OBJECTID"),
+        clean_text(properties.get("UNITID")),
+        None,
+        site,
+        clean_text(properties.get("ZAREA")),
+        None,
+        common_name,
+        dbh_trunk,
         json.dumps(geometry),
     )
 

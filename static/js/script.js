@@ -244,6 +244,42 @@ function getTreeKey(item) {
     return `${item.latitude},${item.longitude},${item.common_name || ''}`;
 }
 
+function normalizeText(value) {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    const text = String(value).trim();
+    if (!text) {
+        return null;
+    }
+    const lowered = text.toLowerCase();
+    if (["null", "none", "undefined", "n/a", "na"].includes(lowered)) {
+        return null;
+    }
+    return text;
+}
+
+function formatAddress(item) {
+    const address = normalizeText(item.address);
+    const streetname = normalizeText(item.streetname);
+    if (address && streetname) {
+        return `${address} ${streetname}`;
+    }
+    return address || streetname || 'Location unavailable';
+}
+
+function formatDbh(value) {
+    if (value === null || value === undefined || value === '') {
+        return 'N/A';
+    }
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue)) {
+        return `${numericValue} cm`;
+    }
+    const textValue = normalizeText(value);
+    return textValue ? `${textValue} cm` : 'N/A';
+}
+
 function syncMarkers(data) {
     let created = 0;
     let updated = 0;
@@ -252,16 +288,18 @@ function syncMarkers(data) {
     data.forEach((item) => {
         const key = getTreeKey(item);
 
-        const dbhDisplay = item.dbh ? `${item.dbh} cm` : 'N/A';
-        const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;
+        const dbhDisplay = formatDbh(item.dbh);
+        const addressDisplay = formatAddress(item);
+        const commonNameDisplay = normalizeText(item.common_name) || 'Unknown tree';
+        const botanicalNameDisplay = normalizeText(item.botanical_name) || 'N/A';
 
         const popupContent = `
             <div class="tree-marker">
-                <span class="tree-marker-common-name">${item.common_name}</span><br>
+                <span class="tree-marker-common-name">${commonNameDisplay}</span><br>
                 <span class="tree-marker-address">${addressDisplay}</span><br>
                 <hr>
                 <table class="treedata">
-                    <tr><td>Botanical name</td><td>${item.botanical_name}</td></tr>
+                    <tr><td>Botanical name</td><td>${botanicalNameDisplay}</td></tr>
                     <tr><td>Diameter</td><td>${dbhDisplay}</td></tr>
                 </table>
             </div>
@@ -352,13 +390,16 @@ function updateTable(data) {
 
         const row = document.createElement('tr');
         row.id = `tree-row-${index}`;
-        const addressDisplay = item.streetname ? `${item.address} ${item.streetname}` : item.address;
+        const addressDisplay = formatAddress(item);
+        const commonNameDisplay = normalizeText(item.common_name) || 'Unknown tree';
+        const botanicalNameDisplay = normalizeText(item.botanical_name) || 'N/A';
+        const dbhDisplay = formatDbh(item.dbh).replace(' cm', '');
         
         row.innerHTML = `
             <td>${addressDisplay}</td>
-            <td>${item.common_name}</td>
-            <td>${item.botanical_name}</td>
-            <td>${item.dbh ? item.dbh : 'N/A'}</td>
+            <td>${commonNameDisplay}</td>
+            <td>${botanicalNameDisplay}</td>
+            <td>${dbhDisplay}</td>
             <td>${item.distance.toFixed(2)}</td>
         `;
 

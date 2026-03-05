@@ -1,4 +1,4 @@
-const CACHE_NAME = "treeseek-v4";
+const CACHE_NAME = "treeseek-v5";
 const APP_SHELL = [
     "/",
     "/offline",

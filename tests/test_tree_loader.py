@@ -109,3 +109,41 @@ def test_toronto_row_tuple_normalizes_point_geometry():
 
     assert result[0] == "Toronto Open Data Street Trees"
     assert '"type": "MultiPoint"' in result[-1]
+
+
+def test_mississauga_city_is_registered():
+    config = tree_loader.CITY_HANDLERS["mississauga"]
+
+    assert config["source_name"] == "Mississauga City-Owned Tree Inventory"
+    assert config["loader"] == "load_mississauga_data"
+
+
+def test_mississauga_row_tuple_maps_shared_fields():
+    feature = {
+        "properties": {
+            "OBJECTID": 1001,
+            "UNITID": "748543",
+            "ADDRKEY": 38791,
+            "LOC": "SIDE",
+            "SPACETYPE": "BLVD",
+            "SERVSTAT": "TREE MAINTAINED BY OPERATIONS",
+            "ZAREA": "Z03",
+            "BOTNAME": "APCRFL",
+            "BOTDESC": "APPLE CRAB FLOWERING",
+            "DIAM": 22.0,
+        },
+        "geometry": {"type": "Point", "coordinates": [-79.64, 43.58]},
+    }
+
+    result = tree_loader.mississauga_row_tuple(feature)
+
+    assert result[0] == "Mississauga City-Owned Tree Inventory"
+    assert result[1] == 1001
+    assert result[2] == "748543"
+    assert result[3] is None
+    assert result[4] == "SIDE | BLVD | TREE MAINTAINED BY OPERATIONS"
+    assert result[5] == "Z03"
+    assert result[6] is None
+    assert result[7] == "Apple Crab Flowering"
+    assert result[8] == 22
+    assert '"type": "MultiPoint"' in result[9]
