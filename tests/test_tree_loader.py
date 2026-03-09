@@ -147,3 +147,62 @@ def test_mississauga_row_tuple_maps_shared_fields():
     assert result[7] == "Apple Crab Flowering"
     assert result[8] == 22
     assert '"type": "MultiPoint"' in result[9]
+
+
+def test_mississauga_row_tuple_falls_back_to_botname():
+    feature = {
+        "properties": {
+            "OBJECTID": 1002,
+            "UNITID": "748544",
+            "LOC": "FRONT",
+            "SERVSTAT": "TO BE PLANTED",
+            "ZAREA": "Z30",
+            "BOTNAME": "COKEES",
+            "BOTDESC": None,
+            "DIAM": 5.0,
+        },
+        "geometry": {"type": "Point", "coordinates": [-79.60, 43.60]},
+    }
+
+    result = tree_loader.mississauga_row_tuple(feature)
+
+    assert result[7] == "Cokees"
+
+
+def test_san_francisco_city_is_registered():
+    config = tree_loader.CITY_HANDLERS["san_francisco"]
+
+    assert config["source_name"] == "San Francisco Street Tree Inventory"
+    assert config["loader"] == "load_san_francisco_data"
+
+
+def test_san_francisco_row_tuple_maps_shared_fields():
+    row = {
+        "TreeID": "123456",
+        "qLegalStatus": "Permitted",
+        "qSpecies": "London Plane",
+        "qAddress": "123 Market St",
+        "SiteOrder": "7",
+        "qSiteInfo": "Sidewalk",
+        "qCaretaker": "Public Works",
+        "qCareAssistant": "Urban Forestry",
+        "XCoord": "551234.5",
+        "YCoord": "4182345.8",
+        "DBH": "18.4",
+        "longitude": "-122.4464023",
+        "latitude": "37.7760911",
+    }
+
+    result = tree_loader.san_francisco_row_tuple(row)
+
+    assert result[0] == "San Francisco Street Tree Inventory"
+    assert result[1] == 123456
+    assert result[2] == "123 Market St"
+    assert result[3] == "Sidewalk"
+    assert result[4] == "Public Works"
+    assert result[5] == "London Plane"
+    assert result[6] == "London Plane"
+    assert result[7] == 18
+    assert result[8] == 7
+    assert result[9] == -122.4464023
+    assert result[10] == 37.7760911

@@ -31,6 +31,7 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py oakville --file /path/to/oakville.geojson
 .venv/bin/python tree_loader.py peterborough --file /path/to/peterborough.geojson
 .venv/bin/python tree_loader.py mississauga --file /path/to/mississauga.geojson
+.venv/bin/python tree_loader.py san_francisco --file /path/to/san_francisco.csv
 ```
 
 To replace all existing rows for one city source before loading, add `--refresh`:

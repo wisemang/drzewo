@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-03-08 - Add San Francisco loader and load production data
+- Prompt summary: Add San Francisco tree dataset support, load it locally, and complete production refresh.
+- Scope: `tree_loader.py`, `templates/index.html`, `README.md`, `scripts/load_prod.sh`, `tests/test_tree_loader.py`, `scripts/load_prod.sh`.
+- Decisions: Registered San Francisco in city handlers, added CSV loader/parser using provided SF field names, updated production source-name verification mapping, updated supported-cities UI copy, and added San Francisco tuple tests.
+- Validation: Loaded to local DB with batch size `2000` and refreshed existing SF rows; loaded to production with `DRZEWO_REFRESH=1 make load-prod CITY=san_francisco FILE=data/raw/san_francisco/2026-03-08/tkzw-k3nq_version_12667.csv` and confirmed `195,353` rows via direct source-count query.
+- Follow-ups: Optionally add a `make verify-prod-count` helper for repeated post-load checks.
+
 ## 2026-03-05 - Add Mississauga ingestion and fix null popup rendering
 - Prompt summary: Add newly downloaded Mississauga GeoJSON to the canonical dataset layout, support it in loaders/lists, and resolve awkward popup values compared to Toronto.
 - Scope: `tree_loader.py`, `tests/test_tree_loader.py`, `README.md`, `templates/index.html`, `scripts/load_prod.sh`, `static/js/script.js`, `static/sw.js`.

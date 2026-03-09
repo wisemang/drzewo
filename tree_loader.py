@@ -77,6 +77,11 @@ CITY_HANDLERS = {
         "loader": "load_mississauga_data",
         "enrichments": [],
     },
+    "san_francisco": {
+        "source_name": "San Francisco Street Tree Inventory",
+        "loader": "load_san_francisco_data",
+        "enrichments": ["wikipedia_links"],
+    },
 }
 
 
@@ -827,7 +832,7 @@ def mississauga_row_tuple(feature):
         clean_text(properties.get("SERVSTAT")),
     ]
     site = " | ".join(part for part in site_parts if part) or None
-    common_name = clean_text(properties.get("BOTDESC"))
+    common_name = clean_text(properties.get("BOTDESC")) or clean_text(properties.get("BOTNAME"))
     if common_name:
         common_name = common_name.title()
 
@@ -842,6 +847,90 @@ def mississauga_row_tuple(feature):
         common_name,
         dbh_trunk,
         json.dumps(geometry),
+    )
+
+
+def load_san_francisco_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load San Francisco data using a CSV file."""
+    import csv
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, address, site, ward, botanical_name, common_name,
+        dbh_trunk, tree_position_number, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, ST_Multi(ST_SetSRID(ST_Point(%s, %s), 4326)))
+    """
+
+    rows = []
+    with open(filename, "r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for idx, row in enumerate(reader, start=1):
+            row_tuple = san_francisco_row_tuple(row)
+            if row_tuple is None:
+                continue
+            rows.append(row_tuple)
+            if len(rows) >= batch_size:
+                _flush_batch(cursor, sql_query, rows, template, batch_size)
+            if idx % PROGRESS_INTERVAL == 0:
+                print(f"Processed {idx} San Francisco rows...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def san_francisco_row_tuple(row):
+    """Build one San Francisco insert row."""
+    source = "San Francisco Street Tree Inventory"
+    properties = {k.lower(): (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
+
+    objectid = properties.get("treeid") or properties.get("tree_id")
+    if objectid in (None, ""):
+        return
+
+    try:
+        objectid = int(float(objectid))
+    except (TypeError, ValueError):
+        return
+
+    def parse_float(value):
+        if value in (None, ""):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    dbh = parse_float(properties.get("dbh"))
+    dbh_trunk = None if dbh is None else round(dbh)
+
+    tree_position = parse_float(properties.get("siteorder"))
+    if tree_position is None:
+        tree_position = None
+    else:
+        tree_position = int(tree_position)
+
+    longitude = parse_float(properties.get("longitude"))
+    latitude = parse_float(properties.get("latitude"))
+    if longitude is None or latitude is None:
+        return
+
+    species = properties.get("qspecies")
+
+    return (
+        source,
+        objectid,
+        properties.get("qaddress"),
+        properties.get("qsiteinfo"),
+        properties.get("qcaretaker"),
+        species,
+        species,
+        dbh_trunk,
+        tree_position,
+        longitude,
+        latitude,
     )
 
 
