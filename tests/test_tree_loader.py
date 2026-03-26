@@ -206,3 +206,38 @@ def test_san_francisco_row_tuple_maps_shared_fields():
     assert result[8] == 7
     assert result[9] == -122.4464023
     assert result[10] == 37.7760911
+
+
+def test_madison_city_is_registered():
+    config = tree_loader.CITY_HANDLERS["madison_wi"]
+
+    assert config["source_name"] == "Madison Urban Forestry Street Trees"
+    assert config["loader"] == "load_madison_data"
+
+
+def test_madison_row_tuple_maps_shared_fields():
+    feature = {
+        "properties": {
+            "OBJECTID": 794615,
+            "INSPECT_DT": "2024-03-20T06:00:00Z",
+            "INV_DATE": "2022-03-28T06:00:00Z",
+            "SPP_COM": "Honeylocust 'Skyline'",
+            "SPP_BOT": "Gleditsia triacanthos 'Skyline'",
+            "GSSIZE": "7'-8'",
+            "DIAMETER": 6.0,
+            "STATUS": "Active",
+            "site_id": 403144,
+        },
+        "geometry": {"type": "Point", "coordinates": [-89.385608133859975, 43.056392160247363]},
+    }
+
+    result = tree_loader.madison_row_tuple(feature)
+
+    assert result[0] == "Madison Urban Forestry Street Trees"
+    assert result[1] == 794615
+    assert result[2] == "403144"
+    assert result[3] == "Active"
+    assert result[4] == "Gleditsia triacanthos 'Skyline'"
+    assert result[5] == "Honeylocust 'Skyline'"
+    assert result[6] == 6
+    assert '"type": "MultiPoint"' in result[7]
