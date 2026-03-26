@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 2 || $# -gt 4 ]]; then
-  echo "Usage: $0 <city> <file> [env_file=.env.prod] [ssh_host=drzewo-user]"
+if [[ $# -lt 1 || $# -gt 4 ]]; then
+  echo "Usage: $0 <city> [file] [env_file=.env.prod] [ssh_host=drzewo-user]"
   exit 1
 fi
 
 CITY="$1"
-DATA_FILE="$2"
+DATA_FILE="${2:-}"
 ENV_FILE="${3:-.env.prod}"
 SSH_HOST="${4:-drzewo-user}"
 LOCAL_PORT="${DRZEWO_TUNNEL_LOCAL_PORT:-6543}"
@@ -28,7 +28,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$DATA_FILE" ]]; then
+if [[ -n "$DATA_FILE" && ! -f "$DATA_FILE" ]]; then
   echo "Data file not found: $DATA_FILE"
   exit 1
 fi
@@ -57,8 +57,16 @@ if [[ "$DRZEWO_DB_HOST" == "127.0.0.1" || "$DRZEWO_DB_HOST" == "localhost" ]]; t
   DRZEWO_DB_PORT="$LOCAL_PORT"
 fi
 
-echo "Loading city '$CITY' from '$DATA_FILE'..."
-LOAD_CMD=(.venv/bin/python tree_loader.py "$CITY" --file "$DATA_FILE" --batch-size "$IMPORT_BATCH_SIZE")
+if [[ -n "$DATA_FILE" ]]; then
+  echo "Loading city '$CITY' from '$DATA_FILE'..."
+else
+  echo "Loading city '$CITY' from latest archived dataset under data/raw/$CITY/..."
+fi
+
+LOAD_CMD=(.venv/bin/python tree_loader.py "$CITY" --batch-size "$IMPORT_BATCH_SIZE")
+if [[ -n "$DATA_FILE" ]]; then
+  LOAD_CMD+=(--file "$DATA_FILE")
+fi
 if [[ "$REFRESH_MODE" == "1" || "$REFRESH_MODE" == "true" ]]; then
   LOAD_CMD+=(--refresh)
 fi
@@ -77,6 +85,7 @@ case "$CITY" in
   peterborough) SOURCE_NAME="Peterborough Open Data Tree Inventory" ;;
   mississauga) SOURCE_NAME="Mississauga City-Owned Tree Inventory" ;;
   san_francisco) SOURCE_NAME="San Francisco Street Tree Inventory" ;;
+  madison_wi) SOURCE_NAME="Madison Urban Forestry Street Trees" ;;
 esac
 
 if [[ -n "$SOURCE_NAME" ]]; then

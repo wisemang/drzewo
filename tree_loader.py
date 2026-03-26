@@ -10,6 +10,8 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extras import execute_values
 
+from data_management import latest_archived_dataset
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -80,6 +82,11 @@ CITY_HANDLERS = {
     "san_francisco": {
         "source_name": "San Francisco Street Tree Inventory",
         "loader": "load_san_francisco_data",
+        "enrichments": ["wikipedia_links"],
+    },
+    "madison_wi": {
+        "source_name": "Madison Urban Forestry Street Trees",
+        "loader": "load_madison_data",
         "enrichments": ["wikipedia_links"],
     },
 }
@@ -934,10 +941,75 @@ def san_francisco_row_tuple(row):
     )
 
 
+def load_madison_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Madison Wisconsin tree inventory GeoJSON."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, site, ward, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = madison_row_tuple(feature)
+        if row is None:
+            continue
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Madison features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def madison_row_tuple(feature):
+    """Build one Madison insert row."""
+    source = "Madison Urban Forestry Street Trees"
+    properties = feature["properties"]
+    geometry = feature["geometry"]
+
+    site = properties.get("site_id")
+    if site in (None, ""):
+        site = None
+
+    dbh_raw = properties.get("DIAMETER")
+    dbh_trunk = None
+    if dbh_raw not in (None, ""):
+        try:
+            dbh_trunk = round(float(dbh_raw))
+        except (TypeError, ValueError):
+            dbh_trunk = None
+
+    return (
+        source,
+        properties.get("OBJECTID"),
+        str(site) if site is not None else None,
+        properties.get("STATUS"),
+        properties.get("SPP_BOT"),
+        properties.get("SPP_COM"),
+        dbh_trunk,
+        point_to_multipoint_json(geometry),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tree Data Import and Enrichment CLI")
     parser.add_argument("city", choices=CITY_HANDLERS.keys(), help="City to process")
-    parser.add_argument("--file", required=True, help="Path to the data file")
+    parser.add_argument(
+        "--file",
+        help=(
+            "Path to the data file. If omitted, the loader uses the newest file under "
+            "data/raw/<city>/<YYYY-MM-DD>/."
+        ),
+    )
     parser.add_argument("--enrich", action="store_true", help="Apply data enrichments")
     parser.add_argument(
         "--refresh",
@@ -954,6 +1026,10 @@ def main():
     args = parser.parse_args()
     city = args.city
     filename = args.file
+    if not filename:
+        filename = str(latest_archived_dataset(city))
+        print(f"Resolved latest archived dataset: {filename}")
+
     apply_enrichments = args.enrich
     refresh_mode = args.refresh
     batch_size = max(1, args.batch_size)

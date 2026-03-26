@@ -21,6 +21,7 @@ The app starts on `http://127.0.0.1:5000`.
 Use `tree_loader.py` to import city data:
 
 ```bash
+.venv/bin/python tree_loader.py toronto
 .venv/bin/python tree_loader.py toronto --file /path/to/toronto.geojson
 .venv/bin/python tree_loader.py ottawa --file /path/to/ottawa.geojson
 .venv/bin/python tree_loader.py montreal --file /path/to/montreal.csv
@@ -32,7 +33,10 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py peterborough --file /path/to/peterborough.geojson
 .venv/bin/python tree_loader.py mississauga --file /path/to/mississauga.geojson
 .venv/bin/python tree_loader.py san_francisco --file /path/to/san_francisco.csv
+.venv/bin/python tree_loader.py madison_wi --file /path/to/madison_wi.geojson
 ```
+
+When `--file` is omitted, the loader automatically uses the newest archived file under `data/raw/<city>/<YYYY-MM-DD>/`.
 
 To replace all existing rows for one city source before loading, add `--refresh`:
 
@@ -58,7 +62,9 @@ The first command is a dry run. Use `APPLY=1` to move the file, `COPY=1` to copy
 Create `.env.prod` with production DB credentials, then run:
 
 ```bash
-make load-prod CITY=toronto FILE=data/toronto/Street\ Tree\ Data.geojson
+make load-prod CITY=toronto
+# Optional override:
+make load-prod CITY=toronto FILE=data/raw/toronto/2026-03-26/Street\ Tree\ Data\ -\ 4326.geojson
 ```
 
 `scripts/load_prod.sh` will:

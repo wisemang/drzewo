@@ -16,7 +16,7 @@ help:
 	@echo "  lint        Run static checks"
 	@echo "  format      Auto-fix style/import issues with ruff"
 	@echo "  check       Run lint + tests"
-	@echo "  load-prod   Load city data into prod DB from local machine (CITY=... FILE=...)"
+	@echo "  load-prod   Load city data into prod DB from local machine (CITY=... [FILE=...])"
 	@echo "  archive-data Archive a local dataset into data/raw/<city>/<date>/ (CITY=... FILE=... APPLY=1)"
 	@echo "  analyze-logs Analyze Nginx access logs (PATHS=... TOP=...)"
 
@@ -41,7 +41,6 @@ check: lint test
 
 load-prod:
 	@test -n "$(CITY)" || (echo "CITY is required (e.g. CITY=boston)" && exit 1)
-	@test -n "$(FILE)" || (echo "FILE is required (e.g. FILE=data/boston/bprd_trees.geojson)" && exit 1)
 	./scripts/load_prod.sh "$(CITY)" "$(FILE)"
 
 archive-data:

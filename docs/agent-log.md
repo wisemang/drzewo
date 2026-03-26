@@ -16,6 +16,20 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-03-26 - Auto-resolve latest archived datasets and refresh Toronto
+- Prompt summary: Update loader/prod workflow to use newly archived Toronto raw-data layout and bring Toronto data current.
+- Scope: `data_management.py`, `tree_loader.py`, `scripts/load_prod.sh`, `Makefile`, `README.md`, `tests/test_data_management.py`, `docs/agent-log.md`.
+- Decisions: Added `latest_archived_dataset()` to resolve `data/raw/<city>/<YYYY-MM-DD>/` newest file, made `tree_loader.py --file` optional with automatic latest-file resolution, made `make load-prod`/`load_prod.sh` accept optional `FILE`, and documented the new default behavior.
+- Validation: `make lint` passed; `make test` passed (`28 passed`); local refresh run `.venv/bin/python tree_loader.py toronto --refresh --batch-size 2000` auto-resolved `data/raw/toronto/2026-03-26/Street Tree Data - 4326.geojson` and completed successfully.
+- Follow-ups: Run `DRZEWO_REFRESH=1 make load-prod CITY=toronto` to apply the same refresh in production.
+
+## 2026-03-20 - Add Madison Wisconsin street tree import
+- Prompt summary: Add Madison Wisconsin urban forestry dataset support and wire to local/production workflows.
+- Scope: `tree_loader.py`, `templates/index.html`, `README.md`, `scripts/load_prod.sh`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
+- Decisions: Added `madison_wi` city handler and GeoJSON loader parser, mapped shared fields (`OBJECTID`, `SPP_COM`, `SPP_BOT`, `DIAMETER`, `site_id`, geometry), included Madison in production source verification and supported-cities UI lists, and added targeted tuple/registration tests.
+- Validation: Not executed here yet; loader follows existing batched import pattern and local file discovery indicates GeoJSON schema is compatible.
+- Follow-ups: Run local prod import for Madison and consider adding source-size-based QA checks.
+
 ## 2026-03-08 - Add San Francisco loader and load production data
 - Prompt summary: Add San Francisco tree dataset support, load it locally, and complete production refresh.
 - Scope: `tree_loader.py`, `templates/index.html`, `README.md`, `scripts/load_prod.sh`, `tests/test_tree_loader.py`, `scripts/load_prod.sh`.
