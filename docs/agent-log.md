@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-03 - Add Geneva tree import and downloader
+- Prompt summary: Add support for Geneva trees from the SITG `SIPV_ICA_WEB_PUBLIC_TOT` service, test a full local import, and preserve the paged downloader workflow.
+- Scope: `tree_loader.py`, `scripts/download_geneva_trees.py`, `Makefile`, `README.md`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
+- Decisions: Registered `geneva` as a city handler, mapped SITG fields into the shared tree schema, supported both FeatureServer GeoJSON and ArcGIS JSON shapes, transformed native LV95 ArcGIS JSON coordinates via PostGIS when needed, converted `DIAM_1M` meters to integer centimeters, and added a checked-in paged downloader because the SITG service caps FeatureServer responses.
+- Validation: Baseline `make lint` passed and baseline `make test` passed (`28 passed`); final `make check` passed (`ruff` + `pytest`, `31 passed`); full local Geneva refresh loaded `238,853` rows and recorded a completed `import_runs` row from `/private/tmp/geneva-trees-full.geojson`.
+- Follow-ups: Consider running the Geneva refresh through `make load-prod` when ready for production.
+
 ## 2026-03-26 - Auto-resolve latest archived datasets and refresh Toronto
 - Prompt summary: Update loader/prod workflow to use newly archived Toronto raw-data layout and bring Toronto data current.
 - Scope: `data_management.py`, `tree_loader.py`, `scripts/load_prod.sh`, `Makefile`, `README.md`, `tests/test_data_management.py`, `docs/agent-log.md`.

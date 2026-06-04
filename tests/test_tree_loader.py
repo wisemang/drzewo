@@ -241,3 +241,65 @@ def test_madison_row_tuple_maps_shared_fields():
     assert result[5] == "Honeylocust 'Skyline'"
     assert result[6] == 6
     assert '"type": "MultiPoint"' in result[7]
+
+
+def test_geneva_city_is_registered():
+    config = tree_loader.CITY_HANDLERS["geneva"]
+
+    assert config["source_name"] == "Geneva Cantonal Tree Inventory"
+    assert config["loader"] == "load_geneva_data"
+
+
+def test_geneva_geojson_row_tuple_maps_shared_fields():
+    feature = {
+        "properties": {
+            "classe": "Feuillus",
+            "commune": "Collonge-Bellerive",
+            "globalid": "{F402AD3D-C386-41B1-8D89-E543541AE71C}",
+            "diam_1m": 0.42,
+            "id_arbre": 42769,
+            "nom_commun": "Peuplier",
+            "nom_latin": "Populus",
+            "objectid": 1,
+            "statut": "Historique",
+        },
+        "geometry": {"type": "Point", "coordinates": [6.199525696665598, 46.24506941115345]},
+    }
+
+    result = tree_loader.geneva_geojson_row_tuple(feature)
+
+    assert result[0] == "Geneva Cantonal Tree Inventory"
+    assert result[1] == 42769
+    assert result[2] == "{F402AD3D-C386-41B1-8D89-E543541AE71C}"
+    assert result[3] == "Feuillus | Historique"
+    assert result[4] == "Collonge-Bellerive"
+    assert result[5] == "Populus"
+    assert result[6] == "Peuplier"
+    assert result[7] == 42
+    assert '"type": "MultiPoint"' in result[8]
+
+
+def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
+    feature = {
+        "attributes": {
+            "CLASSE": "Feuillus",
+            "COMMUNE": "Collonge-Bellerive",
+            "GLOBALID": "{F402AD3D-C386-41B1-8D89-E543541AE71C}",
+            "DIAM_1M": 0.42,
+            "ID_ARBRE": 42769,
+            "NOM_COMMUN": "Peuplier",
+            "NOM_LATIN": "Populus",
+            "OBJECTID": 1,
+            "STATUT": "Historique",
+        },
+        "geometry": {"x": 2504434.43, "y": 1122271.21},
+    }
+
+    result = tree_loader.geneva_arcgis_json_row_tuple(feature)
+
+    assert result[0] == "Geneva Cantonal Tree Inventory"
+    assert result[1] == 42769
+    assert result[3] == "Feuillus | Historique"
+    assert result[7] == 42
+    assert result[8] == 2504434.43
+    assert result[9] == 1122271.21

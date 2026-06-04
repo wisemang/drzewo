@@ -89,6 +89,11 @@ CITY_HANDLERS = {
         "loader": "load_madison_data",
         "enrichments": ["wikipedia_links"],
     },
+    "geneva": {
+        "source_name": "Geneva Cantonal Tree Inventory",
+        "loader": "load_geneva_data",
+        "enrichments": ["wikipedia_links"],
+    },
 }
 
 
@@ -998,6 +1003,160 @@ def madison_row_tuple(feature):
         dbh_trunk,
         point_to_multipoint_json(geometry),
     )
+
+
+def load_geneva_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load Geneva SITG tree inventory from ArcGIS JSON or GeoJSON."""
+    with open(filename, "r") as file:
+        data = json.load(file)
+
+    first_feature = next(iter(data.get("features", [])), None)
+    if first_feature and "attributes" in first_feature:
+        load_geneva_arcgis_json(cursor, data, batch_size)
+    else:
+        load_geneva_geojson(cursor, data, batch_size)
+
+
+def load_geneva_geojson(cursor, data, batch_size):
+    """Load Geneva GeoJSON features with WGS84 coordinates."""
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, structid, site, ward, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = geneva_geojson_row_tuple(feature)
+        if row is None:
+            continue
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Geneva features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def load_geneva_arcgis_json(cursor, data, batch_size):
+    """Load Geneva ArcGIS JSON features with LV95 coordinates."""
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, structid, site, ward, botanical_name, common_name, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s, %s,
+    ST_Multi(ST_Transform(ST_SetSRID(ST_Point(%s, %s), 2056), 4326)))
+    """
+
+    rows = []
+    for idx, feature in enumerate(data["features"], start=1):
+        row = geneva_arcgis_json_row_tuple(feature)
+        if row is None:
+            continue
+        rows.append(row)
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if idx % PROGRESS_INTERVAL == 0:
+            print(f"Processed {idx} Geneva features...")
+
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def geneva_geojson_row_tuple(feature):
+    """Build one Geneva row from FeatureServer GeoJSON."""
+    properties = feature["properties"]
+    shared = geneva_shared_values(properties)
+    if shared is None:
+        return
+    return (*shared, point_to_multipoint_json(feature["geometry"]))
+
+
+def geneva_arcgis_json_row_tuple(feature):
+    """Build one Geneva row from FeatureServer ArcGIS JSON."""
+    properties = feature["attributes"]
+    shared = geneva_shared_values(properties)
+    geometry = feature.get("geometry") or {}
+    x_coord = geometry.get("x")
+    y_coord = geometry.get("y")
+    if shared is None or x_coord is None or y_coord is None:
+        return
+    return (*shared, x_coord, y_coord)
+
+
+def geneva_shared_values(properties):
+    """Map Geneva attributes into the shared street_trees columns."""
+
+    def prop(name):
+        if name in properties:
+            return properties.get(name)
+        return properties.get(name.upper())
+
+    objectid = parse_int(prop("id_arbre"))
+    if objectid is None:
+        objectid = parse_int(prop("objectid"))
+    if objectid is None:
+        return
+
+    status = clean_text(prop("statut"))
+    tree_class = clean_text(prop("classe"))
+    site = " | ".join(part for part in [tree_class, status] if part) or None
+
+    return (
+        "Geneva Cantonal Tree Inventory",
+        objectid,
+        clean_text(prop("globalid")),
+        site,
+        clean_text(prop("commune")),
+        clean_text(prop("nom_latin")),
+        clean_text(prop("nom_commun")) or clean_text(prop("nom_com_re")),
+        parse_geneva_diameter_cm(prop("diam_1m")),
+    )
+
+
+def clean_text(value):
+    """Return stripped text or None for empty values."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text
+
+
+def parse_int(value):
+    """Parse numeric IDs from integer-like source values."""
+    if value in (None, ""):
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_geneva_diameter_cm(value):
+    """Parse Geneva trunk diameter from meters into integer centimeters."""
+    diameter_meters = parse_float(value)
+    if diameter_meters is None:
+        return None
+    return round(diameter_meters * 100)
+
+
+def parse_float(value):
+    """Parse a numeric source value as float."""
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def main():

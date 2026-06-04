@@ -34,9 +34,20 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py mississauga --file /path/to/mississauga.geojson
 .venv/bin/python tree_loader.py san_francisco --file /path/to/san_francisco.csv
 .venv/bin/python tree_loader.py madison_wi --file /path/to/madison_wi.geojson
+.venv/bin/python tree_loader.py geneva --file /path/to/geneva.json
 ```
 
 When `--file` is omitted, the loader automatically uses the newest archived file under `data/raw/<city>/<YYYY-MM-DD>/`.
+
+Geneva's SITG tree service is paginated rather than a single static download. Fetch a full
+GeoJSON archive with:
+
+```bash
+make download-geneva-data
+```
+
+This writes `data/raw/geneva/<today>/geneva-trees-full.geojson`. Use `OUTPUT=...` to choose a
+different path or `OVERWRITE=1` to replace an existing file.
 
 To replace all existing rows for one city source before loading, add `--refresh`:
 
