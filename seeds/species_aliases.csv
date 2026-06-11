@@ -1,0 +1,84 @@
+species_key,alias,name_kind,locale,source,confidence
+quercus_robur,Chêne pédonculé,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus_robur,Chêne commun,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus_robur,Pedunculate Oak,common,en,,curated
+quercus_robur,Oak English,common,en,Toronto Open Data Street Trees,curated
+"quercus_robur","Oak, English",common,en,Toronto Open Data Street Trees,curated
+"betula_populifolia","Birch, Grey",common,en,Toronto Open Data Street Trees,curated
+"betula_populifolia","Birch, Gray",common,en,,curated
+"acer_platanoides","Maple, Norway",common,en,Toronto Open Data Street Trees,curated
+"picea_pungens","Spruce, Colorado blue",common,en,Toronto Open Data Street Trees,curated
+"quercus_rubra","Oak, red",common,en,Toronto Open Data Street Trees,curated
+"tilia_cordata","Linden, littleleaf",common,en,Toronto Open Data Street Trees,curated
+"acer_saccharinum","Maple, silver",common,en,Toronto Open Data Street Trees,curated
+"syringa_reticulata","Lilac, Japanese",common,en,Toronto Open Data Street Trees,curated
+"malus_sargentii","Apple, Sargents",common,en,Toronto Open Data Street Trees,curated
+gleditsia_triacanthos_skyline,Honey locust Skyline,common,en,Toronto Open Data Street Trees,curated
+"acer_x_freemanii_autumn_blaze","Maple, Freeman Autumn Blaze",common,en,Toronto Open Data Street Trees,curated
+gleditsia_triacanthos_shademaster,Honey locust Shademaster,common,en,Toronto Open Data Street Trees,curated
+"acer_platanoides_schwedleri","Maple, Norway Schwedler",common,en,Toronto Open Data Street Trees,curated
+"pinus_nigra","Pine, Austrian",common,en,Toronto Open Data Street Trees,curated
+"acer_saccharum","Maple, sugar",common,en,Toronto Open Data Street Trees,curated
+"ulmus_pumila","Elm, Siberian",common,en,Toronto Open Data Street Trees,curated
+"picea_glauca","Spruce, white",common,en,Toronto Open Data Street Trees,curated
+"acer_platanoides_crimson_king","Maple, Norway Crimson King",common,en,Toronto Open Data Street Trees,curated
+"betula_papyrifera","Birch, white",common,en,Toronto Open Data Street Trees,curated
+pyrus_calleryana_chanticleer,Pear Chanticleer,common,en,Toronto Open Data Street Trees,curated
+"quercus_macrocarpa","Oak, bur",common,en,Toronto Open Data Street Trees,curated
+"acer_rubrum","Maple, red",common,en,Toronto Open Data Street Trees,curated
+"acer_negundo","Maple, Manitoba",common,en,Toronto Open Data Street Trees,curated
+"thuja_occidentalis","Cedar, white",common,en,Toronto Open Data Street Trees,curated
+"quercus_bicolor","Oak, swamp white",common,en,Toronto Open Data Street Trees,curated
+"tilia_americana_redmond","Basswood, Redmond",common,en,Toronto Open Data Street Trees,curated
+"platanus_x_acerifolia","Planetree, London",common,en,Toronto Open Data Street Trees,curated
+"fraxinus_pennsylvanica","Ash, green",common,en,Toronto Open Data Street Trees,curated
+betula,Bouleau,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus,Chêne,common,fr,Geneva Cantonal Tree Inventory,curated
+picea,Epicéa,common,fr,Geneva Cantonal Tree Inventory,curated
+picea,Épinette,common,fr,Geneva Cantonal Tree Inventory,curated
+pinus,Pin,common,fr,Geneva Cantonal Tree Inventory,curated
+carpinus_betulus,Charme commun,common,fr,Geneva Cantonal Tree Inventory,curated
+acer,Erable,common,fr,Geneva Cantonal Tree Inventory,curated
+populus,Peuplier,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia,Tilleul,common,fr,Geneva Cantonal Tree Inventory,curated
+acer_campestre,Erable champêtre,common,fr,Geneva Cantonal Tree Inventory,curated
+juglans,Noyer,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_avium,Merisier,common,fr,Geneva Cantonal Tree Inventory,curated
+acer_platanoides,Erable plane,common,fr,Geneva Cantonal Tree Inventory,curated
+carpinus,Charme,common,fr,Geneva Cantonal Tree Inventory,curated
+fraxinus,Frêne,common,fr,Geneva Cantonal Tree Inventory,curated
+aesculus,Marronnier,common,fr,Geneva Cantonal Tree Inventory,curated
+aesculus_hippocastanum,Marronnier d'Inde,common,fr,Geneva Cantonal Tree Inventory,curated
+taxus_baccata,If commun,common,fr,Geneva Cantonal Tree Inventory,curated
+fraxinus_excelsior,Frêne commun,common,fr,Geneva Cantonal Tree Inventory,curated
+malus,Pommier,common,fr,Geneva Cantonal Tree Inventory,curated
+pinus_sylvestris,Pin sylvestre,common,fr,Geneva Cantonal Tree Inventory,curated
+salix,Saule,common,fr,Geneva Cantonal Tree Inventory,curated
+betula_pendula,Bouleau blanc,common,fr,Geneva Cantonal Tree Inventory,curated
+fagus,Fagus sp.,botanical,,,curated
+fagus,Fagus,botanical,,,curated
+fagus_sylvatica,Hêtre,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia_cordata,Tilleul à petites feuilles,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia_platyphyllos,Tilleul à grandes feuilles,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia_x_europaea,Tilleul d'Europe,common,fr,Geneva Cantonal Tree Inventory,curated
+platanus_x_acerifolia,Platanus ×hispanica,botanical,,,curated
+platanus_x_acerifolia,Platanus x hispanica,botanical,,,curated
+platanus_x_acerifolia,Platane commun,common,fr,Geneva Cantonal Tree Inventory,curated
+platanus,Platane,common,fr,Geneva Cantonal Tree Inventory,curated
+populus_nigra_italica,Peuplier noir d'Italie,common,fr,Geneva Cantonal Tree Inventory,curated
+populus_nigra,Peuplier noir,common,fr,Geneva Cantonal Tree Inventory,curated
+cedrus_atlantica,Cèdre de l'Atlas,common,fr,Geneva Cantonal Tree Inventory,curated
+cedrus_atlantica,Cèdre bleu de l'atlas,common,fr,Geneva Cantonal Tree Inventory,curated
+celtis_australis,Micocoulier de Provence,common,fr,Geneva Cantonal Tree Inventory,curated
+liquidambar_styraciflua,Copalme d'Amérique,common,fr,Geneva Cantonal Tree Inventory,curated
+cupressus,Cyprès,common,fr,Geneva Cantonal Tree Inventory,curated
+taxodium,Taxodium,botanical,,,curated
+quercus_cerris,Chêne chevelu,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus_petraea,Chêne rouvre,common,fr,Geneva Cantonal Tree Inventory,curated
+chamaecyparis_lawsoniana,Cyprès de Lawson,common,fr,Geneva Cantonal Tree Inventory,curated
+parrotia_persica,Parrotie de Perse,common,fr,Geneva Cantonal Tree Inventory,curated
+sophora_japonica,Sophora du Japon,common,fr,Geneva Cantonal Tree Inventory,curated
+sequoiadendron_giganteum,Séquoia géant,common,fr,Geneva Cantonal Tree Inventory,curated
+cydonia_oblonga,Cognassier commun,common,fr,Geneva Cantonal Tree Inventory,curated
+cercis_siliquastrum,Arbre de Judée,common,fr,Geneva Cantonal Tree Inventory,curated
+robinia_pseudoacacia,Robinier faux-acacia,common,fr,Geneva Cantonal Tree Inventory,curated

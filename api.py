@@ -89,6 +89,8 @@ def nearest():
         cur.execute(f"""
             SELECT source, objectid, common_name, botanical_name, address, streetname,
             dbh_trunk, tree_position_number,
+            to_jsonb(street_trees)->>'original_common_name' AS original_common_name,
+            to_jsonb(street_trees)->>'species_id' AS species_id,
             ST_Distance(geom::geography, ST_MakePoint(%s, %s)::geography) AS distance,
             ST_X(ST_GeometryN(geom, 1)) AS longitude, ST_Y(ST_GeometryN(geom, 1)) AS latitude
             FROM street_trees
@@ -111,9 +113,11 @@ def nearest():
             "streetname": row[5],
             "dbh": row[6],
             "pos": row[7],
-            "distance": row[8],
-            "longitude": row[9],
-            "latitude": row[10],
+            "original_common_name": row[8],
+            "species_id": row[9],
+            "distance": row[10],
+            "longitude": row[11],
+            "latitude": row[12],
         }
         for row in results
     ]

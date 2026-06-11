@@ -1,0 +1,97 @@
+species_key,canonical_botanical_name,display_common_name,wikipedia_url
+abies,Abies sp.,Fir,https://en.wikipedia.org/wiki/Fir
+abies_balsamea,Abies balsamea,Balsam Fir,https://en.wikipedia.org/wiki/Abies_balsamea
+acer,Acer sp.,Maple,https://en.wikipedia.org/wiki/Maple
+acer_campestre,Acer campestre,Hedge Maple,https://en.wikipedia.org/wiki/Acer_campestre
+acer_ginnala,Acer ginnala,Amur Maple,https://en.wikipedia.org/wiki/Acer_ginnala
+acer_negundo,Acer negundo,Manitoba Maple,https://en.wikipedia.org/wiki/Acer_negundo
+acer_platanoides,Acer platanoides,Norway Maple,https://en.wikipedia.org/wiki/Acer_platanoides
+acer_platanoides_crimson_king,Acer platanoides 'Crimson King',Crimson King Norway Maple,https://en.wikipedia.org/wiki/Acer_platanoides
+acer_platanoides_schwedleri,Acer platanoides 'Schwedleri',Schwedler Norway Maple,https://en.wikipedia.org/wiki/Acer_platanoides
+acer_pseudoplatanus,Acer pseudoplatanus,Sycamore Maple,https://en.wikipedia.org/wiki/Acer_pseudoplatanus
+acer_rubrum,Acer rubrum,Red Maple,https://en.wikipedia.org/wiki/Acer_rubrum
+acer_saccharinum,Acer saccharinum,Silver Maple,https://en.wikipedia.org/wiki/Acer_saccharinum
+acer_saccharum,Acer saccharum,Sugar Maple,https://en.wikipedia.org/wiki/Acer_saccharum
+acer_x_freemanii_autumn_blaze,Acer x freemanii 'Autumn Blaze',Autumn Blaze Freeman Maple,https://en.wikipedia.org/wiki/Acer_%C3%97_freemanii
+aesculus,Aesculus sp.,Horsechestnut,https://en.wikipedia.org/wiki/Aesculus
+aesculus_glabra,Aesculus glabra,Ohio Buckeye,https://en.wikipedia.org/wiki/Aesculus_glabra
+aesculus_hippocastanum,Aesculus hippocastanum,Common Horsechestnut,https://en.wikipedia.org/wiki/Aesculus_hippocastanum
+betula,Betula sp.,Birch,https://en.wikipedia.org/wiki/Birch
+betula_papyrifera,Betula papyrifera,White Birch,https://en.wikipedia.org/wiki/Betula_papyrifera
+betula_pendula,Betula pendula,Silver Birch,https://en.wikipedia.org/wiki/Betula_pendula
+betula_populifolia,Betula populifolia,Grey Birch,https://en.wikipedia.org/wiki/Betula_populifolia
+carpinus,Carpinus sp.,Hornbeam,https://en.wikipedia.org/wiki/Carpinus
+carpinus_betulus,Carpinus betulus,European Hornbeam,https://en.wikipedia.org/wiki/Carpinus_betulus
+cedrus,Cedrus sp.,Cedar,https://en.wikipedia.org/wiki/Cedrus
+cedrus_atlantica,Cedrus atlantica,Atlas Cedar,https://en.wikipedia.org/wiki/Cedrus_atlantica
+cercis_siliquastrum,Cercis siliquastrum,Judas Tree,https://en.wikipedia.org/wiki/Cercis_siliquastrum
+celtis_australis,Celtis australis,Mediterranean Hackberry,https://en.wikipedia.org/wiki/Celtis_australis
+celtis_occidentalis,Celtis occidentalis,Hackberry,https://en.wikipedia.org/wiki/Celtis_occidentalis
+chamaecyparis_lawsoniana,Chamaecyparis lawsoniana,Lawson Cypress,https://en.wikipedia.org/wiki/Chamaecyparis_lawsoniana
+cupressus,Cupressus sp.,Cypress,https://en.wikipedia.org/wiki/Cupressus
+cydonia_oblonga,Cydonia oblonga,Quince,https://en.wikipedia.org/wiki/Quince
+fagus,Fagus sp.,Beech,https://en.wikipedia.org/wiki/Beech
+fagus_sylvatica,Fagus sylvatica,European Beech,https://en.wikipedia.org/wiki/Fagus_sylvatica
+fraxinus,Fraxinus sp.,Ash,https://en.wikipedia.org/wiki/Fraxinus
+fraxinus_excelsior,Fraxinus excelsior,European Ash,https://en.wikipedia.org/wiki/Fraxinus_excelsior
+fraxinus_pennsylvanica,Fraxinus pennsylvanica,Green Ash,https://en.wikipedia.org/wiki/Fraxinus_pennsylvanica
+ginkgo_biloba,Ginkgo biloba,Ginkgo,https://en.wikipedia.org/wiki/Ginkgo_biloba
+gleditsia_triacanthos,Gleditsia triacanthos,Honey Locust,https://en.wikipedia.org/wiki/Honey_locust
+gleditsia_triacanthos_shademaster,Gleditsia triacanthos 'Shademaster',Shademaster Honey Locust,https://en.wikipedia.org/wiki/Honey_locust
+gleditsia_triacanthos_skyline,Gleditsia triacanthos 'Skyline',Skyline Honey Locust,https://en.wikipedia.org/wiki/Honey_locust
+gymnocladus_dioicus,Gymnocladus dioicus,Kentucky Coffeetree,https://en.wikipedia.org/wiki/Kentucky_coffeetree
+juglans,Juglans sp.,Walnut,https://en.wikipedia.org/wiki/Juglans
+juglans_nigra,Juglans nigra,Black Walnut,https://en.wikipedia.org/wiki/Juglans_nigra
+juglans_regia,Juglans regia,English Walnut,https://en.wikipedia.org/wiki/Juglans_regia
+liquidambar_styraciflua,Liquidambar styraciflua,American Sweetgum,https://en.wikipedia.org/wiki/Liquidambar_styraciflua
+liriodendron_tulipifera,Liriodendron tulipifera,Tulip Tree,https://en.wikipedia.org/wiki/Liriodendron_tulipifera
+malus,Malus sp.,Apple,https://en.wikipedia.org/wiki/Malus
+malus_sargentii,Malus sargentii,Sargent Crabapple,https://en.wikipedia.org/wiki/Malus_sargentii
+picea,Picea sp.,Spruce,https://en.wikipedia.org/wiki/Spruce
+picea_abies,Picea abies,Norway Spruce,https://en.wikipedia.org/wiki/Picea_abies
+picea_glauca,Picea glauca,White Spruce,https://en.wikipedia.org/wiki/Picea_glauca
+picea_pungens,Picea pungens,Colorado Blue Spruce,https://en.wikipedia.org/wiki/Picea_pungens
+pinus,Pinus sp.,Pine,https://en.wikipedia.org/wiki/Pine
+pinus_nigra,Pinus nigra,Austrian Pine,https://en.wikipedia.org/wiki/Pinus_nigra
+pinus_strobus,Pinus strobus,Eastern White Pine,https://en.wikipedia.org/wiki/Pinus_strobus
+pinus_sylvestris,Pinus sylvestris,Scots Pine,https://en.wikipedia.org/wiki/Pinus_sylvestris
+platanus,Platanus sp.,Plane,https://en.wikipedia.org/wiki/Platanus
+platanus_x_acerifolia,Platanus x acerifolia,London Plane,https://en.wikipedia.org/wiki/Platanus_%C3%97_acerifolia
+populus,Populus sp.,Poplar,https://en.wikipedia.org/wiki/Populus
+populus_nigra,Populus nigra,Black Poplar,https://en.wikipedia.org/wiki/Populus_nigra
+populus_nigra_italica,Populus nigra 'Italica',Lombardy Poplar,https://en.wikipedia.org/wiki/Populus_nigra
+parrotia_persica,Parrotia persica,Persian Ironwood,https://en.wikipedia.org/wiki/Parrotia_persica
+prunus,Prunus sp.,Prunus,https://en.wikipedia.org/wiki/Prunus
+prunus_avium,Prunus avium,Sweet Cherry,https://en.wikipedia.org/wiki/Prunus_avium
+prunus_domestica,Prunus domestica,Plum,https://en.wikipedia.org/wiki/Prunus_domestica
+pyrus_calleryana_chanticleer,Pyrus calleryana 'Chanticleer',Chanticleer Callery Pear,https://en.wikipedia.org/wiki/Pyrus_calleryana
+quercus,Quercus sp.,Oak,https://en.wikipedia.org/wiki/Oak
+quercus_alba,Quercus alba,White Oak,https://en.wikipedia.org/wiki/Quercus_alba
+quercus_bicolor,Quercus bicolor,Swamp White Oak,https://en.wikipedia.org/wiki/Quercus_bicolor
+quercus_macrocarpa,Quercus macrocarpa,Bur Oak,https://en.wikipedia.org/wiki/Quercus_macrocarpa
+quercus_palustris,Quercus palustris,Pin Oak,https://en.wikipedia.org/wiki/Quercus_palustris
+quercus_cerris,Quercus cerris,Turkey Oak,https://en.wikipedia.org/wiki/Quercus_cerris
+quercus_petraea,Quercus petraea,Sessile Oak,https://en.wikipedia.org/wiki/Quercus_petraea
+quercus_robur,Quercus robur,English Oak,https://en.wikipedia.org/wiki/Quercus_robur
+quercus_robur_fastigiata,Quercus robur 'Fastigiata',Pyramidal English Oak,https://en.wikipedia.org/wiki/Quercus_robur
+quercus_rubra,Quercus rubra,Red Oak,https://en.wikipedia.org/wiki/Quercus_rubra
+robinia,Robinia sp.,Locust,https://en.wikipedia.org/wiki/Robinia
+robinia_pseudoacacia,Robinia pseudoacacia,Black Locust,https://en.wikipedia.org/wiki/Robinia_pseudoacacia
+salix,Salix sp.,Willow,https://en.wikipedia.org/wiki/Willow
+sequoiadendron_giganteum,Sequoiadendron giganteum,Giant Sequoia,https://en.wikipedia.org/wiki/Sequoiadendron_giganteum
+sophora_japonica,Sophora japonica,Japanese Pagoda Tree,https://en.wikipedia.org/wiki/Styphnolobium_japonicum
+syringa_reticulata,Syringa reticulata,Japanese Tree Lilac,https://en.wikipedia.org/wiki/Syringa_reticulata
+taxodium,Taxodium sp.,Bald Cypress,https://en.wikipedia.org/wiki/Taxodium
+taxus,Taxus sp.,Yew,https://en.wikipedia.org/wiki/Taxus
+taxus_baccata,Taxus baccata,English Yew,https://en.wikipedia.org/wiki/Taxus_baccata
+thuja_occidentalis,Thuja occidentalis,Eastern White Cedar,https://en.wikipedia.org/wiki/Thuja_occidentalis
+tilia,Tilia sp.,Linden,https://en.wikipedia.org/wiki/Tilia
+tilia_americana,Tilia americana,American Basswood,https://en.wikipedia.org/wiki/Tilia_americana
+tilia_americana_redmond,Tilia americana 'Redmond',Redmond Basswood,https://en.wikipedia.org/wiki/Tilia_americana
+tilia_cordata,Tilia cordata,Littleleaf Linden,https://en.wikipedia.org/wiki/Tilia_cordata
+tilia_cordata_greenspire,Tilia cordata 'Greenspire',Greenspire Littleleaf Linden,https://en.wikipedia.org/wiki/Tilia_cordata
+tilia_x_europaea,Tilia x europaea,Common Linden,https://en.wikipedia.org/wiki/Tilia_%C3%97_europaea
+tilia_platyphyllos,Tilia platyphyllos,Large-leaved Linden,https://en.wikipedia.org/wiki/Tilia_platyphyllos
+ulmus,Ulmus sp.,Elm,https://en.wikipedia.org/wiki/Elm
+ulmus_americana,Ulmus americana,American Elm,https://en.wikipedia.org/wiki/Ulmus_americana
+ulmus_pumila,Ulmus pumila,Siberian Elm,https://en.wikipedia.org/wiki/Ulmus_pumila

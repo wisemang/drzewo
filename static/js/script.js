@@ -292,6 +292,10 @@ function syncMarkers(data) {
         const addressDisplay = formatAddress(item);
         const commonNameDisplay = normalizeText(item.common_name) || 'Unknown tree';
         const botanicalNameDisplay = normalizeText(item.botanical_name) || 'N/A';
+        const sourceNameDisplay = normalizeText(item.original_common_name);
+        const sourceNameRow = sourceNameDisplay && sourceNameDisplay !== commonNameDisplay
+            ? `<tr><td>Source name</td><td>${sourceNameDisplay}</td></tr>`
+            : '';
 
         const popupContent = `
             <div class="tree-marker">
@@ -300,6 +304,7 @@ function syncMarkers(data) {
                 <hr>
                 <table class="treedata">
                     <tr><td>Botanical name</td><td>${botanicalNameDisplay}</td></tr>
+                    ${sourceNameRow}
                     <tr><td>Diameter</td><td>${dbhDisplay}</td></tr>
                 </table>
             </div>

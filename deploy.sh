@@ -7,7 +7,7 @@ APP_NAME="drzewo"
 
 # Deploy files (excluding .env)
 echo "📦 Deploying files..."
-scp -r static templates scripts *.py requirements.txt Makefile drzewo.sql README.md $SSH_HOST:$REMOTE_DIR
+scp -r static templates scripts seeds migrations *.py requirements.txt Makefile drzewo.sql README.md $SSH_HOST:$REMOTE_DIR
 
 # If this is first deployment, copy .env template
 echo "🔧 Checking environment configuration..."

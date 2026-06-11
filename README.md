@@ -57,6 +57,22 @@ To replace all existing rows for one city source before loading, add `--refresh`
 
 Successful and failed imports are recorded in the `import_runs` table with source file, refresh mode, timestamps, and final row count.
 
+Existing databases created before species source names were retained should apply the
+species-name migration before deploying newer code:
+
+```bash
+psql "$DATABASE_URL" -f migrations/20260611_add_original_common_name.sql
+```
+
+The loader seeds the normalized species catalog from:
+
+- `seeds/species.csv`
+- `seeds/species_aliases.csv`
+
+Toronto and Geneva imports use this catalog to store `street_trees.species_id`, display a
+Canadian English species name, and retain the source-provided common name for comparison.
+Refresh a city import after applying the migration to populate `species_id` for that source.
+
 ### Archive local raw datasets
 
 Keep manually downloaded files in a stable layout under `data/raw/<city>/<YYYY-MM-DD>/` using filesystem metadata for the date:

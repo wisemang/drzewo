@@ -57,6 +57,37 @@ def test_record_import_run_writes_expected_values():
     assert params[5] == "completed"
 
 
+def test_species_seed_files_load():
+    catalog = tree_loader.load_species_catalog()
+
+    assert "quercus_robur" in catalog["species_by_key"]
+    assert catalog["species_by_key"]["quercus_robur"]["display_common_name"] == "English Oak"
+
+
+def test_resolved_species_values_uses_canadian_english_aliases():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "Birch, Grey", "Betula populifolia", "Toronto Open Data Street Trees"
+    )
+
+    assert common_name == "Grey Birch"
+    assert original_common_name == "Birch, Grey"
+    assert species_key == "betula_populifolia"
+
+
+def test_resolved_species_values_translates_known_geneva_species():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "Chêne pédonculé", "Quercus robur", "Geneva Cantonal Tree Inventory"
+    )
+
+    assert common_name == "English Oak"
+    assert original_common_name == "Chêne pédonculé"
+    assert species_key == "quercus_robur"
+
+
+def test_standardize_common_name_does_not_invert_unknown_comma_names():
+    assert tree_loader.standardize_common_name("Something, Cultivar") == "Something, Cultivar"
+
+
 def test_calgary_row_tuple_uses_shared_schema_fields():
     row = {
         "TREE_ASSET_CD": "123",
@@ -79,9 +110,10 @@ def test_calgary_row_tuple_uses_shared_schema_fields():
     assert result[1] == 32114228
     assert result[2] == "123"
     assert result[3] == "Honey Locust"
-    assert result[4] == "Gleditsia triacanthos"
-    assert result[8] == "Boulevard"
-    assert result[9] == "POINT (-114.0719 51.0447)"
+    assert result[4] == "Honey Locust"
+    assert result[5] == "Gleditsia triacanthos"
+    assert result[9] == "Boulevard"
+    assert result[10] == "POINT (-114.0719 51.0447)"
 
 
 def test_toronto_row_tuple_normalizes_point_geometry():
@@ -98,8 +130,8 @@ def test_toronto_row_tuple_normalizes_point_geometry():
             "TREE_POSITION_NUMBER": 2,
             "SITE": "Boulevard",
             "WARD": "1",
-            "BOTANICAL_NAME": "Acer saccharum",
-            "COMMON_NAME": "Sugar Maple",
+            "BOTANICAL_NAME": "Acer platanoides",
+            "COMMON_NAME": "Maple, Norway",
             "DBH_TRUNK": 20,
         },
         "geometry": {"type": "Point", "coordinates": [-79.38, 43.65]},
@@ -108,6 +140,10 @@ def test_toronto_row_tuple_normalizes_point_geometry():
     result = tree_loader.toronto_row_tuple(feature)
 
     assert result[0] == "Toronto Open Data Street Trees"
+    assert result[12] == "Acer platanoides"
+    assert result[13] == "Norway Maple"
+    assert result[14] == "Maple, Norway"
+    assert result[15] == "acer_platanoides"
     assert '"type": "MultiPoint"' in result[-1]
 
 
@@ -145,8 +181,9 @@ def test_mississauga_row_tuple_maps_shared_fields():
     assert result[5] == "Z03"
     assert result[6] is None
     assert result[7] == "Apple Crab Flowering"
-    assert result[8] == 22
-    assert '"type": "MultiPoint"' in result[9]
+    assert result[8] == "Apple Crab Flowering"
+    assert result[9] == 22
+    assert '"type": "MultiPoint"' in result[10]
 
 
 def test_mississauga_row_tuple_falls_back_to_botname():
@@ -167,6 +204,7 @@ def test_mississauga_row_tuple_falls_back_to_botname():
     result = tree_loader.mississauga_row_tuple(feature)
 
     assert result[7] == "Cokees"
+    assert result[8] == "Cokees"
 
 
 def test_san_francisco_city_is_registered():
@@ -202,10 +240,11 @@ def test_san_francisco_row_tuple_maps_shared_fields():
     assert result[4] == "Public Works"
     assert result[5] == "London Plane"
     assert result[6] == "London Plane"
-    assert result[7] == 18
-    assert result[8] == 7
-    assert result[9] == -122.4464023
-    assert result[10] == 37.7760911
+    assert result[7] == "London Plane"
+    assert result[8] == 18
+    assert result[9] == 7
+    assert result[10] == -122.4464023
+    assert result[11] == 37.7760911
 
 
 def test_madison_city_is_registered():
@@ -238,9 +277,10 @@ def test_madison_row_tuple_maps_shared_fields():
     assert result[2] == "403144"
     assert result[3] == "Active"
     assert result[4] == "Gleditsia triacanthos 'Skyline'"
-    assert result[5] == "Honeylocust 'Skyline'"
-    assert result[6] == 6
-    assert '"type": "MultiPoint"' in result[7]
+    assert result[5] == "Skyline Honey Locust"
+    assert result[6] == "Honeylocust 'Skyline'"
+    assert result[7] == 6
+    assert '"type": "MultiPoint"' in result[8]
 
 
 def test_geneva_city_is_registered():
@@ -277,9 +317,11 @@ def test_geneva_geojson_row_tuple_maps_shared_fields():
     assert result[4] == "Feuillus | Historique"
     assert result[5] == "Collonge-Bellerive"
     assert result[6] == "Populus"
-    assert result[7] == "Peuplier"
-    assert result[8] == 64
-    assert '"type": "MultiPoint"' in result[9]
+    assert result[7] == "Poplar"
+    assert result[8] == "Peuplier"
+    assert result[9] == "populus"
+    assert result[10] == 64
+    assert '"type": "MultiPoint"' in result[11]
 
 
 def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
@@ -306,6 +348,7 @@ def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
     assert result[1] == 42769
     assert result[3] == "1222 Collonge-Bellerive"
     assert result[4] == "Feuillus | Historique"
-    assert result[8] == 64
-    assert result[9] == 2504434.43
-    assert result[10] == 1122271.21
+    assert result[9] == "populus"
+    assert result[10] == 64
+    assert result[11] == 2504434.43
+    assert result[12] == 1122271.21

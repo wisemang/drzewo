@@ -56,6 +56,8 @@ def test_nearest_returns_rows(monkeypatch):
             "King St",
             25,
             1,
+            "Maple",
+            "12",
             9.3,
             -79.3832,
             43.6532,
@@ -75,6 +77,8 @@ def test_nearest_returns_rows(monkeypatch):
     payload = response.get_json()
     assert len(payload) == 1
     assert payload[0]["common_name"] == "Maple"
+    assert payload[0]["original_common_name"] == "Maple"
+    assert payload[0]["species_id"] == "12"
     assert fake_conn.closed is True
 
 
