@@ -1,4 +1,174 @@
 species_key,alias,name_kind,locale,source,confidence
+abies,Abies,botanical,,,curated
+acer,Acer,botanical,,,curated
+aesculus,Aesculus,botanical,,,curated
+ailanthus,Allianthus altissima,botanical,,,curated
+alnus,Alnus,botanical,,,curated
+betula,Betula,botanical,,,curated
+cedrus,Cedrus,botanical,,,curated
+cornus,Cornus,botanical,,,curated
+crataegus,Crataegus,botanical,,,curated
+fraxinus,Fraxinus,botanical,,,curated
+juniperus,Juniperus,botanical,,,curated
+larix,Larix,botanical,,,curated
+liriodendron,Liriodendron,botanical,,,curated
+magnolia,Magnolia,botanical,,,curated
+morus,Morus,botanical,,,curated
+picea,Picea,botanical,,,curated
+pinus,Pinus,botanical,,,curated
+populus,Populus,botanical,,,curated
+prunus,Prunus spp.,botanical,,,curated
+pyrus,Pyrus,botanical,,,curated
+quercus,Quercus,botanical,,,curated
+salix,Salix,botanical,,,curated
+sorbus,Sorbus,botanical,,,curated
+syringa,Syringa,botanical,,,curated
+taxus,Taxus,botanical,,,curated
+thuja,Thuja,botanical,,,curated
+tilia,Tilia,botanical,,,curated
+ulmus,Ulmus,botanical,,,curated
+zelkova,Zelkova,botanical,,,curated
+malus,Malus,botanical,,,curated
+juglans,Juglans,botanical,,,curated
+prunus,Prunus,botanical,,,curated
+sequoiadendron_giganteum,Sequoiadendron,botanical,,,curated
+ailanthus,Ailanthus,botanical,,,curated
+gleditsia_triacanthos,Gleditsia,botanical,,,curated
+sophora_japonica,Sophora,botanical,,,curated
+chamaecyparis_lawsoniana,Chamaecyparis,botanical,,,curated
+carya,Carya,botanical,,,curated
+amelanchier_canadensis,Serviceberry,common,en,Toronto Open Data Street Trees,curated
+tilia,Linden,common,en,Toronto Open Data Street Trees,curated
+catalpa_speciosa,Catalpa speciosa,botanical,,,curated
+catalpa_speciosa,"Catalpa, northern",common,en,Toronto Open Data Street Trees,curated
+ulmus_davidiana_morton,"Elm, Accolade",common,en,Toronto Open Data Street Trees,curated
+ulmus_davidiana_morton,Ulmus davidiana 'japonica Morton,botanical,,,curated
+acer_ginnala,Acer tataricum subsp. ginnala,botanical,,,curated
+"acer_ginnala","Maple, Amur",common,en,Toronto Open Data Street Trees,curated
+acer_palmatum,"Maple, Japanese",common,en,Toronto Open Data Street Trees,curated
+cercis_canadensis,Redbud,common,en,Toronto Open Data Street Trees,curated
+"morus_alba_pendula","Mulberry, white weeping",common,en,Toronto Open Data Street Trees,curated
+morus_alba_pendula,Morus alba 'pendula',botanical,,,curated
+acer_x_freemanii_armstrong,Acer x freemanii (A. rubrum x saccharinum) 'Armstrong',botanical,,,curated
+"acer_x_freemanii_armstrong","Maple, Freeman Armstrong",common,en,Toronto Open Data Street Trees,curated
+aesculus_flava,"Buckeye, yellow",common,en,Toronto Open Data Street Trees,curated
+magnolia_x_soulangeana,Magnolia x soulngeana (M. denudata x liliiflora),botanical,,,curated
+magnolia_x_soulangeana,"Magnolia, saucer",common,en,Toronto Open Data Street Trees,curated
+cercidiphyllum_japonicum,"Katsura, Japanese",common,en,Toronto Open Data Street Trees,curated
+"morus_alba","Mulberry, white",common,en,Toronto Open Data Street Trees,curated
+acer_nigrum,"Maple, black",common,en,Toronto Open Data Street Trees,curated
+aesculus_x_carnea_briotii,"Horsechestnut, Ruby red",common,en,Toronto Open Data Street Trees,curated
+fraxinus_americana,"Ash, white",common,en,Toronto Open Data Street Trees,curated
+ostrya_virginiana,Ironwood,common,en,Toronto Open Data Street Trees,curated
+corylus_colurna,"Hazel, Turkish",common,en,Toronto Open Data Street Trees,curated
+juniperus_virginiana,"Cedar, eastern red",common,en,Toronto Open Data Street Trees,curated
+cladrastis_kentukea,"Yellowwood, Kentucky",common,en,Toronto Open Data Street Trees,curated
+prunus_serrulata,"Cherry, Japanese",common,en,Toronto Open Data Street Trees,curated
+sorbus_thuringiaca_fastigiata,"Mountain ash, oak leaf",common,en,Toronto Open Data Street Trees,curated
+pyrus_calleryana_bradford,Pear Bradford,common,en,Toronto Open Data Street Trees,curated
+prunus_virginiana_shubert,Prunus virginiana Shubert,botanical,,,curated
+prunus_virginiana_shubert,"Cherry, choke Shubert",common,en,Toronto Open Data Street Trees,curated
+sorbus_aucuparia,"Mountain ash, European",common,en,Toronto Open Data Street Trees,curated
+phellodendron_amurense,"Cork tree, Amur",common,en,Toronto Open Data Street Trees,curated
+prunus_virginiana,"Cherry, choke",common,en,Toronto Open Data Street Trees,curated
+ulmus_parvifolia,"Elm, Chinese",common,en,Toronto Open Data Street Trees,curated
+pseudotsuga_menziesii,Douglas fir,common,en,Toronto Open Data Street Trees,curated
+abies_balsamea,Abies balsamaea,botanical,,,curated
+abies_balsamea,"Fir, balsam",common,en,Toronto Open Data Street Trees,curated
+acer_x_freemanii_marmo,Acer x freemanii (A. rubrum x saccharinum) 'Marmo',botanical,,,curated
+acer_x_freemanii_marmo,"Maple, Freeman Marmo",common,en,Toronto Open Data Street Trees,curated
+acer_x_freemanii_celebration,Acer x freemanii (A. rubrum x saccharinum) 'Celebration',botanical,,,curated
+acer_x_freemanii_celebration,"Maple, Freeman Celebration",common,en,Toronto Open Data Street Trees,curated
+quercus_velutina,"Oak, black",common,en,Toronto Open Data Street Trees,curated
+crataegus_viridis_winter_king,"Hawthorn, green Winter King",common,en,Toronto Open Data Street Trees,curated
+sorbus,Mountain ash,common,en,Toronto Open Data Street Trees,curated
+acer_x_freemanii_sienna_glen,Acer x freemanii (A. rubrum x saccharinum) 'Sienna Glen',botanical,,,curated
+acer_x_freemanii_sienna_glen,"Maple, Freeman Sienna Glen",common,en,Toronto Open Data Street Trees,curated
+tsuga_canadensis,"Hemlock, eastern",common,en,Toronto Open Data Street Trees,curated
+ginkgo_biloba_autumn_gold,ginkgo biloba Autumn Gold,botanical,,,curated
+ginkgo_biloba_autumn_gold,"Ginkgo, Autumn Gold",common,en,Toronto Open Data Street Trees,curated
+chamaecyparis_pisifera,"Falsecypress, Japanese",common,en,Toronto Open Data Street Trees,curated
+quercus_muehlenbergii,"Oak, chinquapin",common,en,Toronto Open Data Street Trees,curated
+elaeagnus_angustifolia,"Olive, Russian",common,en,Toronto Open Data Street Trees,curated
+robinia_pseudoacacia_purple_robe,Robinia pseudoacacia Purple robe,botanical,,,curated
+robinia_pseudoacacia_purple_robe,Black locust Purple robe,common,en,Toronto Open Data Street Trees,curated
+magnolia_acuminata,Cucumbertree,common,en,Toronto Open Data Street Trees,curated
+ulmus_glabra,"Elm, wych",common,en,Toronto Open Data Street Trees,curated
+acer_x_freemanii,Acer x freemanii (A. rubrum x saccharinum),botanical,,,curated
+acer_x_freemanii,"Maple, Freeman",common,en,Toronto Open Data Street Trees,curated
+acer_tataricum,"Maple, tatarian",common,en,Toronto Open Data Street Trees,curated
+salix_x_sepuchralis_chrysocoma,Salix x sepulcralis 'Chrysocoma',botanical,,,curated
+salix_x_sepuchralis_chrysocoma,"Willow, golden weeping",common,en,Toronto Open Data Street Trees,curated
+fagus_grandifolia,"Beech, American",common,en,Toronto Open Data Street Trees,curated
+fagus_sylvatica_fastigiata,Fagus sylvatica Fastigiata,botanical,,,curated
+fagus_sylvatica_fastigiata,"Beech, European columnar",common,en,Toronto Open Data Street Trees,curated
+crataegus_crus_galli,"Hawthorn, cockspur",common,en,Toronto Open Data Street Trees,curated
+sorbus_americana,"Mountain ash, American",common,en,Toronto Open Data Street Trees,curated
+cornus_florida,"Dogwood, flowering",common,en,Toronto Open Data Street Trees,curated
+fagus_sylvatica_purpurea,Fagus sylvatica Cupria,botanical,,,curated
+fagus_sylvatica_purpurea,"Beech, European Copper",common,en,Toronto Open Data Street Trees,curated
+ulmus_davidiana_morton,Elm Pioneer,common,en,Toronto Open Data Street Trees,review
+cotinus_obovatus,"Smoketree, American",common,en,Toronto Open Data Street Trees,curated
+salix_nigra,"Willow, black",common,en,Toronto Open Data Street Trees,curated
+pinus_resinosa,"Pine, red",common,en,Toronto Open Data Street Trees,curated
+betula_nigra,"Birch, river",common,en,Toronto Open Data Street Trees,curated
+nyssa_sylvatica,Blackgum,common,en,Toronto Open Data Street Trees,curated
+ulmus_rubra,"Elm, slippery",common,en,Toronto Open Data Street Trees,curated
+picea_omorika,"Spruce, Serbian",common,en,Toronto Open Data Street Trees,curated
+abies_concolor,Abies concolor,botanical,,,curated
+abies_concolor,"Fir, white",common,en,Toronto Open Data Street Trees,curated
+alnus_glutinosa,"Alder, European",common,en,Toronto Open Data Street Trees,curated
+zelkova_serrata,"Zelkova, Japanese",common,en,Toronto Open Data Street Trees,curated
+abies_alba,Abies alba,botanical,,,curated
+abies_alba,"Fir, European white",common,en,Toronto Open Data Street Trees,curated
+ulmus_thomasii,"Elm, rock",common,en,Toronto Open Data Street Trees,curated
+quercus_shumardii,"Oak, Shumard",common,en,Toronto Open Data Street Trees,curated
+metasequoia_glyptostroboides,Dawn redwood,common,en,Toronto Open Data Street Trees,curated
+salix_matsudana_tortuosa,"Willow, corkscrew",common,en,Toronto Open Data Street Trees,curated
+taxus_cuspidata,"Yew, Japanese",common,en,Toronto Open Data Street Trees,curated
+tilia_x_euchlora,Tilia x euchlora (T. cordata x dasystyla),botanical,,,curated
+quercus_imbricaria,"Oak, shingle",common,en,Toronto Open Data Street Trees,curated
+acer_griseum,"Maple, paperbark",common,en,Toronto Open Data Street Trees,curated
+salix_discolor,Salix Discolor,botanical,,,curated
+salix_discolor,"Willow, pussy",common,en,Toronto Open Data Street Trees,curated
+morus_rubra,"Mulberry, red",common,en,Toronto Open Data Street Trees,curated
+populus_x_canadensis,Populus x canadensis (Populus nigra x deltoides),botanical,,,curated
+populus_x_canadensis,"Poplar, Carolina",common,en,Toronto Open Data Street Trees,curated
+populus_tremuloides,"Aspen, trembling",common,en,Toronto Open Data Street Trees,curated
+populus_deltoides,"Poplar, eastern cottonwood",common,en,Toronto Open Data Street Trees,curated
+fraxinus_pennsylvanica_marshall,Fraxinus pennsylvanica 'Marshall's seedless',botanical,,,curated
+fraxinus_pennsylvanica_marshall,"Ash, green Marshall's Seedless",common,en,Toronto Open Data Street Trees,curated
+prunus_x_cistena,Prunus x cistena (P. pumila x P. cerasifera âAtropurpureaâ),botanical,,,curated
+prunus_x_cistena,"Cherry, purple-leaf sand",common,en,Toronto Open Data Street Trees,curated
+aesculus_x_carnea,Aesculus x carnea (A. hippocastanum x pavia) 'Fort Mcnair',botanical,,,curated
+aesculus_x_carnea,"Horsechestnut, Fort Mcnair",common,en,Toronto Open Data Street Trees,curated
+carya_laciniosa,"Hickory, big shellbark",common,en,Toronto Open Data Street Trees,curated
+rhus_typhina,Rhus Typhina,botanical,,,curated
+rhus_typhina,"Sumac, staghorn",common,en,Toronto Open Data Street Trees,curated
+platanus_occidentalis,Sycamore,common,en,Toronto Open Data Street Trees,curated
+carya_cordiformis,"Hickory, bitternut",common,en,Toronto Open Data Street Trees,curated
+acer_truncatum_x_platanoides_warrenred,"Maple, Pacific sunset",common,en,Toronto Open Data Street Trees,curated
+ulmus_davidiana_japonica,"Elm, David",common,en,Toronto Open Data Street Trees,curated
+betula_nigra_heritage,Betula nigra Heritage,botanical,,,curated
+betula_nigra_heritage,"Birch, river Heritage",common,en,Toronto Open Data Street Trees,curated
+populus_alba_pyramidalis,Populus alba 'pyramidalis',botanical,,,curated
+populus_alba_pyramidalis,"Poplar, white Boleana",common,en,Toronto Open Data Street Trees,curated
+acer_rubrum,Acer rubrum Franksred,botanical,,,curated
+acer_rubrum,"Maple, red Red Sunset",common,en,Toronto Open Data Street Trees,curated
+betula_alleghaniensis,"Birch, yellow",common,en,Toronto Open Data Street Trees,curated
+populus_balsamifera,"Poplar, balsam",common,en,Toronto Open Data Street Trees,curated
+fraxinus_nigra,"Ash, black",common,en,Toronto Open Data Street Trees,curated
+betula_utilis_jacquemontii,Betula utilis Jacquemonti,botanical,,,curated
+betula_utilis_jacquemontii,"Birch, Himalayan Jacquemonti",common,en,Toronto Open Data Street Trees,curated
+populus_grandidentata,"Aspen, large tooth",common,en,Toronto Open Data Street Trees,curated
+caragana_arborescens,Caragana arboresense,botanical,,,curated
+caragana_arborescens,"Peashrub, Siberian",common,en,Toronto Open Data Street Trees,curated
+carya_ovata,"Hickory, shagbark",common,en,Toronto Open Data Street Trees,curated
+sorbus_decora,Sorbus decora,botanical,,,curated
+sorbus_decora,"Mountain ash, showy",common,en,Toronto Open Data Street Trees,curated
+pinus_banksiana,"Pine, jack",common,en,Toronto Open Data Street Trees,curated
+juglans_cinerea_hybrid,Juglans cinerea x,botanical,,,review
+prunus_sargentii,"Cherry, sargent",common,en,Toronto Open Data Street Trees,curated
 quercus_robur,Chêne pédonculé,common,fr,Geneva Cantonal Tree Inventory,curated
 quercus_robur,Chêne commun,common,fr,Geneva Cantonal Tree Inventory,curated
 quercus_robur,Pedunculate Oak,common,en,,curated
@@ -82,3 +252,78 @@ sequoiadendron_giganteum,Séquoia géant,common,fr,Geneva Cantonal Tree Inventor
 cydonia_oblonga,Cognassier commun,common,fr,Geneva Cantonal Tree Inventory,curated
 cercis_siliquastrum,Arbre de Judée,common,fr,Geneva Cantonal Tree Inventory,curated
 robinia_pseudoacacia,Robinier faux-acacia,common,fr,Geneva Cantonal Tree Inventory,curated
+cedrus,Cèdre,common,fr,Geneva Cantonal Tree Inventory,curated
+robinia,Robinier,common,fr,Geneva Cantonal Tree Inventory,curated
+ulmus,Orme,common,fr,Geneva Cantonal Tree Inventory,curated
+pyrus_communis,Poirier,common,fr,Geneva Cantonal Tree Inventory,curated
+taxus,If,common,fr,Geneva Cantonal Tree Inventory,curated
+thuja,Thuya,common,fr,Geneva Cantonal Tree Inventory,curated
+abies,Sapin,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia_tomentosa,Tilia tomentosa,botanical,,,curated
+tilia_tomentosa,Tilleul argenté,common,fr,Geneva Cantonal Tree Inventory,curated
+larix,Mélèze,common,fr,Geneva Cantonal Tree Inventory,curated
+ulmus_minor,Orme champêtre,common,fr,Geneva Cantonal Tree Inventory,curated
+magnolia_grandiflora,Magnolia à grandes fleurs,common,fr,Geneva Cantonal Tree Inventory,curated
+salix_alba,Saule blanc,common,fr,Geneva Cantonal Tree Inventory,curated
+catalpa,Catalpa,botanical,,,curated
+catalpa,Catalpa,common,fr,Geneva Cantonal Tree Inventory,curated
+catalpa_bignonioides,Catalpa bignonioides,botanical,,,curated
+catalpa_bignonioides,Catalpa commun,common,fr,Geneva Cantonal Tree Inventory,curated
+ostrya_carpinifolia,Charme houblon,common,fr,Geneva Cantonal Tree Inventory,curated
+aesculus_x_carnea,Marronnier rouge,common,fr,Geneva Cantonal Tree Inventory,curated
+cupressus_sempervirens,Cyprès sempervirent,common,fr,Geneva Cantonal Tree Inventory,curated
+cedrus_deodara,Cèdre de l'Himalaya,common,fr,Geneva Cantonal Tree Inventory,curated
+thuja_plicata,Thuya géant de Californie,common,fr,Geneva Cantonal Tree Inventory,curated
+ailanthus_altissima,Ailante glanduleux,common,fr,Geneva Cantonal Tree Inventory,curated
+magnolia,Magnolia,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_cerasifera,Prunier myrobalan,common,fr,Geneva Cantonal Tree Inventory,curated
+cedrus_libani,Cèdre du Liban,common,fr,Geneva Cantonal Tree Inventory,curated
+castanea_sativa,Châtaignier,common,fr,Geneva Cantonal Tree Inventory,curated
+koelreuteria_paniculata,Savonnier,common,fr,Geneva Cantonal Tree Inventory,curated
+pseudotsuga,Sapin de Douglas,common,fr,Geneva Cantonal Tree Inventory,curated
+tilia_x_euchlora,Tilia ×euchlora,botanical,,,curated
+tilia_x_euchlora,Tilleul de Crimée,common,fr,Geneva Cantonal Tree Inventory,curated
+magnolia_x_soulangeana,Magnolia de Soulange,common,fr,Geneva Cantonal Tree Inventory,curated
+corylus_colurna,Noisetier de Byzance,common,fr,Geneva Cantonal Tree Inventory,curated
+populus_tremula,Populus tremula,botanical,,,curated
+populus_tremula,Tremble,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_cerasus,Griottier,common,fr,Geneva Cantonal Tree Inventory,curated
+sequoia_sempervirens,Sequoia sempervirens,botanical,,,curated
+sequoia_sempervirens,Séquoia toujours vert,common,fr,Geneva Cantonal Tree Inventory,curated
+acer_monspessulanum,Acer monspessulanum,botanical,,,curated
+acer_monspessulanum,Erable de Montpellier,common,fr,Geneva Cantonal Tree Inventory,curated
+ficus_carica,Ficus carica,botanical,,,curated
+ficus_carica,Figuier,common,fr,Geneva Cantonal Tree Inventory,curated
+pinus_mugo,Pinus mugo,botanical,,,curated
+pinus_mugo,Pin mugo,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus,Prunier,common,fr,Geneva Cantonal Tree Inventory,curated
+lagerstroemia_indica,Lilas des Indes,common,fr,Geneva Cantonal Tree Inventory,curated
+buxus_sempervirens,Buis commun,common,fr,Geneva Cantonal Tree Inventory,curated
+ilex_aquifolium,Houx commun,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus_ilex,Chêne vert,common,fr,Geneva Cantonal Tree Inventory,curated
+calocedrus_decurrens,Calocèdre,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_mahaleb,Cerisier de Sainte Lucie,common,fr,Geneva Cantonal Tree Inventory,curated
+ailanthus,Ailante,common,fr,Geneva Cantonal Tree Inventory,curated
+betula_pendula,Betula verrucosa,botanical,,,curated
+betula_pendula,Bouleau verruqueux,common,fr,Geneva Cantonal Tree Inventory,curated
+pterocarya_fraxinifolia,Ptérocaryer du Caucase,common,fr,Geneva Cantonal Tree Inventory,curated
+alnus_cordata,Aulne à feuilles en cœur,common,fr,Geneva Cantonal Tree Inventory,curated
+quercus_pubescens,Chêne pubescent,common,fr,Geneva Cantonal Tree Inventory,curated
+acer_cappadocicum,Erable de Colchide,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_fruticosa,Cerisier des steppes,common,fr,Geneva Cantonal Tree Inventory,curated
+prunus_lusitanica,Laurier du Portugal,common,fr,Geneva Cantonal Tree Inventory,curated
+sorbus_torminalis,Alisier torminal,common,fr,Geneva Cantonal Tree Inventory,curated
+acer_opalus,Erable à feuilles d'obier,common,fr,Geneva Cantonal Tree Inventory,curated
+gleditsia_triacanthos,Févier d'Amérique,common,fr,Geneva Cantonal Tree Inventory,curated
+crataegus_monogyna,Aubépine monogyne,common,fr,Geneva Cantonal Tree Inventory,curated
+taxodium_distichum,Cyprès chauve,common,fr,Geneva Cantonal Tree Inventory,curated
+cupressus_arizonica,Cyprès de l'Arizona,common,fr,Geneva Cantonal Tree Inventory,curated
+pinus_pinea,Pin parasol,common,fr,Geneva Cantonal Tree Inventory,curated
+chamaecyparis_lawsoniana,Faux-cyprès,common,fr,Geneva Cantonal Tree Inventory,curated
+fraxinus_ornus,Frêne à fleurs,common,fr,Geneva Cantonal Tree Inventory,curated
+paulownia,Paulownia,botanical,,,curated
+paulownia_tomentosa,Paulownia impérial,common,fr,Geneva Cantonal Tree Inventory,curated
+populus_alba,Peuplier blanc,common,fr,Geneva Cantonal Tree Inventory,curated
+betula_utilis_jacquemontii,Betula utilis,botanical,,,curated
+betula_utilis_jacquemontii,Bouleau de l'Himalaya,common,fr,Geneva Cantonal Tree Inventory,curated
+corylus_avellana,Noisetier,common,fr,Geneva Cantonal Tree Inventory,curated

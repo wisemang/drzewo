@@ -74,6 +74,16 @@ def test_resolved_species_values_uses_canadian_english_aliases():
     assert species_key == "betula_populifolia"
 
 
+def test_resolved_species_values_handles_toronto_white_mulberry():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "Mulberry, white", "Morus alba", "Toronto Open Data Street Trees"
+    )
+
+    assert common_name == "White Mulberry"
+    assert original_common_name == "Mulberry, white"
+    assert species_key == "morus_alba"
+
+
 def test_resolved_species_values_translates_known_geneva_species():
     common_name, original_common_name, species_key = tree_loader.resolved_species_values(
         "Chêne pédonculé", "Quercus robur", "Geneva Cantonal Tree Inventory"
