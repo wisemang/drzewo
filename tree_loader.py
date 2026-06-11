@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 from datetime import datetime, timezone
 from os import environ
 from pathlib import Path
@@ -1021,12 +1022,13 @@ def load_geneva_geojson(cursor, data, batch_size):
     """Load Geneva GeoJSON features with WGS84 coordinates."""
     sql_query = """
     INSERT INTO street_trees (
-        source, objectid, structid, site, ward, botanical_name, common_name, dbh_trunk, geom
+        source, objectid, structid, address, site, ward, botanical_name, common_name,
+        dbh_trunk, geom
     ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
     template = """
-    (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
     """
 
     rows = []
@@ -1047,12 +1049,13 @@ def load_geneva_arcgis_json(cursor, data, batch_size):
     """Load Geneva ArcGIS JSON features with LV95 coordinates."""
     sql_query = """
     INSERT INTO street_trees (
-        source, objectid, structid, site, ward, botanical_name, common_name, dbh_trunk, geom
+        source, objectid, structid, address, site, ward, botanical_name, common_name,
+        dbh_trunk, geom
     ) VALUES %s
     ON CONFLICT (source, objectid) DO NOTHING;
     """
     template = """
-    (%s, %s, %s, %s, %s, %s, %s, %s,
+    (%s, %s, %s, %s, %s, %s, %s, %s, %s,
     ST_Multi(ST_Transform(ST_SetSRID(ST_Point(%s, %s), 2056), 4326)))
     """
 
@@ -1108,16 +1111,20 @@ def geneva_shared_values(properties):
     status = clean_text(prop("statut"))
     tree_class = clean_text(prop("classe"))
     site = " | ".join(part for part in [tree_class, status] if part) or None
+    commune = clean_text(prop("commune"))
+    postal_code = clean_text(prop("no_postal"))
+    address = " ".join(part for part in [postal_code, commune] if part) or None
 
     return (
         "Geneva Cantonal Tree Inventory",
         objectid,
         clean_text(prop("globalid")),
+        address,
         site,
-        clean_text(prop("commune")),
+        commune,
         clean_text(prop("nom_latin")),
         clean_text(prop("nom_commun")) or clean_text(prop("nom_com_re")),
-        parse_geneva_diameter_cm(prop("diam_1m")),
+        parse_geneva_diameter_cm(prop("diam_1m"), prop("circonference")),
     )
 
 
@@ -1141,12 +1148,16 @@ def parse_int(value):
         return None
 
 
-def parse_geneva_diameter_cm(value):
-    """Parse Geneva trunk diameter from meters into integer centimeters."""
-    diameter_meters = parse_float(value)
-    if diameter_meters is None:
+def parse_geneva_diameter_cm(diameter_value, circumference_value=None):
+    """Parse Geneva trunk diameter as centimeters, falling back from circumference."""
+    diameter_cm = parse_float(diameter_value)
+    if diameter_cm is not None:
+        return round(diameter_cm)
+
+    circumference_cm = parse_float(circumference_value)
+    if circumference_cm is None:
         return None
-    return round(diameter_meters * 100)
+    return round(circumference_cm / math.pi)
 
 
 def parse_float(value):

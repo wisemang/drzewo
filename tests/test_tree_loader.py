@@ -256,8 +256,10 @@ def test_geneva_geojson_row_tuple_maps_shared_fields():
             "classe": "Feuillus",
             "commune": "Collonge-Bellerive",
             "globalid": "{F402AD3D-C386-41B1-8D89-E543541AE71C}",
-            "diam_1m": 0.42,
+            "circonference": 201,
+            "diam_1m": 64,
             "id_arbre": 42769,
+            "no_postal": 1222,
             "nom_commun": "Peuplier",
             "nom_latin": "Populus",
             "objectid": 1,
@@ -271,12 +273,13 @@ def test_geneva_geojson_row_tuple_maps_shared_fields():
     assert result[0] == "Geneva Cantonal Tree Inventory"
     assert result[1] == 42769
     assert result[2] == "{F402AD3D-C386-41B1-8D89-E543541AE71C}"
-    assert result[3] == "Feuillus | Historique"
-    assert result[4] == "Collonge-Bellerive"
-    assert result[5] == "Populus"
-    assert result[6] == "Peuplier"
-    assert result[7] == 42
-    assert '"type": "MultiPoint"' in result[8]
+    assert result[3] == "1222 Collonge-Bellerive"
+    assert result[4] == "Feuillus | Historique"
+    assert result[5] == "Collonge-Bellerive"
+    assert result[6] == "Populus"
+    assert result[7] == "Peuplier"
+    assert result[8] == 64
+    assert '"type": "MultiPoint"' in result[9]
 
 
 def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
@@ -285,8 +288,10 @@ def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
             "CLASSE": "Feuillus",
             "COMMUNE": "Collonge-Bellerive",
             "GLOBALID": "{F402AD3D-C386-41B1-8D89-E543541AE71C}",
-            "DIAM_1M": 0.42,
+            "CIRCONFERENCE": 201,
+            "DIAM_1M": None,
             "ID_ARBRE": 42769,
+            "NO_POSTAL": 1222,
             "NOM_COMMUN": "Peuplier",
             "NOM_LATIN": "Populus",
             "OBJECTID": 1,
@@ -299,7 +304,8 @@ def test_geneva_arcgis_json_row_tuple_maps_lv95_coordinates():
 
     assert result[0] == "Geneva Cantonal Tree Inventory"
     assert result[1] == 42769
-    assert result[3] == "Feuillus | Historique"
-    assert result[7] == 42
-    assert result[8] == 2504434.43
-    assert result[9] == 1122271.21
+    assert result[3] == "1222 Collonge-Bellerive"
+    assert result[4] == "Feuillus | Historique"
+    assert result[8] == 64
+    assert result[9] == 2504434.43
+    assert result[10] == 1122271.21
