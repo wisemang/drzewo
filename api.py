@@ -92,7 +92,7 @@ def nearest():
             SELECT source, objectid, common_name, botanical_name, address, streetname,
             dbh_trunk, tree_position_number,
             to_jsonb(street_trees)->>'original_common_name' AS original_common_name,
-            to_jsonb(street_trees)->>'species_id' AS species_id,
+            street_trees.species_id,
             ST_Distance(geom::geography, ST_MakePoint(%s, %s)::geography) AS distance,
             ST_X(ST_GeometryN(geom, 1)) AS longitude, ST_Y(ST_GeometryN(geom, 1)) AS latitude
             FROM street_trees
@@ -116,7 +116,7 @@ def nearest():
             "dbh": row[6],
             "pos": row[7],
             "original_common_name": row[8],
-            "species_id": row[9],
+            "species_id": int(row[9]) if row[9] is not None else None,
             "distance": row[10],
             "longitude": row[11],
             "latitude": row[12],
@@ -168,30 +168,35 @@ def species_profile(species_id):
     if row is None:
         return jsonify({"error": "species not found"}), 404
 
-    profile = None
-    if row[8] is not None:
-        profile = {
-            "summary": row[5],
-            "taxonomy": row[6] or {},
-            "canonical_url": row[7],
+    summary = None
+    if row[8] is not None and row[5] is not None:
+        summary = {
+            "available": True,
+            "text": row[5],
             "source_system": row[8],
-            "source_url": row[9],
-            "retrieved_at": serialize_datetime(row[10]),
-            "method_version": row[11],
-            "confidence": row[12],
-            "license_name": row[13],
+            "source_url": row[9] or row[7],
+            "source_title": (row[6] or {}).get("canonical_botanical_name") or row[2],
+            "license": row[13],
             "license_url": row[14],
             "attribution": row[15],
+            "confidence": row[12],
+            "retrieved_at": serialize_datetime(row[10]),
+            "method_version": row[11],
         }
 
     return jsonify(
         {
             "species_id": row[0],
             "species_key": row[1],
-            "canonical_botanical_name": row[2],
-            "display_common_name": row[3],
-            "wikipedia_url": row[4],
-            "profile": profile,
+            "common_name": row[3],
+            "botanical_name": row[2],
+            "sections": {
+                "summary": summary,
+                "benefits": None,
+                "risk": None,
+                "media": None,
+                "local_stats": None,
+            },
         }
     )
 

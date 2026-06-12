@@ -4,6 +4,7 @@ let markerByKey = new Map(); // Active tree markers keyed by source/objectid
 let markerInsertionOrder = []; // FIFO order for cap-based pruning
 let resultKeys = []; // Keys for current table rows by index
 let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
+let speciesProfileCache = new Map(); // Species profiles keyed by numeric species_id
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
@@ -259,6 +260,148 @@ function normalizeText(value) {
     return text;
 }
 
+function escapeHtml(value) {
+    const text = value === null || value === undefined ? '' : String(value);
+    return text.replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
+function usableSpeciesId(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const numericValue = Number(value);
+    if (!Number.isInteger(numericValue) || numericValue <= 0) {
+        return null;
+    }
+    return numericValue;
+}
+
+function aboutSpeciesLabel(commonName) {
+    const normalizedName = normalizeText(commonName);
+    return normalizedName ? `About ${normalizedName}` : 'About this species';
+}
+
+function closeSpeciesProfilePanel() {
+    const panel = document.getElementById('species-profile-panel');
+    if (panel) {
+        panel.setAttribute('hidden', '');
+    }
+}
+
+function setSpeciesProfileShell(title, contentHtml) {
+    const titleElement = document.getElementById('species-profile-title');
+    const bodyElement = document.getElementById('species-profile-body');
+    const panel = document.getElementById('species-profile-panel');
+    if (!titleElement || !bodyElement || !panel) {
+        return;
+    }
+
+    titleElement.textContent = title;
+    bodyElement.innerHTML = contentHtml;
+    panel.removeAttribute('hidden');
+}
+
+function loadingSpeciesProfilePanel(commonName, botanicalName) {
+    const title = aboutSpeciesLabel(commonName);
+    const botanicalNameDisplay = normalizeText(botanicalName);
+    const botanicalHtml = botanicalNameDisplay
+        ? `<p class="species-profile-botanical">${escapeHtml(botanicalNameDisplay)}</p>`
+        : '';
+    setSpeciesProfileShell(
+        title,
+        `${botanicalHtml}<p class="species-profile-status">Loading species profile...</p>`
+    );
+}
+
+function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName) {
+    const commonNameDisplay = normalizeText(profile.common_name) ||
+        normalizeText(fallbackCommonName) ||
+        'This species';
+    const botanicalNameDisplay = normalizeText(profile.botanical_name) ||
+        normalizeText(fallbackBotanicalName);
+    const summary = profile.sections ? profile.sections.summary : null;
+    const summaryText = summary && summary.available !== false ? normalizeText(summary.text) : null;
+    const sourceUrl = summary ? normalizeText(summary.source_url) : null;
+    const attribution = summary ? normalizeText(summary.attribution) : null;
+    const license = summary ? normalizeText(summary.license) : null;
+    const licenseUrl = summary ? normalizeText(summary.license_url) : null;
+    const canShowSummary = Boolean(summaryText && attribution && (license || licenseUrl));
+
+    let bodyHtml = '';
+    if (botanicalNameDisplay) {
+        bodyHtml += `<p class="species-profile-botanical">${escapeHtml(botanicalNameDisplay)}</p>`;
+    }
+
+    if (canShowSummary) {
+        bodyHtml += `<p class="species-profile-summary">${escapeHtml(summaryText)}</p>`;
+    } else {
+        bodyHtml += '<p class="species-profile-status">No species profile is available yet.</p>';
+    }
+
+    if (sourceUrl || (canShowSummary && (attribution || license))) {
+        bodyHtml += '<div class="species-profile-source">';
+        if (sourceUrl) {
+            bodyHtml += `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Read more on Wikipedia</a>`;
+        }
+        if (canShowSummary && (attribution || license)) {
+            const licenseText = licenseUrl && license
+                ? `<a href="${escapeHtml(licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(license)}</a>`
+                : escapeHtml(license || 'license terms');
+            bodyHtml += `<p>Source: ${escapeHtml(attribution)} · ${licenseText}</p>`;
+        }
+        bodyHtml += '</div>';
+    }
+
+    setSpeciesProfileShell(commonNameDisplay, bodyHtml);
+}
+
+function renderSpeciesProfileError(commonName, botanicalName) {
+    const botanicalNameDisplay = normalizeText(botanicalName);
+    const botanicalHtml = botanicalNameDisplay
+        ? `<p class="species-profile-botanical">${escapeHtml(botanicalNameDisplay)}</p>`
+        : '';
+    setSpeciesProfileShell(
+        aboutSpeciesLabel(commonName),
+        `${botanicalHtml}<p class="species-profile-status species-profile-error">Unable to load this species profile right now.</p>`
+    );
+}
+
+function openSpeciesProfilePanel(speciesId, commonName, botanicalName) {
+    const numericSpeciesId = usableSpeciesId(speciesId);
+    if (!numericSpeciesId) {
+        return;
+    }
+
+    loadingSpeciesProfilePanel(commonName, botanicalName);
+
+    if (speciesProfileCache.has(numericSpeciesId)) {
+        renderSpeciesProfile(speciesProfileCache.get(numericSpeciesId), commonName, botanicalName);
+        return;
+    }
+
+    fetch(`/species/${numericSpeciesId}/profile`)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`Species profile request failed with ${response.status}`);
+            }
+            return response.json();
+        })
+        .then((profile) => {
+            speciesProfileCache.set(numericSpeciesId, profile);
+            renderSpeciesProfile(profile, commonName, botanicalName);
+        })
+        .catch((error) => {
+            console.warn('Error fetching species profile:', error);
+            renderSpeciesProfileError(commonName, botanicalName);
+        });
+}
+
 function formatAddress(item) {
     const address = normalizeText(item.address);
     const streetname = normalizeText(item.streetname);
@@ -293,20 +436,35 @@ function syncMarkers(data) {
         const commonNameDisplay = normalizeText(item.common_name) || 'Unknown tree';
         const botanicalNameDisplay = normalizeText(item.botanical_name) || 'N/A';
         const sourceNameDisplay = normalizeText(item.original_common_name);
+        const speciesId = usableSpeciesId(item.species_id);
         const sourceNameRow = sourceNameDisplay && sourceNameDisplay !== commonNameDisplay
-            ? `<tr><td>Source name</td><td>${sourceNameDisplay}</td></tr>`
+            ? `<tr><td>Original name</td><td>${escapeHtml(sourceNameDisplay)}</td></tr>`
+            : '';
+        const aboutSpeciesRow = speciesId
+            ? `
+                <div class="tree-marker-about">
+                    <button
+                        type="button"
+                        class="species-profile-trigger"
+                        data-species-id="${speciesId}"
+                        data-common-name="${escapeHtml(commonNameDisplay)}"
+                        data-botanical-name="${escapeHtml(botanicalNameDisplay)}"
+                    >${escapeHtml(aboutSpeciesLabel(commonNameDisplay))} -&gt;</button>
+                </div>
+            `
             : '';
 
         const popupContent = `
             <div class="tree-marker">
-                <span class="tree-marker-common-name">${commonNameDisplay}</span><br>
-                <span class="tree-marker-address">${addressDisplay}</span><br>
+                <span class="tree-marker-common-name">${escapeHtml(commonNameDisplay)}</span><br>
+                <span class="tree-marker-address">${escapeHtml(addressDisplay)}</span><br>
                 <hr>
                 <table class="treedata">
-                    <tr><td>Botanical name</td><td>${botanicalNameDisplay}</td></tr>
+                    <tr><td>Botanical name</td><td>${escapeHtml(botanicalNameDisplay)}</td></tr>
                     ${sourceNameRow}
-                    <tr><td>Diameter</td><td>${dbhDisplay}</td></tr>
+                    <tr><td>Diameter</td><td>${escapeHtml(dbhDisplay)}</td></tr>
                 </table>
+                ${aboutSpeciesRow}
             </div>
         `;
 
@@ -504,6 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeDismissIcon = document.getElementById('welcome-dismiss-icon');
     const welcomeAboutLink = document.getElementById('welcome-about-link');
     const welcomeModal = document.getElementById('welcome-modal');
+    const speciesProfileClose = document.getElementById('species-profile-close');
 
     menuIcon.addEventListener('click', (event) => {
         if (event.target.closest('.menu-dropdown')) {
@@ -577,6 +736,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    if (speciesProfileClose) {
+        speciesProfileClose.addEventListener('click', closeSpeciesProfilePanel);
+    }
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('.species-profile-trigger');
+        if (!trigger) {
+            return;
+        }
+        event.preventDefault();
+        openSpeciesProfilePanel(
+            trigger.dataset.speciesId,
+            trigger.dataset.commonName,
+            trigger.dataset.botanicalName
+        );
+    });
     if (!hasDismissedWelcomeModal()) {
         showWelcomeModal();
     }
@@ -589,6 +763,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.key === 'Escape' && isWelcomeModalOpen()) {
             dismissWelcomeModal();
             return;
+        }
+        if (event.key === 'Escape') {
+            closeSpeciesProfilePanel();
         }
         if (event.key === 'Escape' && isMapFullscreen) {
             setMapFullscreen(false);

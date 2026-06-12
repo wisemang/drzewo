@@ -85,7 +85,7 @@ def test_nearest_returns_rows(monkeypatch):
     assert len(payload) == 1
     assert payload[0]["common_name"] == "Maple"
     assert payload[0]["original_common_name"] == "Maple"
-    assert payload[0]["species_id"] == "12"
+    assert payload[0]["species_id"] == 12
     assert fake_conn.closed is True
 
 
@@ -171,9 +171,20 @@ def test_species_profile_returns_sourced_profile(monkeypatch):
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["species_key"] == "acer_rubrum"
-    assert payload["profile"]["source_system"] == "wikipedia"
-    assert payload["profile"]["source_url"] == "https://en.wikipedia.org/wiki/Acer_rubrum"
-    assert payload["profile"]["retrieved_at"] == "2026-06-12T00:00:00+00:00"
+    assert payload["common_name"] == "Red Maple"
+    assert payload["botanical_name"] == "Acer rubrum"
+    assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["risk"] is None
+    summary = payload["sections"]["summary"]
+    assert summary["available"] is True
+    assert summary["text"] == "Acer rubrum is a deciduous tree."
+    assert summary["source_system"] == "wikipedia"
+    assert summary["source_url"] == "https://en.wikipedia.org/wiki/Acer_rubrum"
+    assert summary["license"] == "Creative Commons Attribution-ShareAlike 4.0 International"
+    assert summary["license_url"] == "https://creativecommons.org/licenses/by-sa/4.0/"
+    assert summary["attribution"] == "Wikipedia contributors"
+    assert summary["retrieved_at"] == "2026-06-12T00:00:00+00:00"
+    assert "profile" not in payload
     assert "LEFT JOIN species_profile" in fake_conn.cursor_instance.executed
 
 
@@ -209,7 +220,11 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
     response = client.get("/species/12/profile")
 
     assert response.status_code == 200
-    assert response.get_json()["profile"] is None
+    payload = response.get_json()
+    assert payload["common_name"] == "Red Maple"
+    assert payload["botanical_name"] == "Acer rubrum"
+    assert payload["sections"]["summary"] is None
+    assert payload["sections"]["benefits"] is None
 
 
 def test_species_profile_returns_404_for_unknown_species(monkeypatch):

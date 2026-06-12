@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Add species profile panel
+- Prompt summary: Implement `TE-009A` so tree popups can open a lazy-loaded species profile panel using the canonical `TE-008A` API contract.
+- Scope: `api.py`, `templates/index.html`, `static/js/script.js`, `static/css/styles.css`, `tests/test_api.py`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Kept `/nearest` compact while returning numeric `species_id`; changed `/species/<species_id>/profile` to the sectioned `sections.summary` response with `summary: null` for missing profiles; added a popup "About" action only for usable IDs; rendered Wikipedia summary text only when attribution and license metadata are visible; used a desktop side panel/mobile bottom sheet without changing the map browsing model.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` passed (`ruff` + `pytest`, `50 passed`); local browser smoke check loaded `http://127.0.0.1:5000/` with map and hidden panel shell present and no console errors.
+- Follow-ups: none.
+
 ## 2026-06-12 - Clarify species API identity semantics
 - Prompt summary: Incorporate review feedback that `species_key` should not be treated as more durable than numeric `species_id`.
 - Scope: `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.
