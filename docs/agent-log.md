@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Populate local Wikipedia species profiles
+- Prompt summary: Apply the new profile migration locally, run Wikipedia enrichment, fix missing profile URLs, and prepare for production enrichment.
+- Scope: `scripts/enrich_species_profiles.py`, `seeds/species.csv`, `docs/agent-log.md`.
+- Decisions: Fixed the enrichment script so it can import repo modules when invoked from `scripts/`; replaced two dead cultivar/hybrid Wikipedia URLs with nearest live genus pages (`Arbutus`, `Tilia`) so the profile job can complete without repeated 404s.
+- Validation: Local migration applied; local enrichment finished with `299` cached profiles for `299` species with Wikipedia URLs and `0` missing profiles; `make check` passed (`ruff` + `pytest`, `46 passed`).
+- Follow-ups: Apply the same migration, seed URL updates, and enrichment job to production.
+
 ## 2026-06-12 - Add Wikipedia species profile enrichment
 - Prompt summary: After committing the provenance foundation, continue into `TE-004` by turning seeded Wikipedia URLs into sourced species profile records and an API surface.
 - Scope: `scripts/enrich_species_profiles.py`, `api.py`, `Makefile`, `README.md`, `tests/test_api.py`, `tests/test_species_profile_enrichment.py`, `docs/tree-enrichment-backlog.md`, `docs/agent-log.md`.

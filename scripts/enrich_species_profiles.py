@@ -2,13 +2,17 @@
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from os import environ
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, unquote, urlparse
 from urllib.request import Request, urlopen
 
 from psycopg2.extras import Json
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import tree_loader
 
