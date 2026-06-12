@@ -4,8 +4,10 @@ import tree_loader
 
 
 class FakeCursor:
-    def __init__(self, fetchone_result=(0,)):
+    def __init__(self, fetchone_result=(0,), fetchall_result=None, rowcount=0):
         self.fetchone_result = fetchone_result
+        self.fetchall_result = fetchall_result or []
+        self.rowcount = rowcount
         self.calls = []
 
     def execute(self, query, params=None):
@@ -13,6 +15,9 @@ class FakeCursor:
 
     def fetchone(self):
         return self.fetchone_result
+
+    def fetchall(self):
+        return self.fetchall_result
 
 
 def test_delete_city_rows_uses_source_name():
@@ -57,6 +62,40 @@ def test_record_import_run_writes_expected_values():
     assert params[5] == "completed"
 
 
+def test_apply_species_catalog_to_source_updates_resolved_rows(monkeypatch):
+    cursor = FakeCursor(
+        fetchall_result=[
+            ("Quercus robur", "Chêne pédonculé"),
+            ("Unknown botanical", "Mystery tree"),
+        ],
+        rowcount=42,
+    )
+    inserted_rows = []
+
+    def fake_execute_values(_cursor, _query, rows, **_kwargs):
+        inserted_rows.extend(rows)
+
+    monkeypatch.setattr(tree_loader, "execute_values", fake_execute_values)
+
+    updated = tree_loader.apply_species_catalog_to_source(
+        cursor, "Geneva Cantonal Tree Inventory"
+    )
+
+    assert updated == 42
+    assert inserted_rows == [
+        (
+            "Geneva Cantonal Tree Inventory",
+            "Quercus robur",
+            "Chêne pédonculé",
+            "English Oak",
+            "quercus_robur",
+        )
+    ]
+    assert cursor.calls[0][1] == ("Geneva Cantonal Tree Inventory",)
+    assert "IS NOT DISTINCT FROM resolved.botanical_name" in cursor.calls[3][0]
+    assert "tree.species_id IS DISTINCT FROM species.id" in cursor.calls[3][0]
+
+
 def test_species_seed_files_load():
     catalog = tree_loader.load_species_catalog()
 
@@ -92,6 +131,37 @@ def test_resolved_species_values_translates_known_geneva_species():
     assert common_name == "English Oak"
     assert original_common_name == "Chêne pédonculé"
     assert species_key == "quercus_robur"
+
+
+def test_resolved_species_values_handles_ottawa_reversed_common_names():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "Maple Sugar", "Maple Sugar", "Ottawa Open Data Tree Inventory"
+    )
+
+    assert common_name == "Sugar Maple"
+    assert original_common_name == "Maple Sugar"
+    assert species_key == "acer_saccharum"
+
+
+def test_resolved_species_values_handles_canonical_common_names_without_botanical_name():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "Norway Maple", None, "Mississauga City-Owned Tree Inventory"
+    )
+
+    assert common_name == "Norway Maple"
+    assert original_common_name == "Norway Maple"
+    assert species_key == "acer_platanoides"
+
+
+def test_resolved_species_values_handles_san_francisco_packed_species_text():
+    source_name = "Platanus x hispanica :: Sycamore: London Plane"
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        source_name, source_name, "San Francisco Street Tree Inventory"
+    )
+
+    assert common_name == "London Plane"
+    assert original_common_name == source_name
+    assert species_key == "platanus_x_acerifolia"
 
 
 def test_standardize_common_name_does_not_invert_unknown_comma_names():
@@ -228,7 +298,7 @@ def test_san_francisco_row_tuple_maps_shared_fields():
     row = {
         "TreeID": "123456",
         "qLegalStatus": "Permitted",
-        "qSpecies": "London Plane",
+        "qSpecies": "Platanus x hispanica :: Sycamore: London Plane",
         "qAddress": "123 Market St",
         "SiteOrder": "7",
         "qSiteInfo": "Sidewalk",
@@ -248,9 +318,9 @@ def test_san_francisco_row_tuple_maps_shared_fields():
     assert result[2] == "123 Market St"
     assert result[3] == "Sidewalk"
     assert result[4] == "Public Works"
-    assert result[5] == "London Plane"
+    assert result[5] == "Platanus x hispanica"
     assert result[6] == "London Plane"
-    assert result[7] == "London Plane"
+    assert result[7] == "Platanus x hispanica :: Sycamore: London Plane"
     assert result[8] == 18
     assert result[9] == 7
     assert result[10] == -122.4464023

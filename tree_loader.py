@@ -380,6 +380,77 @@ def load_city_data(cursor, city, city_config, filename, batch_size):
     loader(cursor, filename, batch_size=batch_size)
 
 
+def apply_species_catalog_to_source(cursor, source_name):
+    """Resolve loaded source rows against the curated species catalog."""
+    cursor.execute(
+        """
+        SELECT botanical_name, original_common_name
+        FROM street_trees
+        WHERE source = %s
+        GROUP BY botanical_name, original_common_name;
+        """,
+        (source_name,),
+    )
+
+    resolution_rows = []
+    for botanical_name, original_common_name in cursor.fetchall():
+        resolution = resolve_species(source_name, botanical_name, original_common_name)
+        if resolution:
+            resolution_rows.append(
+                (
+                    source_name,
+                    botanical_name,
+                    original_common_name,
+                    resolution["display_common_name"],
+                    resolution["species_key"],
+                )
+            )
+
+    if not resolution_rows:
+        return 0
+
+    cursor.execute("DROP TABLE IF EXISTS species_resolution_map;")
+    cursor.execute(
+        """
+        CREATE TEMP TABLE species_resolution_map (
+            source TEXT NOT NULL,
+            botanical_name TEXT,
+            original_common_name TEXT,
+            display_common_name TEXT NOT NULL,
+            species_key TEXT NOT NULL
+        ) ON COMMIT DROP;
+        """
+    )
+    execute_values(
+        cursor,
+        """
+        INSERT INTO species_resolution_map (
+            source, botanical_name, original_common_name, display_common_name, species_key
+        ) VALUES %s;
+        """,
+        resolution_rows,
+    )
+    cursor.execute(
+        """
+        UPDATE street_trees AS tree
+        SET common_name = resolved.display_common_name,
+            species_id = species.id
+        FROM species_resolution_map AS resolved
+        JOIN species ON species.species_key = resolved.species_key
+        WHERE tree.source = resolved.source
+            AND tree.botanical_name IS NOT DISTINCT FROM resolved.botanical_name
+            AND tree.original_common_name IS NOT DISTINCT FROM resolved.original_common_name
+            AND (
+                tree.common_name IS DISTINCT FROM resolved.display_common_name
+                OR tree.species_id IS DISTINCT FROM species.id
+            );
+        """
+    )
+    updated_count = cursor.rowcount
+    cursor.execute("DROP TABLE species_resolution_map;")
+    return updated_count
+
+
 def point_to_multipoint_json(geometry):
     """Normalize Point geometries to the MultiPoint schema shape."""
     normalized = geometry
@@ -1142,8 +1213,16 @@ def san_francisco_row_tuple(row):
     if longitude is None or latitude is None:
         return
 
-    species = properties.get("qspecies")
-    common_name, original_common_name = common_name_values(species, species)
+    raw_species = properties.get("qspecies")
+    botanical_name, source_common_name = split_source_species_text(raw_species)
+    if botanical_name is None and source_common_name is None:
+        botanical_name = raw_species
+        source_common_name = raw_species
+
+    common_name, _original_common_name, _species_key = resolved_species_values(
+        source_common_name, botanical_name, source
+    )
+    original_common_name = clean_text(raw_species)
 
     return (
         source,
@@ -1151,7 +1230,7 @@ def san_francisco_row_tuple(row):
         properties.get("qaddress"),
         properties.get("qsiteinfo"),
         properties.get("qcaretaker"),
-        species,
+        botanical_name,
         common_name,
         original_common_name,
         dbh_trunk,
@@ -1391,6 +1470,10 @@ def standardize_common_name(source_common_name, botanical_name=None):
     if common_name is None:
         return None
 
+    _botanical_part, delimited_common_name = split_source_species_text(common_name)
+    if delimited_common_name:
+        common_name = delimited_common_name
+
     parenthesized_name = english_name_from_parentheses(common_name)
     if parenthesized_name:
         common_name = parenthesized_name
@@ -1409,8 +1492,8 @@ def resolve_species(source, botanical_name=None, source_common_name=None):
         if species_key:
             return catalog["species_by_key"][species_key]
 
-    common_key = normalize_species_text(source_common_name)
-    if common_key:
+    common_keys = common_name_lookup_candidates(source_common_name)
+    for common_key in common_keys:
         source_key = clean_text(source) or ""
         for lookup_key in ((source_key, common_key), ("", common_key)):
             species_key = catalog["common_aliases"].get(lookup_key)
@@ -1431,10 +1514,24 @@ def load_species_catalog():
     botanical_aliases = {}
     common_aliases = {}
 
+    def set_common_alias(alias, species_key, source=""):
+        alias_key = normalize_species_text(alias)
+        if not alias_key:
+            return
+        lookup_key = (source, alias_key)
+        existing_key = common_aliases.get(lookup_key)
+        if existing_key is None or is_more_specific_species(
+            species_by_key[species_key], species_by_key[existing_key]
+        ):
+            common_aliases[lookup_key] = species_key
+
     for row in species_rows:
         species_key = row["species_key"]
         species_by_key[species_key] = row
         botanical_aliases[normalize_species_text(row["canonical_botanical_name"])] = species_key
+        set_common_alias(row["display_common_name"], species_key)
+        for alias in generated_common_aliases(row["display_common_name"]):
+            set_common_alias(alias, species_key)
 
     for row in alias_rows:
         species_key = row["species_key"]
@@ -1444,7 +1541,7 @@ def load_species_catalog():
         if row["name_kind"] == "botanical":
             botanical_aliases[alias_key] = species_key
         elif row["name_kind"] == "common":
-            common_aliases[(row["source"], alias_key)] = species_key
+            set_common_alias(row["alias"], species_key, row["source"])
         else:
             raise ValueError(f"Unknown name_kind in alias seed: {row['name_kind']}")
 
@@ -1458,6 +1555,38 @@ def load_species_catalog():
     return _SPECIES_CATALOG_CACHE
 
 
+def is_more_specific_species(candidate, existing):
+    """Prefer species-level common-name aliases over genus placeholders."""
+    candidate_is_genus = candidate["canonical_botanical_name"].endswith(" sp.")
+    existing_is_genus = existing["canonical_botanical_name"].endswith(" sp.")
+    return existing_is_genus and not candidate_is_genus
+
+
+def generated_common_aliases(display_common_name):
+    """Return conservative aliases for common source naming patterns."""
+    text = clean_text(display_common_name)
+    if not text:
+        return []
+
+    aliases = []
+    words = text.split()
+    if len(words) > 1:
+        aliases.append(" ".join([words[-1], *words[:-1]]))
+
+    for suffix in ("Mountain Ash", "Tree Lilac"):
+        if text.endswith(f" {suffix}"):
+            prefix = text[: -len(suffix)].strip()
+            if prefix:
+                aliases.append(f"{suffix} {prefix}")
+                if suffix == "Tree Lilac":
+                    aliases.append(f"Lilac {prefix}")
+
+    if len(words) == 1:
+        aliases.extend((f"{text} Species", f"{text} Spp", f"{text} Spp."))
+
+    return aliases
+
+
 def read_seed_csv(path):
     """Read a species seed CSV with stripped field values."""
     with open(path, newline="", encoding="utf-8") as file:
@@ -1469,7 +1598,8 @@ def read_seed_csv(path):
 
 def botanical_name_candidates(value):
     """Return increasingly broad botanical lookup keys."""
-    normalized = normalize_species_text(value)
+    botanical_part, _common_part = split_source_species_text(value)
+    normalized = normalize_species_text(botanical_part or value)
     if not normalized:
         return []
 
@@ -1481,6 +1611,44 @@ def botanical_name_candidates(value):
     if without_cultivar and without_cultivar not in candidates:
         candidates.append(without_cultivar)
     return candidates
+
+
+def common_name_lookup_candidates(value):
+    """Return common-name lookup keys from raw or packed source text."""
+    candidates = []
+    values = [value]
+    _botanical_part, common_part = split_source_species_text(value)
+    if common_part:
+        values.append(common_part)
+        if ":" in common_part:
+            values.append(common_part.rsplit(":", 1)[1])
+
+    for candidate in values:
+        parenthesized_name = english_name_from_parentheses(candidate)
+        if parenthesized_name:
+            candidates.append(parenthesized_name)
+        candidates.append(candidate)
+
+    keys = []
+    for candidate in candidates:
+        key = normalize_species_text(candidate)
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
+def split_source_species_text(value):
+    """Split source text formatted as 'botanical :: common' when present."""
+    text = clean_text(value)
+    if not text or "::" not in text:
+        return None, None
+
+    botanical_part, common_part = text.split("::", 1)
+    botanical_part = clean_text(botanical_part)
+    common_part = clean_text(common_part)
+    if botanical_part in {"Tree(s)", "Tree"}:
+        botanical_part = None
+    return botanical_part, common_part
 
 
 def normalize_species_text(value):
@@ -1629,6 +1797,8 @@ def main():
             delete_city_rows(cursor, source_name)
 
         load_city_data(cursor, city, city_config, filename, batch_size)
+        resolved_count = apply_species_catalog_to_source(cursor, source_name)
+        print(f"Applied species catalog to {resolved_count} {city} rows.")
 
         if apply_enrichments:
             print(f"Applying enrichments for {city}...")

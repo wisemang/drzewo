@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Expand species normalization across sources
+- Prompt summary: Bring non-Toronto/Geneva sources up to the standardized Canadian English common-name catalog, update local/prod DBs, and preserve source names for comparison.
+- Scope: `tree_loader.py`, `seeds/species.csv`, `seeds/species_aliases.csv`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
+- Decisions: Added a shared post-load species-catalog application step so every source can populate `species_id` and standardized display names without duplicating loader SQL; added conservative canonical common-name aliases, Ottawa reversed-name handling, San Francisco `Botanical :: Common` parsing, and high-volume source aliases/species for Ottawa, Mississauga, San Francisco, and other common misses.
+- Validation: `make check` passed (`ruff` + `pytest`, `40 passed`); local and production backfills completed; production San Francisco refresh completed; final prod coverage included Toronto `99.85%`, Geneva `96.48%`, Ottawa `92.37%`, Mississauga `76.18%`, San Francisco `76.33%`, Markham `95.66%`, Peterborough `97.10%`, Montreal `91.00%`, and Oakville `87.22%`; public `treeseek.ca` smoke check passed.
+- Follow-ups: Continue curating long-tail unresolved species, especially Calgary/Madison cultivars and San Francisco western street-tree species not yet represented in the catalog.
+
 ## 2026-06-03 - Add Geneva tree import and downloader
 - Prompt summary: Add support for Geneva trees from the SITG `SIPV_ICA_WEB_PUBLIC_TOT` service, test a full local import, and preserve the paged downloader workflow.
 - Scope: `tree_loader.py`, `scripts/download_geneva_trees.py`, `Makefile`, `README.md`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
