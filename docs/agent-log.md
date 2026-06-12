@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Normalize enrichment backlog specs
+- Prompt summary: Sanity-check the moved backlog/spec files and apply recommended consistency edits.
+- Scope: `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/species-profile-api-spec.md`, `docs/backlog/treeseek-enrichment-specs/*.md`, `docs/agent-log.md`.
+- Decisions: Made `TE-008A-species-profile-api.md` the canonical API contract with the generic API spec as a pointer; standardized numeric `species_id` plus string `species_key`; chose `summary: null` for missing summary sections; added `TE-015` to the backlog; standardized benefit scope naming on `tree_instance`; required explicit `lat`/`lng`/`radius_m` context for nearby local stats.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` passed (`ruff` + `pytest`, `47 passed`).
+- Follow-ups: Implement `TE-008A` against the sectioned response contract before building the `TE-009A` panel.
+
 ## 2026-06-12 - Rename Japanese Tree Lilac display name
 - Prompt summary: Spot-check found `Syringa reticulata` should display as `Japanese Lilac` rather than `Japanese Tree Lilac`.
 - Scope: `seeds/species.csv`, `seeds/species_aliases.csv`, `docs/agent-log.md`; local and production database seed/backfill/profile refresh.
