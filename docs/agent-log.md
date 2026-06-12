@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Add species profile provenance foundation
+- Prompt summary: Continue the enrichment plan after species-name standardization, identify the Wikipedia/profile next step, and add the provenance schema foundation.
+- Scope: `drzewo.sql`, `migrations/20260612_add_species_profile.sql`, `tree_loader.py`, `tests/test_tree_loader.py`, `docs/tree-enrichment-backlog.md`, `docs/agent-log.md`.
+- Decisions: Added a `species_profile` table keyed by species with summary/taxonomy placeholders plus required provenance fields (`source_system`, `source_url`, `retrieved_at`, `method_version`, `confidence`) and license/attribution fields; marked the completed species schema, normalization, provenance, and licensing-guardrail backlog items as done.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` passed (`ruff` + `pytest`, `41 passed`).
+- Follow-ups: Implement `TE-004` as an idempotent Wikipedia profile enrichment job that populates `species_profile` from existing `species.wikipedia_url` values and exposes sourced profiles through the API.
+
 ## 2026-06-12 - Expand species normalization across sources
 - Prompt summary: Bring non-Toronto/Geneva sources up to the standardized Canadian English common-name catalog, update local/prod DBs, and preserve source names for comparison.
 - Scope: `tree_loader.py`, `seeds/species.csv`, `seeds/species_aliases.csv`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
