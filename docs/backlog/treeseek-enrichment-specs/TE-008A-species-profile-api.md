@@ -46,6 +46,20 @@ GET /species/profile?botanical_name=Quercus%20rubra
 
 But the frontend should prefer the stable `species_id` path.
 
+## Identity Semantics
+
+Use `species_id` as the durable database identity for the route and relationship joins.
+
+Use `species_key` as a stable API/display convenience, not as the only source of truth. The key
+should not change casually, but taxonomy fixes, synonym handling improvements, or catalog cleanup may
+require a key migration. If a `species_key` changes, the migration should preserve the numeric
+`species_id` where possible, update seed/profile references in the same change, and document the
+decision in the backlog log.
+
+Clients may use `species_key` for readable cache labels and debugging, but should not assume it is
+more durable than the numeric `species_id` unless the project later adopts an explicit immutable-key
+policy.
+
 ## `/nearest` Contract
 
 `/nearest` should remain optimized for fast map browsing.
@@ -123,10 +137,15 @@ If the species exists but has no profile:
 
 If the species ID does not exist, return a normal API 404 response.
 
+When `sections.summary` exists, keep provenance fields inside the `summary` section. When no summary
+exists, return `"summary": null` rather than an object full of null provenance fields.
+
 ## Acceptance Criteria
 
-- `/species/<species_id>/profile` returns numeric species id, stable species key, species common name, botanical name, summary section, source URL, license, attribution, confidence, retrieval timestamp, and method version.
+- `/species/<species_id>/profile` returns numeric species id, species key, species common name, botanical name, summary section, source URL, license, attribution, confidence, retrieval timestamp, and method version.
+- Spec documents that numeric `species_id` is the durable identity and `species_key` is a stable-but-migratable API/display convenience.
 - Response is null-safe when profile data is missing.
+- Missing summary data is represented as `summary: null`; present summary data carries section-level provenance.
 - `/nearest` does not return full profile summaries.
 - API response is documented.
 - Tests cover known species with profile data.

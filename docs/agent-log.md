@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Clarify species API identity semantics
+- Prompt summary: Incorporate review feedback that `species_key` should not be treated as more durable than numeric `species_id`.
+- Scope: `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.
+- Decisions: Documented numeric `species_id` as the durable route/join identity; documented `species_key` as stable-but-migratable unless an immutable-key policy is adopted; reaffirmed that present summary sections carry provenance while missing summaries are `summary: null`.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` passed (`ruff` + `pytest`, `47 passed`).
+- Follow-ups: none.
+
 ## 2026-06-12 - Normalize enrichment backlog specs
 - Prompt summary: Sanity-check the moved backlog/spec files and apply recommended consistency edits.
 - Scope: `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/species-profile-api-spec.md`, `docs/backlog/treeseek-enrichment-specs/*.md`, `docs/agent-log.md`.

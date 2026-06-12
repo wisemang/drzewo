@@ -81,3 +81,8 @@ Template:
 - Context: The profile provenance table exists; the next user-visible step is making seeded Wikipedia URLs produce retrievable species profiles.
 - Decision: Add `make enrich-species-profiles` as the first Wikipedia profile population path and expose profiles through `/species/<species_id>/profile`, rather than expanding `/nearest` before the full enriched tree response design.
 - Consequences: Profile enrichment can be run and refreshed independently. `TE-008A` tracks the current profile contract, while `TE-008B` remains open for later benefits/risk/media/local-stats expansion.
+
+### 2026-06-12 - Species API identity semantics
+- Context: The profile API exposes both numeric `species_id` and human-readable `species_key`.
+- Decision: Treat numeric `species_id` as the durable route/join identity. Treat `species_key` as a stable-but-migratable API/display convenience unless an explicit immutable-key policy is adopted later.
+- Consequences: Future taxonomy, synonym, or normalization fixes should preserve `species_id` where possible, document any `species_key` changes, and avoid encouraging clients to treat `species_key` as the only durable identifier.
