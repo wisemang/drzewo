@@ -58,10 +58,11 @@ To replace all existing rows for one city source before loading, add `--refresh`
 Successful and failed imports are recorded in the `import_runs` table with source file, refresh mode, timestamps, and final row count.
 
 Existing databases created before species source names were retained should apply the
-species-name migration before deploying newer code:
+species and enrichment migrations before deploying newer code:
 
 ```bash
 psql "$DATABASE_URL" -f migrations/20260611_add_original_common_name.sql
+psql "$DATABASE_URL" -f migrations/20260612_add_species_profile.sql
 ```
 
 The loader seeds the normalized species catalog from:
@@ -72,6 +73,17 @@ The loader seeds the normalized species catalog from:
 Toronto and Geneva imports use this catalog to store `street_trees.species_id`, display a
 Canadian English species name, and retain the source-provided common name for comparison.
 Refresh a city import after applying the migration to populate `species_id` for that source.
+
+Populate sourced Wikipedia species profiles with:
+
+```bash
+make enrich-species-profiles
+make enrich-species-profiles LIMIT=10 DRY_RUN=1
+make enrich-species-profiles SPECIES_KEY=acer_rubrum REFRESH=1
+```
+
+Profiles are stored in `species_profile` with source, retrieval, method, confidence, license,
+and attribution metadata. The API returns one profile at `/species/<species_id>/profile`.
 
 ### Archive local raw datasets
 

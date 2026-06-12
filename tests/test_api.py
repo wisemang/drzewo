@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import api
 
 
@@ -15,6 +17,11 @@ class FakeCursor:
 
     def fetchall(self):
         return self.rows
+
+    def fetchone(self):
+        if not self.rows:
+            return None
+        return self.rows[0]
 
     def close(self):
         return None
@@ -128,3 +135,93 @@ def test_nearest_uses_default_limit_when_missing(monkeypatch):
     assert response.status_code == 200
     params = fake_conn.cursor_instance.params
     assert params[-1] == api.DEFAULT_LIMIT
+
+
+def test_species_profile_returns_sourced_profile(monkeypatch):
+    rows = [
+        (
+            12,
+            "acer_rubrum",
+            "Acer rubrum",
+            "Red Maple",
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            "Acer rubrum is a deciduous tree.",
+            {"canonical_botanical_name": "Acer rubrum"},
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            "wikipedia",
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            datetime(2026, 6, 12, tzinfo=timezone.utc),
+            "wikipedia-summary-v1",
+            "source-derived",
+            "Creative Commons Attribution-ShareAlike 4.0 International",
+            "https://creativecommons.org/licenses/by-sa/4.0/",
+            "Wikipedia contributors",
+        )
+    ]
+    fake_conn = FakeConnection(rows)
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["species_key"] == "acer_rubrum"
+    assert payload["profile"]["source_system"] == "wikipedia"
+    assert payload["profile"]["source_url"] == "https://en.wikipedia.org/wiki/Acer_rubrum"
+    assert payload["profile"]["retrieved_at"] == "2026-06-12T00:00:00+00:00"
+    assert "LEFT JOIN species_profile" in fake_conn.cursor_instance.executed
+
+
+def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch):
+    rows = [
+        (
+            12,
+            "acer_rubrum",
+            "Acer rubrum",
+            "Red Maple",
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    ]
+    fake_conn = FakeConnection(rows)
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    assert response.get_json()["profile"] is None
+
+
+def test_species_profile_returns_404_for_unknown_species(monkeypatch):
+    fake_conn = FakeConnection([])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/999/profile")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"error": "species not found"}

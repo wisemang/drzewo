@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Add Wikipedia species profile enrichment
+- Prompt summary: After committing the provenance foundation, continue into `TE-004` by turning seeded Wikipedia URLs into sourced species profile records and an API surface.
+- Scope: `scripts/enrich_species_profiles.py`, `api.py`, `Makefile`, `README.md`, `tests/test_api.py`, `tests/test_species_profile_enrichment.py`, `docs/tree-enrichment-backlog.md`, `docs/agent-log.md`.
+- Decisions: Added a focused `make enrich-species-profiles` job using Wikipedia REST summaries, storing summary/canonical URL/source/license/attribution metadata in `species_profile`; exposed profiles via `/species/<species_id>/profile` while leaving the full `/nearest` payload expansion for `TE-008`.
+- Validation: `make check` passed (`ruff` + `pytest`, `46 passed`).
+- Follow-ups: Run the enrichment job against a database after applying `migrations/20260612_add_species_profile.sql`; design `TE-008` for embedding profiles, benefits, risk, and provenance in tree responses.
+
 ## 2026-06-12 - Add species profile provenance foundation
 - Prompt summary: Continue the enrichment plan after species-name standardization, identify the Wikipedia/profile next step, and add the provenance schema foundation.
 - Scope: `drzewo.sql`, `migrations/20260612_add_species_profile.sql`, `tree_loader.py`, `tests/test_tree_loader.py`, `docs/tree-enrichment-backlog.md`, `docs/agent-log.md`.

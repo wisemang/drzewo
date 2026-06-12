@@ -14,6 +14,17 @@ MAX_LIMIT = 150
 MIN_RADIUS_M = 1.0
 MAX_RADIUS_M = 5000.0
 
+
+def db_params():
+    """Return database connection parameters from the environment."""
+    return {
+        "database": environ.get('DRZEWO_DB', 'drzewo'),
+        "user": environ.get('DRZEWO_DB_USER'),
+        "password": environ.get('DRZEWO_DB_PW'),
+        "host": environ.get('DRZEWO_DB_HOST', 'localhost'),
+        "port": environ.get('DRZEWO_DB_PORT', '5432')
+    }
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -59,16 +70,7 @@ def nearest():
             return jsonify({"error": "max_distance_m must be a number"}), 400
         max_distance_m = max(MIN_RADIUS_M, min(max_distance_m, MAX_RADIUS_M))
 
-    db_params = {
-        "database": environ.get('DRZEWO_DB', 'drzewo'),
-        "user": environ.get('DRZEWO_DB_USER'),
-        "password": environ.get('DRZEWO_DB_PW'),
-        "host": environ.get('DRZEWO_DB_HOST', 'localhost'),
-        "port": environ.get('DRZEWO_DB_PORT', '5432')
-    }
-
-
-    conn = psycopg2.connect(**db_params)
+    conn = psycopg2.connect(**db_params())
     try:
         cur = conn.cursor()
         where_clause = ""
@@ -122,6 +124,83 @@ def nearest():
         for row in results
     ]
     return jsonify(response)
+
+
+@app.route('/species/<int:species_id>/profile', methods=['GET'])
+def species_profile(species_id):
+    conn = psycopg2.connect(**db_params())
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                species.id,
+                species.species_key,
+                species.canonical_botanical_name,
+                species.display_common_name,
+                species.wikipedia_url,
+                profile.summary,
+                profile.taxonomy,
+                profile.canonical_url,
+                profile.source_system,
+                profile.source_url,
+                profile.retrieved_at,
+                profile.method_version,
+                profile.confidence,
+                profile.license_name,
+                profile.license_url,
+                profile.attribution
+            FROM species
+            LEFT JOIN species_profile AS profile
+                ON profile.species_id = species.id
+                AND profile.source_system = 'wikipedia'
+            WHERE species.id = %s
+            ORDER BY profile.retrieved_at DESC NULLS LAST
+            LIMIT 1;
+            """,
+            (species_id,),
+        )
+        row = cur.fetchone()
+        cur.close()
+    finally:
+        conn.close()
+
+    if row is None:
+        return jsonify({"error": "species not found"}), 404
+
+    profile = None
+    if row[8] is not None:
+        profile = {
+            "summary": row[5],
+            "taxonomy": row[6] or {},
+            "canonical_url": row[7],
+            "source_system": row[8],
+            "source_url": row[9],
+            "retrieved_at": serialize_datetime(row[10]),
+            "method_version": row[11],
+            "confidence": row[12],
+            "license_name": row[13],
+            "license_url": row[14],
+            "attribution": row[15],
+        }
+
+    return jsonify(
+        {
+            "species_id": row[0],
+            "species_key": row[1],
+            "canonical_botanical_name": row[2],
+            "display_common_name": row[3],
+            "wikipedia_url": row[4],
+            "profile": profile,
+        }
+    )
+
+
+def serialize_datetime(value):
+    """Return an ISO string for DB datetimes, preserving test strings as-is."""
+    if value is None or isinstance(value, str):
+        return value
+    return value.isoformat()
 
 
 

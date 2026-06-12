@@ -26,7 +26,7 @@ Update this file in the same commit as implementation changes.
 | TE-001 | P0 | done | none | Add normalized species tables (`species`, `species_name_alias`) and `street_trees.species_id` linkage. | Migration applied; existing imports still work; species join path covered by tests. |
 | TE-002 | P0 | done | TE-001 | Add deterministic species normalization in `tree_loader.py` (clean botanical/common names, synonym handling). | Loader assigns `species_id` consistently across cities; normalization tests added for edge cases. |
 | TE-003 | P0 | done | TE-001 | Add source metadata model for enrichments (`source_system`, `source_url`, `retrieved_at`, `method_version`, `confidence`). | Enrichment tables include provenance fields; API can expose them. |
-| TE-004 | P1 | todo | TE-001, TE-003 | Add `species_profile` enrichment (Wikipedia-level summary + taxonomy basics + canonical links). | Profile record available for known species; API returns profile block with attribution URL. |
+| TE-004 | P1 | done | TE-001, TE-003 | Add `species_profile` enrichment (Wikipedia-level summary + taxonomy basics + canonical links). | Profile record available for known species; API returns profile block with attribution URL. |
 | TE-005 | P1 | todo | TE-001, TE-003 | Add `species_benefit_model` for ecological/environmental/economic estimates. | Carbon, pollution, stormwater, and economic estimate fields stored with assumption metadata. |
 | TE-006 | P1 | todo | TE-001, TE-003 | Add `species_risk` + `species_risk_observation` for invasive/pest/pathogen signals (EDDMapS-oriented). | Species risk flags queryable by region and risk type; attribution and freshness fields present. |
 | TE-007 | P2 | todo | TE-001, TE-003 | Add `species_media` for public-domain or compatible-license imagery plus attribution payload. | At least one image path with license + credit metadata can be returned for a species. |
@@ -70,3 +70,8 @@ Template:
 - Context: Species names and catalog links have been standardized; Wikipedia URLs now exist in the seed catalog, but richer profiles need attribution and freshness metadata.
 - Decision: Treat Wikipedia as the first approved profile source for short species summaries, canonical article URLs, and basic taxonomy-style facts only. Store source provenance on each profile record using `source_system`, `source_url`, `retrieved_at`, `method_version`, and `confidence`, with license and attribution fields populated when data is fetched.
 - Consequences: Wikipedia links remain seed catalog metadata until an enrichment job creates `species_profile` rows. Any API/frontend surface must show source attribution and avoid presenting imported prose as locally authored content.
+
+### 2026-06-12 - Wikipedia profile endpoint
+- Context: The profile provenance table exists; the next user-visible step is making seeded Wikipedia URLs produce retrievable species profiles.
+- Decision: Add `make enrich-species-profiles` as the first Wikipedia profile population path and expose profiles through `/species/<species_id>/profile`, rather than expanding `/nearest` before the full enriched tree response design.
+- Consequences: Profile enrichment can be run and refreshed independently. `TE-008` remains open for a later combined tree/profile/benefit/risk response.
