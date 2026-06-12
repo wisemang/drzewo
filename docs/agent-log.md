@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Populate production Wikipedia species profiles
+- Prompt summary: After local enrichment succeeded, apply the same species profile migration and Wikipedia profile cache to production.
+- Scope: `docs/agent-log.md`; production database migration/data update.
+- Decisions: Applied `migrations/20260612_add_species_profile.sql` in production via the postgres role, granted the app DB role access to `species_profile` and its sequence, reseeded species URLs through the app role, and ran the profile enrichment job through the existing SSH tunnel workflow.
+- Validation: Production enrichment completed with `299` selected, `299` updated, `0` failed; verification found `299` profiles for `299` species with Wikipedia URLs and `0` missing.
+- Follow-ups: Deploy the app code before relying on `/species/<species_id>/profile` from the public site.
+
 ## 2026-06-12 - Make profile enrichment safe for prod app role
 - Prompt summary: Production migration succeeded, but the app DB role could not run `CREATE TABLE IF NOT EXISTS` during enrichment.
 - Scope: `tree_loader.py`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
