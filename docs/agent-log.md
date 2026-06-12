@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Mark TE-008A and TE-009A done
+- Prompt summary: Review latest `TE-009A`/`TE-008A` changes and verify backlog status reflects completed work.
+- Scope: `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/backlog/treeseek-enrichment-specs/TE-009A-species-profile-panel.md`, `docs/agent-log.md`.
+- Decisions: Marked `TE-008A` and `TE-009A` as `done`; code review found the API and frontend behavior aligned with the requested checks.
+- Validation: Review-only docs status fix; tests not rerun after documentation-only changes.
+- Follow-ups: none.
+
 ## 2026-06-12 - Add species profile panel
 - Prompt summary: Implement `TE-009A` so tree popups can open a lazy-loaded species profile panel using the canonical `TE-008A` API contract.
 - Scope: `api.py`, `templates/index.html`, `static/js/script.js`, `static/css/styles.css`, `tests/test_api.py`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
