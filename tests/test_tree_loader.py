@@ -63,20 +63,32 @@ def test_record_import_run_writes_expected_values():
 
 
 def test_ensure_species_enrichment_tables_creates_profile_schema():
-    cursor = FakeCursor()
+    cursor = FakeCursor(fetchone_result=(None,))
 
     tree_loader.ensure_species_enrichment_tables(cursor)
 
-    assert len(cursor.calls) == 2
-    create_table_sql = cursor.calls[0][0]
-    assert "CREATE TABLE IF NOT EXISTS species_profile" in create_table_sql
+    assert len(cursor.calls) == 4
+    assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
+    create_table_sql = cursor.calls[1][0]
+    assert "CREATE TABLE species_profile" in create_table_sql
     assert "source_system TEXT NOT NULL" in create_table_sql
     assert "source_url TEXT NOT NULL" in create_table_sql
     assert "retrieved_at TIMESTAMPTZ NOT NULL" in create_table_sql
     assert "method_version TEXT NOT NULL" in create_table_sql
     assert "confidence TEXT NOT NULL DEFAULT 'unreviewed'" in create_table_sql
     assert "UNIQUE (species_id, source_system)" in create_table_sql
-    assert "idx_species_profile_species_id" in cursor.calls[1][0]
+    assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[2][0]
+    assert "CREATE INDEX idx_species_profile_species_id" in cursor.calls[3][0]
+
+
+def test_ensure_species_enrichment_tables_skips_existing_profile_schema():
+    cursor = FakeCursor(fetchone_result=("species_profile",))
+
+    tree_loader.ensure_species_enrichment_tables(cursor)
+
+    assert len(cursor.calls) == 2
+    assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
+    assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[1][0]
 
 
 def test_apply_species_catalog_to_source_updates_resolved_rows(monkeypatch):

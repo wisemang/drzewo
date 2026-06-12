@@ -192,30 +192,34 @@ def ensure_species_tables(cursor):
 
 def ensure_species_enrichment_tables(cursor):
     """Create species enrichment tables with source provenance."""
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS species_profile (
-        id BIGSERIAL PRIMARY KEY,
-        species_id BIGINT NOT NULL REFERENCES species(id) ON DELETE CASCADE,
-        summary TEXT,
-        taxonomy JSONB NOT NULL DEFAULT '{}'::jsonb,
-        canonical_url TEXT,
-        source_system TEXT NOT NULL,
-        source_url TEXT NOT NULL,
-        retrieved_at TIMESTAMPTZ NOT NULL,
-        method_version TEXT NOT NULL,
-        confidence TEXT NOT NULL DEFAULT 'unreviewed',
-        license_name TEXT,
-        license_url TEXT,
-        attribution TEXT,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        UNIQUE (species_id, source_system)
-    );
-    """)
-    cursor.execute("""
-    CREATE INDEX IF NOT EXISTS idx_species_profile_species_id
-    ON species_profile (species_id);
-    """)
+    cursor.execute("SELECT to_regclass('public.species_profile');")
+    if cursor.fetchone()[0] is None:
+        cursor.execute("""
+        CREATE TABLE species_profile (
+            id BIGSERIAL PRIMARY KEY,
+            species_id BIGINT NOT NULL REFERENCES species(id) ON DELETE CASCADE,
+            summary TEXT,
+            taxonomy JSONB NOT NULL DEFAULT '{}'::jsonb,
+            canonical_url TEXT,
+            source_system TEXT NOT NULL,
+            source_url TEXT NOT NULL,
+            retrieved_at TIMESTAMPTZ NOT NULL,
+            method_version TEXT NOT NULL,
+            confidence TEXT NOT NULL DEFAULT 'unreviewed',
+            license_name TEXT,
+            license_url TEXT,
+            attribution TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            UNIQUE (species_id, source_system)
+        );
+        """)
+    cursor.execute("SELECT to_regclass('public.idx_species_profile_species_id');")
+    if cursor.fetchone()[0] is None:
+        cursor.execute("""
+        CREATE INDEX idx_species_profile_species_id
+        ON species_profile (species_id);
+        """)
 
 
 def table_column_exists(cursor, table_name, column_name):

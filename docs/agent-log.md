@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Make profile enrichment safe for prod app role
+- Prompt summary: Production migration succeeded, but the app DB role could not run `CREATE TABLE IF NOT EXISTS` during enrichment.
+- Scope: `tree_loader.py`, `tests/test_tree_loader.py`, `docs/agent-log.md`.
+- Decisions: Changed `ensure_species_enrichment_tables()` to check `to_regclass` before issuing DDL, so low-privilege app roles can use already-migrated databases without requiring schema `CREATE` privileges.
+- Validation: `make lint` passed; `make test` passed (`47 passed`).
+- Follow-ups: Rerun production profile enrichment after committing this fix.
+
 ## 2026-06-12 - Populate local Wikipedia species profiles
 - Prompt summary: Apply the new profile migration locally, run Wikipedia enrichment, fix missing profile URLs, and prepare for production enrichment.
 - Scope: `scripts/enrich_species_profiles.py`, `seeds/species.csv`, `docs/agent-log.md`.
