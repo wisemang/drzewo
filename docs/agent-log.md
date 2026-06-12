@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-12 - Rename Japanese Tree Lilac display name
+- Prompt summary: Spot-check found `Syringa reticulata` should display as `Japanese Lilac` rather than `Japanese Tree Lilac`.
+- Scope: `seeds/species.csv`, `seeds/species_aliases.csv`, `docs/agent-log.md`; local and production database seed/backfill/profile refresh.
+- Decisions: Made `Japanese Lilac` the canonical display name for `syringa_reticulata` while keeping `Japanese Tree Lilac` as a curated alias so existing source values continue to resolve.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` passed (`ruff` + `pytest`, `47 passed`); local and production reseeds/backfills updated `67,828` matching tree rows, and both cached Wikipedia profiles were refreshed for `syringa_reticulata`.
+- Follow-ups: none.
+
 ## 2026-06-12 - Populate production Wikipedia species profiles
 - Prompt summary: After local enrichment succeeded, apply the same species profile migration and Wikipedia profile cache to production.
 - Scope: `docs/agent-log.md`; production database migration/data update.
