@@ -254,6 +254,11 @@ a:hover {
     margin: 0.35rem 0;
 }
 
+.species-profile-local-note {
+    font-size: 0.82rem;
+    color: #666;
+}
+
 .species-profile-status {
     margin: 0;
     color: #555;
@@ -271,8 +276,18 @@ a:hover {
     color: #555;
 }
 
+.species-profile-source-link {
+    display: inline-block;
+    margin-bottom: 0.3rem;
+}
+
 .species-profile-source p {
-    margin: 0.4rem 0 0;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.species-profile-source-copy {
+    color: #666;
 }
 
 body.welcome-modal-open {

@@ -363,11 +363,15 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         const largestDbhDisplay = localStatsCopy.largestLine
             ? `<p>${escapeHtml(localStatsCopy.largestLine)}</p>`
             : '';
+        const localStatsNoteDisplay = localStatsCopy.noteLine
+            ? `<p class="species-profile-local-note">${escapeHtml(localStatsCopy.noteLine)}</p>`
+            : '';
         bodyHtml += `
             <section class="species-profile-local-stats">
                 <h3>Nearby in TreeSeek</h3>
                 <p>${escapeHtml(localStatsCopy.countLine)}</p>
                 ${largestDbhDisplay}
+                ${localStatsNoteDisplay}
             </section>
         `;
     }
@@ -386,13 +390,23 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
     if (sourceUrl || (canShowSummary && (attribution || license))) {
         bodyHtml += '<div class="species-profile-source">';
         if (sourceUrl) {
-            bodyHtml += `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Read more on Wikipedia</a>`;
+            bodyHtml += `<a class="species-profile-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Read more on Wikipedia</a>`;
         }
         if (canShowSummary && (attribution || license)) {
             const licenseText = licenseUrl && license
                 ? `<a href="${escapeHtml(licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(license)}</a>`
                 : escapeHtml(license || 'license terms');
-            bodyHtml += `<p>Source: ${escapeHtml(attribution)} · ${licenseText}</p>`;
+            if (licenseUrl && license) {
+                const attributionPrefix = escapeHtml(`Summary from ${attribution} · `);
+                bodyHtml += `<p class="species-profile-source-copy">${attributionPrefix}${licenseText}</p>`;
+            } else {
+                bodyHtml += `<p class="species-profile-source-copy">${escapeHtml(
+                    speciesProfileHelpers.formatSpeciesProfileSummaryAttribution(
+                        attribution,
+                        license || 'license terms'
+                    )
+                )}</p>`;
+            }
         }
         bodyHtml += '</div>';
     }

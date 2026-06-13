@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Polish species profile source area
+- Prompt summary: Polish the species profile source/provenance area while keeping API behavior and panel structure unchanged.
+- Scope: `static/css/styles.css`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Kept the Wikipedia link visible, reduced attribution copy to a concise `Summary from ...` line, preserved the license link when present, added a low-noise nearby-stats note, and left the summary attribution/license guard unchanged.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`8 passed`); final `make check` passed (`ruff` + `pytest`, `68 passed`).
+- Follow-ups: none.
+
 ## 2026-06-13 - Extract species profile formatting helpers
 - Prompt summary: Extract species profile local stats formatting into small testable frontend helpers and add focused tests.
 - Scope: `static/js/species_profile_helpers.js`, `static/js/script.js`, `templates/index.html`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
