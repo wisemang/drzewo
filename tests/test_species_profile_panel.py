@@ -49,8 +49,12 @@ def test_species_profile_panel_renders_local_stats_when_present():
     assert "Nearby in TreeSeek" in script
     assert "localStats.same_species_count" in script
     assert "localStats.largest_dbh" in script
-    assert "records within" in script
+    assert "formatDistance(localStats.radius_m)" in script
+    assert "numericValue === 1000" in script
+    assert "1 km" in script
+    assert "mapped trees of this species within" in script
     assert "Largest nearby:" in script
     assert "trunk diameter" in script
+    assert "records within" not in script
     assert "Radius used:" not in script
     assert ".species-profile-local-stats" in css

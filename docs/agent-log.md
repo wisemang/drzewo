@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Refine species local stats wording
+- Prompt summary: Polish species profile local stats copy only and deploy the change to production.
+- Scope: `static/js/script.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Display `radius_m=1000` as `1 km`, changed the local count sentence to "mapped trees of this species", and left the API contract and largest-nearby wording unchanged.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`4 passed`); final `make check` passed (`ruff` + `pytest`, `64 passed`); production deploy succeeded and `https://treeseek.ca` returned `HTTP/1.1 200 OK`.
+- Follow-ups: none.
+
 ## 2026-06-13 - Polish species profile panel copy
 - Prompt summary: Polish the species profile panel UX copy/layout only, keeping API behavior and enrichment scope unchanged.
 - Scope: `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

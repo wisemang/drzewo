@@ -359,7 +359,7 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
 
     const localStats = profile.sections ? profile.sections.local_stats : null;
     if (localStats) {
-        const radiusDisplay = formatNumber(localStats.radius_m);
+        const radiusDisplay = formatDistance(localStats.radius_m);
         const countDisplay = formatNumber(localStats.same_species_count);
         const largestDbhDisplay = localStats.largest_dbh !== null &&
             localStats.largest_dbh !== undefined
@@ -368,7 +368,7 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         bodyHtml += `
             <section class="species-profile-local-stats">
                 <h3>Nearby in TreeSeek</h3>
-                <p>${escapeHtml(countDisplay)} records within ${escapeHtml(radiusDisplay)} m</p>
+                <p>${escapeHtml(countDisplay)} mapped trees of this species within ${escapeHtml(radiusDisplay)}</p>
                 ${largestDbhDisplay}
             </section>
         `;
@@ -408,6 +408,14 @@ function formatNumber(value) {
         return 'N/A';
     }
     return Number.isInteger(numericValue) ? String(numericValue) : numericValue.toFixed(1);
+}
+
+function formatDistance(value) {
+    const numericValue = Number(value);
+    if (numericValue === 1000) {
+        return '1 km';
+    }
+    return `${formatNumber(value)} m`;
 }
 
 function renderSpeciesProfileError(commonName, botanicalName) {
