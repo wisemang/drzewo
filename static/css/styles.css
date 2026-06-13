@@ -230,7 +230,17 @@ a:hover {
     margin: 1rem 0;
     padding: 0.8rem 0;
     border-top: 1px solid #d0b26a;
-    border-bottom: 1px solid #d0b26a;
+}
+
+.species-profile-about {
+    margin-top: 1rem;
+}
+
+.species-profile-about h3 {
+    margin: 0 0 0.5rem;
+    color: #2a7b2a;
+    font-size: 1rem;
+    line-height: 1.2;
 }
 
 .species-profile-local-stats h3 {

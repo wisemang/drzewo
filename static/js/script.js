@@ -357,28 +357,32 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         bodyHtml += `<p class="species-profile-botanical">${escapeHtml(botanicalNameDisplay)}</p>`;
     }
 
-    if (canShowSummary) {
-        bodyHtml += `<p class="species-profile-summary">${escapeHtml(summaryText)}</p>`;
-    } else {
-        bodyHtml += '<p class="species-profile-status">No species profile is available yet.</p>';
-    }
-
     const localStats = profile.sections ? profile.sections.local_stats : null;
     if (localStats) {
         const radiusDisplay = formatNumber(localStats.radius_m);
         const countDisplay = formatNumber(localStats.same_species_count);
         const largestDbhDisplay = localStats.largest_dbh !== null &&
             localStats.largest_dbh !== undefined
-            ? `<p>Largest nearby DBH: ${escapeHtml(formatNumber(localStats.largest_dbh))} cm</p>`
+            ? `<p>Largest nearby: ${escapeHtml(formatNumber(localStats.largest_dbh))} cm trunk diameter</p>`
             : '';
         bodyHtml += `
             <section class="species-profile-local-stats">
                 <h3>Nearby in TreeSeek</h3>
-                <p>${escapeHtml(countDisplay)} mapped records within ${escapeHtml(radiusDisplay)} m</p>
+                <p>${escapeHtml(countDisplay)} records within ${escapeHtml(radiusDisplay)} m</p>
                 ${largestDbhDisplay}
-                <p>Radius used: ${escapeHtml(radiusDisplay)} m</p>
             </section>
         `;
+    }
+
+    if (canShowSummary) {
+        bodyHtml += `
+            <section class="species-profile-about">
+                <h3>About this species</h3>
+                <p class="species-profile-summary">${escapeHtml(summaryText)}</p>
+            </section>
+        `;
+    } else {
+        bodyHtml += '<p class="species-profile-status">No species profile is available yet.</p>';
     }
 
     if (sourceUrl || (canShowSummary && (attribution || license))) {
