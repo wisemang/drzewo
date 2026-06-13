@@ -16,6 +16,20 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Normalize TE-008B optional profile sections
+- Prompt summary: Tighten the species profile API contract for optional `benefits`, `risk`, and `media` sections without changing frontend rendering.
+- Scope: `api.py`, `tests/test_api.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/agent-log.md`.
+- Decisions: Kept runtime behavior conservative; added a tiny shared serializer for optional `{ "available": true, "items": [...] }` sections; documented `TE-008B` in the canonical API spec; added mixed-section tests proving absent sections stay `null`, benefits/risk keep independent shapes, and `media` stays `null` until `TE-007`.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused API tests and final `make check` were run after edits.
+- Follow-ups: `TE-009B` can now consume the pinned optional-section contract when benefits/risk/media rendering is implemented.
+
+## 2026-06-13 - Add TE-006 species risk model support
+- Prompt summary: Implement the minimal backend/model/API slice of `TE-006` without expanding frontend risk rendering or enrichment jobs.
+- Scope: `api.py`, `tree_loader.py`, `drzewo.sql`, `migrations/20260613_add_species_risk.sql`, `tests/test_api.py`, `tests/test_tree_loader.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-006-risk-model.md`, `docs/agent-log.md`.
+- Decisions: Added `species_risk` and `species_risk_observation` tables with region-aware status, provenance, confidence, and freshness fields; exposed only well-formed regional risk items on `/species/<species_id>/profile`; filtered unknown or incomplete risk rows so the API never implies a global or placeholder-safe claim.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused API/schema tests and final `make check` were run after edits.
+- Follow-ups: Add real source ingestion and any region-selection/query semantics before frontend badge rendering or observation-driven surfaces.
+
 ## 2026-06-13 - Add TE-005 species benefits model support
 - Prompt summary: Implement the minimal backend/model/API slice of `TE-005` without expanding risk/media work or changing the current panel rendering.
 - Scope: `api.py`, `tree_loader.py`, `drzewo.sql`, `migrations/20260613_add_species_benefit.sql`, `tests/test_api.py`, `tests/test_tree_loader.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-005-benefit-model.md`, `docs/agent-log.md`.

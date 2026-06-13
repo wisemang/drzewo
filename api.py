@@ -234,6 +234,38 @@ def species_profile(species_id):
                 (species_id,),
             )
             benefits = serialize_species_benefits(cur.fetchall())
+        risk = None
+        if row is not None:
+            cur.execute(
+                """
+                SELECT
+                    risk_type,
+                    status,
+                    region,
+                    region_type,
+                    source_system,
+                    source_url,
+                    retrieved_at,
+                    observed_at,
+                    method_version,
+                    confidence,
+                    license_name,
+                    license_url,
+                    attribution,
+                    notes
+                FROM species_risk
+                WHERE species_id = %s
+                ORDER BY
+                    region_type,
+                    region,
+                    risk_type,
+                    observed_at DESC NULLS LAST,
+                    retrieved_at DESC NULLS LAST,
+                    id;
+                """,
+                (species_id,),
+            )
+            risk = serialize_species_risks(cur.fetchall())
         cur.close()
     finally:
         conn.close()
@@ -266,7 +298,7 @@ def species_profile(species_id):
             "sections": {
                 "summary": summary,
                 "benefits": benefits,
-                "risk": None,
+                "risk": risk,
                 "media": None,
                 "local_stats": local_stats,
             },
@@ -317,9 +349,7 @@ def serialize_species_benefits(rows):
         item = serialize_species_benefit_item(row)
         if item is not None:
             items.append(item)
-    if not items:
-        return None
-    return {"available": True, "items": items}
+    return serialize_optional_items_section(items)
 
 
 def serialize_species_benefit_item(row):
@@ -385,6 +415,132 @@ def serialize_species_benefit_item(row):
         if field_value is not None:
             item[key] = field_value
     return item
+
+
+def serialize_species_risks(rows):
+    """Return the API risk section or null when no valid items exist."""
+    items = []
+    for row in rows:
+        item = serialize_species_risk_item(row)
+        if item is not None:
+            items.append(item)
+    return serialize_optional_items_section(items)
+
+
+def serialize_optional_items_section(items):
+    """Return the shared optional-section object shape or null when empty."""
+    if not items:
+        return None
+    return {"available": True, "items": items}
+
+
+def serialize_species_risk_item(row):
+    """Return a single risk item when it has clear regional meaning and provenance."""
+    (
+        risk_type,
+        status,
+        region,
+        region_type,
+        source_system,
+        source_url,
+        retrieved_at,
+        observed_at,
+        method_version,
+        confidence,
+        license_name,
+        license_url,
+        attribution,
+        notes,
+    ) = row
+
+    if not all(
+        [
+            risk_type,
+            status,
+            region,
+            region_type,
+            source_system,
+            source_url,
+            method_version,
+            confidence,
+        ]
+    ):
+        return None
+
+    if status == "unknown" or (retrieved_at is None and observed_at is None):
+        return None
+
+    item = {
+        "risk_type": risk_type,
+        "status": status,
+        "region": region,
+        "region_type": region_type,
+        "source_system": source_system,
+        "source_url": source_url,
+        "method_version": method_version,
+        "confidence": confidence,
+    }
+    label = build_species_risk_label(risk_type, status, region)
+    if label is not None:
+        item["label"] = label
+    optional_fields = {
+        "retrieved_at": serialize_datetime(retrieved_at),
+        "observed_at": serialize_datetime(observed_at),
+        "license": license_name,
+        "license_url": license_url,
+        "attribution": attribution,
+        "notes": notes,
+    }
+    for key, field_value in optional_fields.items():
+        if field_value is not None:
+            item[key] = field_value
+    return item
+
+
+def build_species_risk_label(risk_type, status, region):
+    """Return concise region-explicit risk copy when the combination is known."""
+    template_by_type = {
+        "native_status": {
+            "native": "Native in {region}",
+        },
+        "introduced_status": {
+            "introduced": "Introduced in {region}",
+        },
+        "naturalized_status": {
+            "naturalized": "Naturalized in {region}",
+        },
+        "invasive_status": {
+            "invasive": "Invasive concern in {region}",
+            "potentially_invasive": "Potentially invasive in {region}",
+        },
+        "watchlist_status": {
+            "watchlist": "Watchlist concern in {region}",
+        },
+        "pest_host": {
+            "present": "Pest host concern in {region}",
+            "reported": "Pest host concern in {region}",
+        },
+        "pathogen_host": {
+            "present": "Pathogen host concern in {region}",
+            "reported": "Pathogen host concern in {region}",
+        },
+        "pest_observation": {
+            "present": "Pest observation in {region}",
+            "reported": "Pest observation in {region}",
+        },
+        "pathogen_observation": {
+            "present": "Pathogen observation in {region}",
+            "reported": "Pathogen observation in {region}",
+        },
+        "management_concern": {
+            "present": "Management concern in {region}",
+            "reported": "Management concern in {region}",
+        },
+    }
+    template = template_by_type.get(risk_type, {}).get(status)
+    if template is None:
+        return None
+    return template.format(region=region)
 
 
 

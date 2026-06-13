@@ -2,7 +2,7 @@
 
 ## Status
 
-todo
+done
 
 ## Priority
 
@@ -158,3 +158,9 @@ unless the region is explicit or the source itself defines the claim globally.
 - Missing risk data is handled gracefully.
 - Tests cover null-safe behavior.
 - Tests cover prevention of region-specific claims being surfaced as global facts.
+
+## Implementation Notes
+
+- Implemented with a `species_risk` table for region-aware species signals plus a `species_risk_observation` table for source observations.
+- `/species/<species_id>/profile` currently serializes only valid `species_risk` rows and keeps `risk: null` when rows are missing, unknown, regionless, or missing freshness metadata.
+- Risk items remain separate from summary facts and include explicit `region`, `region_type`, provenance, confidence, and date fields.

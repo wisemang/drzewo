@@ -74,11 +74,22 @@ def test_record_import_run_writes_expected_values():
 
 
 def test_ensure_species_enrichment_tables_creates_profile_schema():
-    cursor = FakeCursor(fetchone_results=[(None,), (None,), (None,), (None,)])
+    cursor = FakeCursor(
+        fetchone_results=[
+            (None,),
+            (None,),
+            (None,),
+            (None,),
+            (None,),
+            (None,),
+            (None,),
+            (None,),
+        ]
+    )
 
     tree_loader.ensure_species_enrichment_tables(cursor)
 
-    assert len(cursor.calls) == 8
+    assert len(cursor.calls) == 16
     assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
     profile_sql = cursor.calls[1][0]
     assert "CREATE TABLE species_profile" in profile_sql
@@ -102,6 +113,29 @@ def test_ensure_species_enrichment_tables_creates_profile_schema():
     assert "scope <> 'tree_instance'" in benefit_sql
     assert "to_regclass('public.idx_species_benefit_species_id')" in cursor.calls[6][0]
     assert "CREATE INDEX idx_species_benefit_species_id" in cursor.calls[7][0]
+    assert "to_regclass('public.species_risk')" in cursor.calls[8][0]
+    risk_sql = cursor.calls[9][0]
+    assert "CREATE TABLE species_risk" in risk_sql
+    assert "risk_type TEXT NOT NULL" in risk_sql
+    assert "status TEXT NOT NULL" in risk_sql
+    assert "region TEXT NOT NULL" in risk_sql
+    assert "region_type TEXT NOT NULL" in risk_sql
+    assert "method_version TEXT NOT NULL" in risk_sql
+    assert "source_system TEXT NOT NULL" in risk_sql
+    assert "source_url TEXT NOT NULL" in risk_sql
+    assert "CHECK (retrieved_at IS NOT NULL OR observed_at IS NOT NULL)" in risk_sql
+    assert "to_regclass('public.idx_species_risk_species_id')" in cursor.calls[10][0]
+    assert "CREATE INDEX idx_species_risk_species_id" in cursor.calls[11][0]
+    assert "to_regclass('public.species_risk_observation')" in cursor.calls[12][0]
+    observation_sql = cursor.calls[13][0]
+    assert "CREATE TABLE species_risk_observation" in observation_sql
+    assert "species_risk_id BIGINT REFERENCES species_risk(id) ON DELETE CASCADE" in observation_sql
+    assert "species_id BIGINT NOT NULL REFERENCES species(id) ON DELETE CASCADE" in observation_sql
+    assert "risk_type TEXT NOT NULL" in observation_sql
+    assert "source_system TEXT NOT NULL" in observation_sql
+    assert "latitude IS NULL AND longitude IS NULL" in observation_sql
+    assert "to_regclass('public.idx_species_risk_observation_species_id')" in cursor.calls[14][0]
+    assert "CREATE INDEX idx_species_risk_observation_species_id" in cursor.calls[15][0]
 
 
 def test_ensure_species_enrichment_tables_skips_existing_profile_schema():
@@ -111,16 +145,24 @@ def test_ensure_species_enrichment_tables_skips_existing_profile_schema():
             ("idx_species_profile_species_id",),
             ("species_benefit",),
             ("idx_species_benefit_species_id",),
+            ("species_risk",),
+            ("idx_species_risk_species_id",),
+            ("species_risk_observation",),
+            ("idx_species_risk_observation_species_id",),
         ]
     )
 
     tree_loader.ensure_species_enrichment_tables(cursor)
 
-    assert len(cursor.calls) == 4
+    assert len(cursor.calls) == 8
     assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
     assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[1][0]
     assert "to_regclass('public.species_benefit')" in cursor.calls[2][0]
     assert "to_regclass('public.idx_species_benefit_species_id')" in cursor.calls[3][0]
+    assert "to_regclass('public.species_risk')" in cursor.calls[4][0]
+    assert "to_regclass('public.idx_species_risk_species_id')" in cursor.calls[5][0]
+    assert "to_regclass('public.species_risk_observation')" in cursor.calls[6][0]
+    assert "to_regclass('public.idx_species_risk_observation_species_id')" in cursor.calls[7][0]
 
 
 def test_apply_species_catalog_to_source_updates_resolved_rows(monkeypatch):

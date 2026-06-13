@@ -288,6 +288,47 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
     assert payload["sections"]["local_stats"] is None
 
 
+def test_species_profile_keeps_all_optional_sections_null_when_absent(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "Acer rubrum is a deciduous tree.",
+        {"canonical_botanical_name": "Acer rubrum"},
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "wikipedia",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "2026-06-12T00:00:00+00:00",
+        "wikipedia-summary-v1",
+        "source-derived",
+        "Creative Commons Attribution-ShareAlike 4.0 International",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "Wikipedia contributors",
+    )
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=[[], []],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    sections = response.get_json()["sections"]
+    assert sections["summary"]["text"] == "Acer rubrum is a deciduous tree."
+    assert sections["benefits"] is None
+    assert sections["risk"] is None
+    assert sections["media"] is None
+
+
 def test_species_profile_returns_species_benefits_when_present(monkeypatch):
     profile_row = (
         12,
@@ -365,6 +406,327 @@ def test_species_profile_returns_species_benefits_when_present(monkeypatch):
     assert payload["sections"]["media"] is None
 
 
+def test_species_profile_keeps_benefits_shape_when_risk_and_media_are_absent(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    benefit_rows = [
+        [
+            (
+                "shade_cooling",
+                "species",
+                "Shade and cooling",
+                "Large-canopied trees can provide shade and cooling in urban settings.",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                "benefit-notes-v1",
+                None,
+                "source-derived",
+                "example-benefits-catalog",
+                "https://example.test/benefits/acer-rubrum",
+                "2026-06-13T00:00:00+00:00",
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+        ],
+        [],
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=benefit_rows,
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    response = api.app.test_client().get("/species/12/profile")
+
+    assert response.status_code == 200
+    sections = response.get_json()["sections"]
+    assert sections["benefits"] == {
+        "available": True,
+        "items": [
+            {
+                "metric_type": "shade_cooling",
+                "scope": "species",
+                "label": "Shade and cooling",
+                "text": "Large-canopied trees can provide shade and cooling in urban settings.",
+                "confidence": "source-derived",
+                "source_system": "example-benefits-catalog",
+                "source_url": "https://example.test/benefits/acer-rubrum",
+                "method_version": "benefit-notes-v1",
+                "retrieved_at": "2026-06-13T00:00:00+00:00",
+            }
+        ],
+    }
+    assert sections["risk"] is None
+    assert sections["media"] is None
+
+
+def test_species_profile_returns_species_risk_when_present(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "Acer rubrum is a deciduous tree.",
+        {"canonical_botanical_name": "Acer rubrum"},
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "wikipedia",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        datetime(2026, 6, 12, tzinfo=timezone.utc),
+        "wikipedia-summary-v1",
+        "source-derived",
+        "Creative Commons Attribution-ShareAlike 4.0 International",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "Wikipedia contributors",
+    )
+    risk_rows = [
+        [
+            (
+                "native_status",
+                "native",
+                "Ontario",
+                "province",
+                "example-risk-catalog",
+                "https://example.test/risk/acer-rubrum/on",
+                datetime(2026, 6, 13, tzinfo=timezone.utc),
+                None,
+                "risk-catalog-v1",
+                "medium",
+                "CC BY 4.0",
+                "https://creativecommons.org/licenses/by/4.0/",
+                "Example Risk Catalog",
+                "Regional status only.",
+            )
+        ]
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=[[], *risk_rows],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["summary"]["confidence"] == "source-derived"
+    risk = payload["sections"]["risk"]
+    assert risk["available"] is True
+    assert len(risk["items"]) == 1
+    item = risk["items"][0]
+    assert item["risk_type"] == "native_status"
+    assert item["status"] == "native"
+    assert item["region"] == "Ontario"
+    assert item["region_type"] == "province"
+    assert item["label"] == "Native in Ontario"
+    assert item["source_system"] == "example-risk-catalog"
+    assert item["source_url"] == "https://example.test/risk/acer-rubrum/on"
+    assert item["method_version"] == "risk-catalog-v1"
+    assert item["confidence"] == "medium"
+    assert item["retrieved_at"] == "2026-06-13T00:00:00+00:00"
+    assert item["license"] == "CC BY 4.0"
+    assert item["license_url"] == "https://creativecommons.org/licenses/by/4.0/"
+    assert item["attribution"] == "Example Risk Catalog"
+    assert item["notes"] == "Regional status only."
+    assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["media"] is None
+
+
+def test_species_profile_keeps_risk_shape_when_benefits_and_media_are_absent(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    risk_rows = [
+        [],
+        [
+            (
+                "native_status",
+                "native",
+                "Ontario",
+                "province",
+                "example-risk-catalog",
+                "https://example.test/risk/acer-rubrum/on",
+                "2026-06-13T00:00:00+00:00",
+                None,
+                "risk-catalog-v1",
+                "medium",
+                None,
+                None,
+                None,
+                None,
+            )
+        ],
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=risk_rows,
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    response = api.app.test_client().get("/species/12/profile")
+
+    assert response.status_code == 200
+    sections = response.get_json()["sections"]
+    assert sections["benefits"] is None
+    assert sections["risk"] == {
+        "available": True,
+        "items": [
+            {
+                "risk_type": "native_status",
+                "status": "native",
+                "region": "Ontario",
+                "region_type": "province",
+                "source_system": "example-risk-catalog",
+                "source_url": "https://example.test/risk/acer-rubrum/on",
+                "method_version": "risk-catalog-v1",
+                "confidence": "medium",
+                "label": "Native in Ontario",
+                "retrieved_at": "2026-06-13T00:00:00+00:00",
+            }
+        ],
+    }
+    assert sections["media"] is None
+
+
+def test_species_profile_keeps_benefits_and_risk_independent_when_both_present(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    benefit_rows = [
+        (
+            "shade_cooling",
+            "species",
+            "Shade and cooling",
+            "Large-canopied trees can provide shade and cooling in urban settings.",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "benefit-notes-v1",
+            None,
+            "source-derived",
+            "example-benefits-catalog",
+            "https://example.test/benefits/acer-rubrum",
+            "2026-06-13T00:00:00+00:00",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    ]
+    risk_rows = [
+        (
+            "native_status",
+            "native",
+            "Ontario",
+            "province",
+            "example-risk-catalog",
+            "https://example.test/risk/acer-rubrum/on",
+            "2026-06-13T00:00:00+00:00",
+            None,
+            "risk-catalog-v1",
+            "medium",
+            None,
+            None,
+            None,
+            None,
+        )
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=[benefit_rows, risk_rows],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    response = api.app.test_client().get("/species/12/profile")
+
+    assert response.status_code == 200
+    sections = response.get_json()["sections"]
+    assert sections["benefits"]["available"] is True
+    assert sections["benefits"]["items"][0]["metric_type"] == "shade_cooling"
+    assert sections["risk"]["available"] is True
+    assert sections["risk"]["items"][0]["risk_type"] == "native_status"
+    assert sections["risk"]["items"][0]["label"] == "Native in Ontario"
+    assert sections["media"] is None
+
+
 def test_species_profile_keeps_summary_and_local_stats_contract_when_benefits_absent(monkeypatch):
     profile_row = (
         12,
@@ -419,6 +781,8 @@ def test_species_profile_keeps_summary_and_local_stats_contract_when_benefits_ab
         "same_species_count": 3,
         "largest_dbh": 47,
     }
+    assert payload["sections"]["risk"] is None
+    assert payload["sections"]["media"] is None
 
 
 def test_species_profile_ignores_malformed_benefits_without_placeholder_output(monkeypatch):
@@ -481,6 +845,165 @@ def test_species_profile_ignores_malformed_benefits_without_placeholder_output(m
     assert payload["sections"]["benefits"] is None
     assert payload["sections"]["risk"] is None
     assert payload["sections"]["media"] is None
+
+
+def test_species_profile_ignores_malformed_risk_without_placeholder_output(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    risk_rows = [
+        [
+            (
+                "invasive_status",
+                "unknown",
+                "Ontario",
+                "province",
+                "example-risk-catalog",
+                "https://example.test/risk/acer-rubrum/on",
+                None,
+                None,
+                "risk-catalog-v1",
+                "medium",
+                None,
+                None,
+                None,
+                None,
+            ),
+            (
+                "native_status",
+                "native",
+                None,
+                "province",
+                "example-risk-catalog",
+                "https://example.test/risk/acer-rubrum/on",
+                "2026-06-13T00:00:00+00:00",
+                None,
+                "risk-catalog-v1",
+                "medium",
+                None,
+                None,
+                None,
+                None,
+            ),
+        ]
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=[[], *risk_rows],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["summary"] is None
+    assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["risk"] is None
+    assert payload["sections"]["media"] is None
+
+
+def test_species_profile_filters_malformed_optional_sections_to_null(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    benefit_rows = [
+        (
+            "shade_cooling",
+            "species",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "benefit-notes-v1",
+            None,
+            "source-derived",
+            "example-benefits-catalog",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    ]
+    risk_rows = [
+        (
+            "native_status",
+            "unknown",
+            "Ontario",
+            "province",
+            "example-risk-catalog",
+            "https://example.test/risk/acer-rubrum/on",
+            None,
+            None,
+            "risk-catalog-v1",
+            "medium",
+            None,
+            None,
+            None,
+            None,
+        )
+    ]
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row],
+        fetchall_results=[benefit_rows, risk_rows],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    response = api.app.test_client().get("/species/12/profile")
+
+    assert response.status_code == 200
+    sections = response.get_json()["sections"]
+    assert sections["benefits"] is None
+    assert sections["risk"] is None
+    assert sections["media"] is None
 
 
 def test_species_profile_returns_local_stats_when_context_is_present(monkeypatch):
@@ -598,7 +1121,7 @@ def test_species_profile_omits_local_stats_when_context_is_partial(monkeypatch):
 
     assert response.status_code == 200
     assert response.get_json()["sections"]["local_stats"] is None
-    assert len(fake_conn.cursor_instance.calls) == 2
+    assert len(fake_conn.cursor_instance.calls) == 3
 
 
 def test_species_profile_clamps_local_stats_radius(monkeypatch):
