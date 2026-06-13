@@ -92,6 +92,7 @@ def test_species_profile_panel_renders_local_stats_when_present():
     assert "const localStats = profile.sections ? profile.sections.local_stats : null" in script
     assert "if (localStats)" in script
     assert "speciesProfileHelpers.formatSpeciesProfileLocalStats(localStats)" in script
+    assert "if (localStatsCopy)" in script
     assert "Nearby in TreeSeek" in script
     assert "records within" not in script
     assert "Radius used:" not in script
@@ -111,6 +112,18 @@ def test_species_profile_panel_has_mobile_release_polish():
     assert "-webkit-overflow-scrolling: touch" in css
     assert "min-width: 44px" in css
     assert "min-height: 44px" in css
+
+
+def test_species_profile_panel_does_not_render_future_estimate_or_risk_sections():
+    script = read_text("static/js/script.js")
+    css = read_text("static/css/styles.css")
+
+    assert "species-profile-benefits" not in script
+    assert "species-profile-risk" not in script
+    assert "species-profile-media" not in script
+    assert "species-profile-benefits" not in css
+    assert "species-profile-risk" not in css
+    assert "species-profile-media" not in css
 
 
 def run_species_profile_helper(expression):
@@ -157,6 +170,30 @@ def test_species_profile_local_stats_copy_omits_missing_largest_dbh():
 
     assert result["countLine"] == "3 mapped trees of this species within 500 m"
     assert result["largestLine"] is None
+
+
+def test_species_profile_local_stats_copy_omits_malformed_stats():
+    assert run_species_profile_helper("helpers.formatSpeciesProfileLocalStats(null)") is None
+    assert (
+        run_species_profile_helper(
+            "helpers.formatSpeciesProfileLocalStats({"
+            "radius_m: null, "
+            "same_species_count: 3, "
+            "largest_dbh: null"
+            "})"
+        )
+        is None
+    )
+    assert (
+        run_species_profile_helper(
+            "helpers.formatSpeciesProfileLocalStats({"
+            "radius_m: 1000, "
+            "same_species_count: undefined, "
+            "largest_dbh: null"
+            "})"
+        )
+        is None
+    )
 
 
 def test_species_profile_summary_attribution_copy_is_concise():

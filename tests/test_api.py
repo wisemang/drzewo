@@ -193,6 +193,50 @@ def test_species_profile_returns_sourced_profile(monkeypatch):
     assert "LEFT JOIN species_profile" in fake_conn.cursor_instance.executed
 
 
+def test_species_profile_contract_keeps_facts_separate_from_estimates_and_risk(monkeypatch):
+    rows = [
+        (
+            12,
+            "acer_rubrum",
+            "Acer rubrum",
+            "Red Maple",
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            "Acer rubrum is a deciduous tree.",
+            {"canonical_botanical_name": "Acer rubrum"},
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            "wikipedia",
+            "https://en.wikipedia.org/wiki/Acer_rubrum",
+            "2026-06-12T00:00:00+00:00",
+            "wikipedia-summary-v1",
+            "source-derived",
+            "Creative Commons Attribution-ShareAlike 4.0 International",
+            "https://creativecommons.org/licenses/by-sa/4.0/",
+            "Wikipedia contributors",
+        )
+    ]
+    fake_conn = FakeConnection(rows)
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    sections = payload["sections"]
+    assert sections["summary"]["confidence"] == "source-derived"
+    assert sections["summary"]["method_version"] == "wikipedia-summary-v1"
+    assert "estimate" not in sections["summary"]
+    assert "risk" not in sections["summary"]
+    assert sections["benefits"] is None
+    assert sections["risk"] is None
+    assert sections["media"] is None
+    assert sections["local_stats"] is None
+
+
 def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch):
     rows = [
         (
@@ -230,6 +274,8 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
     assert payload["botanical_name"] == "Acer rubrum"
     assert payload["sections"]["summary"] is None
     assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["risk"] is None
+    assert payload["sections"]["media"] is None
     assert payload["sections"]["local_stats"] is None
 
 
@@ -274,6 +320,43 @@ def test_species_profile_returns_local_stats_when_context_is_present(monkeypatch
     assert "WHERE species_id = %s" in stats_query
     assert "ST_DWithin" in stats_query
     assert stats_params == (12, -79.38, 43.65, 1000)
+
+
+def test_species_profile_coerces_missing_local_stats_count_to_zero(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (None, None)])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=1000")
+
+    assert response.status_code == 200
+    assert response.get_json()["sections"]["local_stats"] == {
+        "radius_m": 1000,
+        "same_species_count": 0,
+        "largest_dbh": None,
+    }
 
 
 def test_species_profile_omits_local_stats_when_context_is_partial(monkeypatch):

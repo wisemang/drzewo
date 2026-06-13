@@ -379,16 +379,18 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
     const localStats = profile.sections ? profile.sections.local_stats : null;
     if (localStats) {
         const localStatsCopy = speciesProfileHelpers.formatSpeciesProfileLocalStats(localStats);
-        const largestDbhDisplay = localStatsCopy.largestLine
-            ? `<p>${escapeHtml(localStatsCopy.largestLine)}</p>`
-            : '';
-        bodyHtml += `
-            <section class="species-profile-local-stats">
-                <h3>Nearby in TreeSeek</h3>
-                <p>${escapeHtml(localStatsCopy.countLine)}</p>
-                ${largestDbhDisplay}
-            </section>
-        `;
+        if (localStatsCopy) {
+            const largestDbhDisplay = localStatsCopy.largestLine
+                ? `<p>${escapeHtml(localStatsCopy.largestLine)}</p>`
+                : '';
+            bodyHtml += `
+                <section class="species-profile-local-stats">
+                    <h3>Nearby in TreeSeek</h3>
+                    <p>${escapeHtml(localStatsCopy.countLine)}</p>
+                    ${largestDbhDisplay}
+                </section>
+            `;
+        }
     }
 
     if (canShowSummary) {

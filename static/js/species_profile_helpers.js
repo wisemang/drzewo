@@ -15,7 +15,18 @@
         return `${formatSpeciesProfileNumber(value)} m`;
     }
 
+    function hasFiniteSpeciesProfileNumber(value) {
+        return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+    }
+
     function formatSpeciesProfileLocalStats(localStats) {
+        if (!localStats || typeof localStats !== 'object') {
+            return null;
+        }
+        if (!hasFiniteSpeciesProfileNumber(localStats.radius_m) ||
+                !hasFiniteSpeciesProfileNumber(localStats.same_species_count)) {
+            return null;
+        }
         const radiusDisplay = formatSpeciesProfileRadius(localStats.radius_m);
         const countDisplay = formatSpeciesProfileNumber(localStats.same_species_count);
         const largestDbh = localStats.largest_dbh;

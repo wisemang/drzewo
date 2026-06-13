@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Add TE-011 species profile semantic tests
+- Prompt summary: Harden species profile tests for fact vs estimate vs risk semantics and null-safe behavior before adding benefit, risk, or media sections.
+- Scope: `api.py`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_api.py`, `tests/test_species_profile_panel.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.
+- Decisions: Added API coverage that keeps current Wikipedia summaries source-derived and separate from unavailable estimate/risk/media sections; added null-safe local-stats API/helper tests; made malformed local stats render as absent instead of placeholder `N/A` copy; left benefit/risk/media UI expansion out of scope.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make lint` passed and `make test` passed (`75 passed`).
+- Follow-ups: Implement TE-005/TE-006/TE-008B/TE-009B separately when adding real benefit, risk, and media data.
+
 ## 2026-06-13 - Polish species profile panel mobile and announcement behavior
 - Prompt summary: Apply the smallest release-readiness polish pass for the species profile panel without changing API behavior, content structure, or enrichment scope.
 - Scope: `templates/index.html`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-009B-enrichment-panel-sections.md`, `docs/agent-log.md`.

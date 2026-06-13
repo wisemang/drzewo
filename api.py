@@ -190,9 +190,10 @@ def species_profile(species_id):
                 ),
             )
             stats_row = cur.fetchone()
+            same_species_count = stats_row[0] if stats_row and stats_row[0] is not None else 0
             local_stats = {
                 "radius_m": local_stats_context["radius_m"],
-                "same_species_count": stats_row[0] if stats_row else 0,
+                "same_species_count": same_species_count,
                 "largest_dbh": stats_row[1] if stats_row else None,
             }
         cur.close()
