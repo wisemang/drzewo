@@ -23,8 +23,7 @@
             countLine: `${countDisplay} mapped trees of this species within ${radiusDisplay}`,
             largestLine: largestDbh === null || largestDbh === undefined
                 ? null
-                : `Largest nearby: ${formatSpeciesProfileNumber(largestDbh)} cm trunk diameter`,
-            noteLine: 'Nearby stats are calculated from TreeSeek records.'
+                : `Largest nearby: ${formatSpeciesProfileNumber(largestDbh)} cm trunk diameter`
         };
     }
 

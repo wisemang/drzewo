@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Remove local stats note and polish popup arrow
+- Prompt summary: Remove the local stats provenance note, keep concise Wikipedia attribution, and replace the popup species-link arrow with a nicer Unicode arrow.
+- Scope: `static/css/styles.css`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Dropped the TreeSeek local-stats note from helper/render/CSS paths, preserved the concise `Summary from ...` provenance copy, and replaced the species popup trigger suffix with a Unicode right arrow.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`8 passed`); final `make check` passed (`ruff` + `pytest`, `68 passed`).
+- Follow-ups: none.
+
 ## 2026-06-13 - Polish species profile source area
 - Prompt summary: Polish the species profile source/provenance area while keeping API behavior and panel structure unchanged.
 - Scope: `static/css/styles.css`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

@@ -33,6 +33,7 @@ def test_species_profile_panel_uses_lazy_numeric_route():
     assert "data-latitude=\"${latitude === null ? '' : latitude}\"" in script
     assert "data-longitude=\"${longitude === null ? '' : longitude}\"" in script
     assert "radius_m=${radiusM}" in script
+    assert "} \u2192</button>" in script
 
 
 def test_species_profile_panel_handles_profile_states_and_attribution_guard():
@@ -49,18 +50,15 @@ def test_species_profile_panel_handles_profile_states_and_attribution_guard():
 
 def test_species_profile_panel_renders_local_stats_when_present():
     script = read_text("static/js/script.js")
-    helper_script = read_text("static/js/species_profile_helpers.js")
     css = read_text("static/css/styles.css")
 
     assert "const localStats = profile.sections ? profile.sections.local_stats : null" in script
     assert "if (localStats)" in script
     assert "speciesProfileHelpers.formatSpeciesProfileLocalStats(localStats)" in script
     assert "Nearby in TreeSeek" in script
-    assert "Nearby stats are calculated from TreeSeek records." in helper_script
     assert "records within" not in script
     assert "Radius used:" not in script
     assert ".species-profile-local-stats" in css
-    assert ".species-profile-local-note" in css
     assert ".species-profile-source-copy" in css
 
 
@@ -95,7 +93,6 @@ def test_species_profile_local_stats_copy_includes_count_and_largest_dbh():
 
     assert result["countLine"] == "12 mapped trees of this species within 1 km"
     assert result["largestLine"] == "Largest nearby: 42.5 cm trunk diameter"
-    assert result["noteLine"] == "Nearby stats are calculated from TreeSeek records."
 
 
 def test_species_profile_local_stats_copy_omits_missing_largest_dbh():

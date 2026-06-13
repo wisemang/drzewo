@@ -363,15 +363,11 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         const largestDbhDisplay = localStatsCopy.largestLine
             ? `<p>${escapeHtml(localStatsCopy.largestLine)}</p>`
             : '';
-        const localStatsNoteDisplay = localStatsCopy.noteLine
-            ? `<p class="species-profile-local-note">${escapeHtml(localStatsCopy.noteLine)}</p>`
-            : '';
         bodyHtml += `
             <section class="species-profile-local-stats">
                 <h3>Nearby in TreeSeek</h3>
                 <p>${escapeHtml(localStatsCopy.countLine)}</p>
                 ${largestDbhDisplay}
-                ${localStatsNoteDisplay}
             </section>
         `;
     }
@@ -528,7 +524,7 @@ function syncMarkers(data) {
                         data-botanical-name="${escapeHtml(botanicalNameDisplay)}"
                         data-latitude="${latitude === null ? '' : latitude}"
                         data-longitude="${longitude === null ? '' : longitude}"
-                    >${escapeHtml(aboutSpeciesLabel(commonNameDisplay))} -&gt;</button>
+                    >${escapeHtml(aboutSpeciesLabel(commonNameDisplay))} →</button>
                 </div>
             `
             : '';
