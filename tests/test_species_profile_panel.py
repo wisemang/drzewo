@@ -1,3 +1,5 @@
+import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,8 +19,11 @@ def test_species_profile_panel_shell_is_present():
 
 
 def test_species_profile_panel_uses_lazy_numeric_route():
+    html = read_text("templates/index.html")
     script = read_text("static/js/script.js")
 
+    assert "/static/js/species_profile_helpers.js" in html
+    assert html.index("/static/js/species_profile_helpers.js") < html.index("/static/js/script.js")
     assert "function usableSpeciesId" in script
     assert "Number.isInteger(numericValue)" in script
     assert "SPECIES_PROFILE_LOCAL_RADIUS_M = 1000" in script
@@ -46,15 +51,54 @@ def test_species_profile_panel_renders_local_stats_when_present():
 
     assert "const localStats = profile.sections ? profile.sections.local_stats : null" in script
     assert "if (localStats)" in script
+    assert "speciesProfileHelpers.formatSpeciesProfileLocalStats(localStats)" in script
     assert "Nearby in TreeSeek" in script
-    assert "localStats.same_species_count" in script
-    assert "localStats.largest_dbh" in script
-    assert "formatDistance(localStats.radius_m)" in script
-    assert "numericValue === 1000" in script
-    assert "1 km" in script
-    assert "mapped trees of this species within" in script
-    assert "Largest nearby:" in script
-    assert "trunk diameter" in script
     assert "records within" not in script
     assert "Radius used:" not in script
     assert ".species-profile-local-stats" in css
+
+
+def run_species_profile_helper(expression):
+    helper_path = ROOT / "static/js/species_profile_helpers.js"
+    node_script = f"""
+        const helpers = require({json.dumps(str(helper_path))});
+        const result = {expression};
+        process.stdout.write(JSON.stringify(result));
+    """
+    completed = subprocess.run(
+        ["node", "-e", node_script],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(completed.stdout)
+
+
+def test_species_profile_radius_formats_1000_m_as_1_km():
+    assert run_species_profile_helper("helpers.formatSpeciesProfileRadius(1000)") == "1 km"
+
+
+def test_species_profile_local_stats_copy_includes_count_and_largest_dbh():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileLocalStats({"
+        "radius_m: 1000, "
+        "same_species_count: 12, "
+        "largest_dbh: 42.5"
+        "})"
+    )
+
+    assert result["countLine"] == "12 mapped trees of this species within 1 km"
+    assert result["largestLine"] == "Largest nearby: 42.5 cm trunk diameter"
+
+
+def test_species_profile_local_stats_copy_omits_missing_largest_dbh():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileLocalStats({"
+        "radius_m: 500, "
+        "same_species_count: 3, "
+        "largest_dbh: null"
+        "})"
+    )
+
+    assert result["countLine"] == "3 mapped trees of this species within 500 m"
+    assert result["largestLine"] is None

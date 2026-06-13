@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Extract species profile formatting helpers
+- Prompt summary: Extract species profile local stats formatting into small testable frontend helpers and add focused tests.
+- Scope: `static/js/species_profile_helpers.js`, `static/js/script.js`, `templates/index.html`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Added a standalone browser/CommonJS helper module for radius, number, and local-stats copy formatting; loaded it before the main app script; used pytest to run focused helper checks through Node instead of adding a JS test framework.
+- Validation: Focused panel/helper tests passed (`7 passed`); final `make check` passed (`ruff` + `pytest`, `67 passed`).
+- Follow-ups: none.
+
 ## 2026-06-13 - Refine species local stats wording
 - Prompt summary: Polish species profile local stats copy only and deploy the change to production.
 - Scope: `static/js/script.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
