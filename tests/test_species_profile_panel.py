@@ -16,6 +16,8 @@ def test_species_profile_panel_shell_is_present():
     assert 'id="species-profile-title"' in html
     assert 'id="species-profile-body"' in html
     assert 'id="species-profile-close"' in html
+    assert 'aria-label="Close species profile"' in html
+    assert 'title="Close species profile"' in html
 
 
 def test_species_profile_panel_uses_lazy_numeric_route():
@@ -29,6 +31,7 @@ def test_species_profile_panel_uses_lazy_numeric_route():
     assert "SPECIES_PROFILE_LOCAL_RADIUS_M = 1000" in script
     assert "fetch(`/species/${numericSpeciesId}/profile${queryString}`)" in script
     assert "class=\"species-profile-trigger\"" in script
+    assert "lastSpeciesProfileTrigger = trigger" in script
     assert "data-species-id=\"${speciesId}\"" in script
     assert "data-latitude=\"${latitude === null ? '' : latitude}\"" in script
     assert "data-longitude=\"${longitude === null ? '' : longitude}\"" in script
@@ -46,6 +49,18 @@ def test_species_profile_panel_handles_profile_states_and_attribution_guard():
     assert "Read more on Wikipedia" in script
     assert "Summary from " in script
     assert "species-profile-source-copy" in script
+
+
+def test_species_profile_panel_manages_focus_and_escape_close():
+    script = read_text("static/js/script.js")
+
+    assert "let lastSpeciesProfileTrigger = null" in script
+    assert "closeButton.focus()" in script
+    assert "document.contains(lastSpeciesProfileTrigger)" in script
+    assert "lastSpeciesProfileTrigger.focus()" in script
+    assert "function isSpeciesProfilePanelOpen()" in script
+    assert "event.key === 'Escape' && isSpeciesProfilePanelOpen()" in script
+    assert "closeSpeciesProfilePanel();" in script
 
 
 def test_species_profile_panel_renders_local_stats_when_present():

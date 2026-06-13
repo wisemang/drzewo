@@ -5,6 +5,7 @@ let markerInsertionOrder = []; // FIFO order for cap-based pruning
 let resultKeys = []; // Keys for current table rows by index
 let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
 let speciesProfileCache = new Map(); // Species profiles keyed by species/context
+let lastSpeciesProfileTrigger = null; // Popup trigger that opened the current species profile
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
@@ -308,8 +309,17 @@ function speciesProfileCacheKey(speciesId, latitude, longitude, radiusM) {
 
 function closeSpeciesProfilePanel() {
     const panel = document.getElementById('species-profile-panel');
-    if (panel) {
-        panel.setAttribute('hidden', '');
+    if (!panel || panel.hasAttribute('hidden')) {
+        return;
+    }
+
+    panel.setAttribute('hidden', '');
+    if (
+        lastSpeciesProfileTrigger &&
+        document.contains(lastSpeciesProfileTrigger) &&
+        typeof lastSpeciesProfileTrigger.focus === 'function'
+    ) {
+        lastSpeciesProfileTrigger.focus();
     }
 }
 
@@ -317,13 +327,20 @@ function setSpeciesProfileShell(title, contentHtml) {
     const titleElement = document.getElementById('species-profile-title');
     const bodyElement = document.getElementById('species-profile-body');
     const panel = document.getElementById('species-profile-panel');
-    if (!titleElement || !bodyElement || !panel) {
+    const closeButton = document.getElementById('species-profile-close');
+    if (!titleElement || !bodyElement || !panel || !closeButton) {
         return;
     }
 
     titleElement.textContent = title;
     bodyElement.innerHTML = contentHtml;
     panel.removeAttribute('hidden');
+    closeButton.focus();
+}
+
+function isSpeciesProfilePanelOpen() {
+    const panel = document.getElementById('species-profile-panel');
+    return Boolean(panel && !panel.hasAttribute('hidden'));
 }
 
 function loadingSpeciesProfilePanel(commonName, botanicalName) {
@@ -820,6 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         event.preventDefault();
+        lastSpeciesProfileTrigger = trigger;
         openSpeciesProfilePanel(
             trigger.dataset.speciesId,
             trigger.dataset.commonName,
@@ -841,8 +859,9 @@ document.addEventListener('DOMContentLoaded', () => {
             dismissWelcomeModal();
             return;
         }
-        if (event.key === 'Escape') {
+        if (event.key === 'Escape' && isSpeciesProfilePanelOpen()) {
             closeSpeciesProfilePanel();
+            return;
         }
         if (event.key === 'Escape' && isMapFullscreen) {
             setMapFullscreen(false);

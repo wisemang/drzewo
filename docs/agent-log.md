@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Polish species profile panel interactions
+- Prompt summary: Polish species profile panel interaction behavior without changing API behavior, content sections, or panel design.
+- Scope: `static/js/script.js`, `templates/index.html`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Added a close-button title, focused the close button when the panel opens, restored focus to the popup trigger on close when still present, and handled Escape as a species-panel close action before fullscreen handling.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`9 passed`); final `make check` passed (`ruff` + `pytest`, `69 passed`). Local mobile browser verification was attempted, but the in-app browser became unavailable and no lightweight local browser test dependency exists.
+- Follow-ups: Perform one manual mobile viewport click-through on production or a local browser.
+
 ## 2026-06-13 - Remove local stats note and polish popup arrow
 - Prompt summary: Remove the local stats provenance note, keep concise Wikipedia attribution, and replace the popup species-link arrow with a nicer Unicode arrow.
 - Scope: `static/css/styles.css`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
