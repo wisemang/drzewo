@@ -4,9 +4,10 @@ import api
 
 
 class FakeCursor:
-    def __init__(self, rows, fetchone_results=None):
+    def __init__(self, rows, fetchone_results=None, fetchall_results=None):
         self.rows = rows
         self.fetchone_results = list(fetchone_results) if fetchone_results is not None else None
+        self.fetchall_results = list(fetchall_results) if fetchall_results is not None else None
         self.executed = None
         self.params = None
         self.calls = []
@@ -17,6 +18,10 @@ class FakeCursor:
         self.calls.append((query, params))
 
     def fetchall(self):
+        if self.fetchall_results is not None:
+            if not self.fetchall_results:
+                return []
+            return self.fetchall_results.pop(0)
         return self.rows
 
     def fetchone(self):
@@ -33,8 +38,12 @@ class FakeCursor:
 
 
 class FakeConnection:
-    def __init__(self, rows, fetchone_results=None):
-        self.cursor_instance = FakeCursor(rows, fetchone_results=fetchone_results)
+    def __init__(self, rows, fetchone_results=None, fetchall_results=None):
+        self.cursor_instance = FakeCursor(
+            rows,
+            fetchone_results=fetchone_results,
+            fetchall_results=fetchall_results,
+        )
         self.closed = False
 
     def cursor(self):
@@ -163,7 +172,7 @@ def test_species_profile_returns_sourced_profile(monkeypatch):
             "Wikipedia contributors",
         )
     ]
-    fake_conn = FakeConnection(rows)
+    fake_conn = FakeConnection(rows, fetchall_results=[[]])
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -190,7 +199,7 @@ def test_species_profile_returns_sourced_profile(monkeypatch):
     assert summary["attribution"] == "Wikipedia contributors"
     assert summary["retrieved_at"] == "2026-06-12T00:00:00+00:00"
     assert "profile" not in payload
-    assert "LEFT JOIN species_profile" in fake_conn.cursor_instance.executed
+    assert "LEFT JOIN species_profile" in fake_conn.cursor_instance.calls[0][0]
 
 
 def test_species_profile_contract_keeps_facts_separate_from_estimates_and_risk(monkeypatch):
@@ -214,7 +223,7 @@ def test_species_profile_contract_keeps_facts_separate_from_estimates_and_risk(m
             "Wikipedia contributors",
         )
     ]
-    fake_conn = FakeConnection(rows)
+    fake_conn = FakeConnection(rows, fetchall_results=[[]])
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -258,7 +267,7 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
             None,
         )
     ]
-    fake_conn = FakeConnection(rows)
+    fake_conn = FakeConnection(rows, fetchall_results=[[]])
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -277,6 +286,201 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
     assert payload["sections"]["risk"] is None
     assert payload["sections"]["media"] is None
     assert payload["sections"]["local_stats"] is None
+
+
+def test_species_profile_returns_species_benefits_when_present(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "Acer rubrum is a deciduous tree.",
+        {"canonical_botanical_name": "Acer rubrum"},
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "wikipedia",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        datetime(2026, 6, 12, tzinfo=timezone.utc),
+        "wikipedia-summary-v1",
+        "source-derived",
+        "Creative Commons Attribution-ShareAlike 4.0 International",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "Wikipedia contributors",
+    )
+    benefit_rows = [[
+        (
+            "shade_cooling",
+            "species",
+            "Shade and cooling",
+            "Large-canopied trees can provide shade and cooling in urban settings.",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "benefit-notes-v1",
+            None,
+            "source-derived",
+            "example-benefits-catalog",
+            "https://example.test/benefits/acer-rubrum",
+            datetime(2026, 6, 13, tzinfo=timezone.utc),
+            None,
+            "CC BY 4.0",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "Example Benefits Catalog",
+            None,
+        )
+    ]]
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row], fetchall_results=benefit_rows)
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["summary"]["confidence"] == "source-derived"
+    benefits = payload["sections"]["benefits"]
+    assert benefits["available"] is True
+    assert len(benefits["items"]) == 1
+    item = benefits["items"][0]
+    assert item["metric_type"] == "shade_cooling"
+    assert item["scope"] == "species"
+    assert item["label"] == "Shade and cooling"
+    assert item["text"] == "Large-canopied trees can provide shade and cooling in urban settings."
+    assert item["method_version"] == "benefit-notes-v1"
+    assert item["confidence"] == "source-derived"
+    assert item["source_system"] == "example-benefits-catalog"
+    assert item["source_url"] == "https://example.test/benefits/acer-rubrum"
+    assert item["retrieved_at"] == "2026-06-13T00:00:00+00:00"
+    assert item["license"] == "CC BY 4.0"
+    assert item["license_url"] == "https://creativecommons.org/licenses/by/4.0/"
+    assert item["attribution"] == "Example Benefits Catalog"
+    assert payload["sections"]["risk"] is None
+    assert payload["sections"]["media"] is None
+
+
+def test_species_profile_keeps_summary_and_local_stats_contract_when_benefits_absent(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "Acer rubrum is a deciduous tree.",
+        {"canonical_botanical_name": "Acer rubrum"},
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "wikipedia",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "2026-06-12T00:00:00+00:00",
+        "wikipedia-summary-v1",
+        "source-derived",
+        "Creative Commons Attribution-ShareAlike 4.0 International",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "Wikipedia contributors",
+    )
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row, (3, 47)],
+        fetchall_results=[[]],
+    )
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=1000")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["summary"] == {
+        "available": True,
+        "text": "Acer rubrum is a deciduous tree.",
+        "source_system": "wikipedia",
+        "source_url": "https://en.wikipedia.org/wiki/Acer_rubrum",
+        "source_title": "Acer rubrum",
+        "license": "Creative Commons Attribution-ShareAlike 4.0 International",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attribution": "Wikipedia contributors",
+        "confidence": "source-derived",
+        "retrieved_at": "2026-06-12T00:00:00+00:00",
+        "method_version": "wikipedia-summary-v1",
+    }
+    assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["local_stats"] == {
+        "radius_m": 1000,
+        "same_species_count": 3,
+        "largest_dbh": 47,
+    }
+
+
+def test_species_profile_ignores_malformed_benefits_without_placeholder_output(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    benefit_rows = [[
+        (
+            "shade_cooling",
+            "species",
+            "Shade and cooling",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "benefit-notes-v1",
+            None,
+            "source-derived",
+            "example-benefits-catalog",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    ]]
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row], fetchall_results=benefit_rows)
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["summary"] is None
+    assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["risk"] is None
+    assert payload["sections"]["media"] is None
 
 
 def test_species_profile_returns_local_stats_when_context_is_present(monkeypatch):
@@ -298,7 +502,7 @@ def test_species_profile_returns_local_stats_when_context_is_present(monkeypatch
         None,
         None,
     )
-    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (3, 47)])
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (3, 47)], fetchall_results=[[]])
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -341,7 +545,11 @@ def test_species_profile_coerces_missing_local_stats_count_to_zero(monkeypatch):
         None,
         None,
     )
-    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (None, None)])
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row, (None, None)],
+        fetchall_results=[[]],
+    )
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -378,7 +586,7 @@ def test_species_profile_omits_local_stats_when_context_is_partial(monkeypatch):
         None,
         None,
     )
-    fake_conn = FakeConnection(None, fetchone_results=[profile_row])
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row], fetchall_results=[[]])
 
     def fake_connect(**_kwargs):
         return fake_conn
@@ -390,7 +598,7 @@ def test_species_profile_omits_local_stats_when_context_is_partial(monkeypatch):
 
     assert response.status_code == 200
     assert response.get_json()["sections"]["local_stats"] is None
-    assert len(fake_conn.cursor_instance.calls) == 1
+    assert len(fake_conn.cursor_instance.calls) == 2
 
 
 def test_species_profile_clamps_local_stats_radius(monkeypatch):
@@ -412,7 +620,11 @@ def test_species_profile_clamps_local_stats_radius(monkeypatch):
         None,
         None,
     )
-    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (0, None)])
+    fake_conn = FakeConnection(
+        None,
+        fetchone_results=[profile_row, (0, None)],
+        fetchall_results=[[]],
+    )
 
     def fake_connect(**_kwargs):
         return fake_conn

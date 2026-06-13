@@ -2,7 +2,7 @@
 
 ## Status
 
-todo
+done
 
 ## Priority
 
@@ -145,3 +145,9 @@ The UI should not display dollar values or precise environmental numbers without
 - Null/missing data is handled safely.
 - Tests cover fact vs estimate semantics.
 - Documentation explains how estimates should be displayed and caveated.
+
+## Implementation Notes
+
+- Implemented with a dedicated `species_benefit` table plus `/species/<species_id>/profile` support for valid `scope='species'` items only.
+- Tree-instance estimate rows are model-supported but intentionally not returned from the species profile route in this slice because that endpoint lacks tree-specific context.
+- Malformed or partial benefit rows are filtered out so the API keeps `benefits: null` rather than emitting placeholder content.

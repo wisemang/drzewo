@@ -4,8 +4,15 @@ import tree_loader
 
 
 class FakeCursor:
-    def __init__(self, fetchone_result=(0,), fetchall_result=None, rowcount=0):
+    def __init__(
+        self,
+        fetchone_result=(0,),
+        fetchone_results=None,
+        fetchall_result=None,
+        rowcount=0,
+    ):
         self.fetchone_result = fetchone_result
+        self.fetchone_results = list(fetchone_results) if fetchone_results is not None else None
         self.fetchall_result = fetchall_result or []
         self.rowcount = rowcount
         self.calls = []
@@ -14,6 +21,10 @@ class FakeCursor:
         self.calls.append((query, params))
 
     def fetchone(self):
+        if self.fetchone_results is not None:
+            if not self.fetchone_results:
+                return None
+            return self.fetchone_results.pop(0)
         return self.fetchone_result
 
     def fetchall(self):
@@ -63,32 +74,53 @@ def test_record_import_run_writes_expected_values():
 
 
 def test_ensure_species_enrichment_tables_creates_profile_schema():
-    cursor = FakeCursor(fetchone_result=(None,))
+    cursor = FakeCursor(fetchone_results=[(None,), (None,), (None,), (None,)])
+
+    tree_loader.ensure_species_enrichment_tables(cursor)
+
+    assert len(cursor.calls) == 8
+    assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
+    profile_sql = cursor.calls[1][0]
+    assert "CREATE TABLE species_profile" in profile_sql
+    assert "source_system TEXT NOT NULL" in profile_sql
+    assert "source_url TEXT NOT NULL" in profile_sql
+    assert "retrieved_at TIMESTAMPTZ NOT NULL" in profile_sql
+    assert "method_version TEXT NOT NULL" in profile_sql
+    assert "confidence TEXT NOT NULL DEFAULT 'unreviewed'" in profile_sql
+    assert "UNIQUE (species_id, source_system)" in profile_sql
+    assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[2][0]
+    assert "CREATE INDEX idx_species_profile_species_id" in cursor.calls[3][0]
+    assert "to_regclass('public.species_benefit')" in cursor.calls[4][0]
+    benefit_sql = cursor.calls[5][0]
+    assert "CREATE TABLE species_benefit" in benefit_sql
+    assert "metric_type TEXT NOT NULL" in benefit_sql
+    assert "scope TEXT NOT NULL" in benefit_sql
+    assert "method_version TEXT NOT NULL" in benefit_sql
+    assert "source_system TEXT NOT NULL" in benefit_sql
+    assert "source_url TEXT NOT NULL" in benefit_sql
+    assert "CHECK (retrieved_at IS NOT NULL OR calculated_at IS NOT NULL)" in benefit_sql
+    assert "scope <> 'tree_instance'" in benefit_sql
+    assert "to_regclass('public.idx_species_benefit_species_id')" in cursor.calls[6][0]
+    assert "CREATE INDEX idx_species_benefit_species_id" in cursor.calls[7][0]
+
+
+def test_ensure_species_enrichment_tables_skips_existing_profile_schema():
+    cursor = FakeCursor(
+        fetchone_results=[
+            ("species_profile",),
+            ("idx_species_profile_species_id",),
+            ("species_benefit",),
+            ("idx_species_benefit_species_id",),
+        ]
+    )
 
     tree_loader.ensure_species_enrichment_tables(cursor)
 
     assert len(cursor.calls) == 4
     assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
-    create_table_sql = cursor.calls[1][0]
-    assert "CREATE TABLE species_profile" in create_table_sql
-    assert "source_system TEXT NOT NULL" in create_table_sql
-    assert "source_url TEXT NOT NULL" in create_table_sql
-    assert "retrieved_at TIMESTAMPTZ NOT NULL" in create_table_sql
-    assert "method_version TEXT NOT NULL" in create_table_sql
-    assert "confidence TEXT NOT NULL DEFAULT 'unreviewed'" in create_table_sql
-    assert "UNIQUE (species_id, source_system)" in create_table_sql
-    assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[2][0]
-    assert "CREATE INDEX idx_species_profile_species_id" in cursor.calls[3][0]
-
-
-def test_ensure_species_enrichment_tables_skips_existing_profile_schema():
-    cursor = FakeCursor(fetchone_result=("species_profile",))
-
-    tree_loader.ensure_species_enrichment_tables(cursor)
-
-    assert len(cursor.calls) == 2
-    assert "to_regclass('public.species_profile')" in cursor.calls[0][0]
     assert "to_regclass('public.idx_species_profile_species_id')" in cursor.calls[1][0]
+    assert "to_regclass('public.species_benefit')" in cursor.calls[2][0]
+    assert "to_regclass('public.idx_species_benefit_species_id')" in cursor.calls[3][0]
 
 
 def test_apply_species_catalog_to_source_updates_resolved_rows(monkeypatch):

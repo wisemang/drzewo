@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Add TE-005 species benefits model support
+- Prompt summary: Implement the minimal backend/model/API slice of `TE-005` without expanding risk/media work or changing the current panel rendering.
+- Scope: `api.py`, `tree_loader.py`, `drzewo.sql`, `migrations/20260613_add_species_benefit.sql`, `tests/test_api.py`, `tests/test_tree_loader.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-005-benefit-model.md`, `docs/agent-log.md`.
+- Decisions: Added a dedicated `species_benefit` table with scope, estimate, assumptions, confidence, provenance, and optional tree-instance identifiers; exposed only valid `scope='species'` benefit items on `/species/<species_id>/profile`; kept `benefits` null when rows are absent or malformed so the API does not imply placeholder certainty.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused API/schema tests and final `make check` were run after edits.
+- Follow-ups: Add an enrichment job for benefit sources and a tree-context API path before surfacing modeled `tree_instance` estimates in the UI.
+
 ## 2026-06-13 - Add TE-011 species profile semantic tests
 - Prompt summary: Harden species profile tests for fact vs estimate vs risk semantics and null-safe behavior before adding benefit, risk, or media sections.
 - Scope: `api.py`, `static/js/script.js`, `static/js/species_profile_helpers.js`, `tests/test_api.py`, `tests/test_species_profile_panel.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.

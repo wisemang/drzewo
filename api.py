@@ -196,6 +196,44 @@ def species_profile(species_id):
                 "same_species_count": same_species_count,
                 "largest_dbh": stats_row[1] if stats_row else None,
             }
+        benefits = None
+        if row is not None:
+            cur.execute(
+                """
+                SELECT
+                    metric_type,
+                    scope,
+                    label,
+                    text,
+                    value,
+                    unit,
+                    min_value,
+                    max_value,
+                    currency,
+                    region,
+                    method_version,
+                    assumptions,
+                    confidence,
+                    source_system,
+                    source_url,
+                    retrieved_at,
+                    calculated_at,
+                    license_name,
+                    license_url,
+                    attribution,
+                    caveat
+                FROM species_benefit
+                WHERE species_id = %s
+                  AND scope = 'species'
+                ORDER BY
+                    metric_type,
+                    retrieved_at DESC NULLS LAST,
+                    calculated_at DESC NULLS LAST,
+                    id;
+                """,
+                (species_id,),
+            )
+            benefits = serialize_species_benefits(cur.fetchall())
         cur.close()
     finally:
         conn.close()
@@ -227,7 +265,7 @@ def species_profile(species_id):
             "botanical_name": row[2],
             "sections": {
                 "summary": summary,
-                "benefits": None,
+                "benefits": benefits,
                 "risk": None,
                 "media": None,
                 "local_stats": local_stats,
@@ -270,6 +308,83 @@ def serialize_datetime(value):
     if value is None or isinstance(value, str):
         return value
     return value.isoformat()
+
+
+def serialize_species_benefits(rows):
+    """Return the API benefits section or null when no valid items exist."""
+    items = []
+    for row in rows:
+        item = serialize_species_benefit_item(row)
+        if item is not None:
+            items.append(item)
+    if not items:
+        return None
+    return {"available": True, "items": items}
+
+
+def serialize_species_benefit_item(row):
+    """Return a single benefit item when it has enough data to be trustworthy."""
+    (
+        metric_type,
+        scope,
+        label,
+        text,
+        value,
+        unit,
+        min_value,
+        max_value,
+        currency,
+        region,
+        method_version,
+        assumptions,
+        confidence,
+        source_system,
+        source_url,
+        retrieved_at,
+        calculated_at,
+        license_name,
+        license_url,
+        attribution,
+        caveat,
+    ) = row
+
+    if not all([metric_type, scope, method_version, confidence, source_system, source_url]):
+        return None
+
+    has_qualitative_text = bool(text)
+    has_estimate_values = any(number is not None for number in (value, min_value, max_value))
+    if not has_qualitative_text and not has_estimate_values:
+        return None
+
+    item = {
+        "metric_type": metric_type,
+        "scope": scope,
+        "confidence": confidence,
+        "source_system": source_system,
+        "source_url": source_url,
+        "method_version": method_version,
+    }
+    optional_fields = {
+        "label": label,
+        "text": text,
+        "value": value,
+        "unit": unit,
+        "min_value": min_value,
+        "max_value": max_value,
+        "currency": currency,
+        "region": region,
+        "assumptions": assumptions,
+        "retrieved_at": serialize_datetime(retrieved_at),
+        "calculated_at": serialize_datetime(calculated_at),
+        "license": license_name,
+        "license_url": license_url,
+        "attribution": attribution,
+        "caveat": caveat,
+    }
+    for key, field_value in optional_fields.items():
+        if field_value is not None:
+            item[key] = field_value
+    return item
 
 
 
