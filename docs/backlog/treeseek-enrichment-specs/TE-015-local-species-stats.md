@@ -2,7 +2,7 @@
 
 ## Status
 
-todo
+done
 
 ## Priority
 
@@ -43,6 +43,10 @@ Seen in: Toronto, Ottawa
 - Count of same-species records across all TreeSeek data.
 
 ## API Shape
+
+The first completed slice exposes nearby stats when explicit request context is provided:
+`radius_m`, `same_species_count`, and `largest_dbh`. The species profile panel renders those fields
+when present. Broader aggregate stats remain follow-up work.
 
 Nearby stats require request context because `/species/<species_id>/profile` alone does not imply a
 location. Proposed query parameters:

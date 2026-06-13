@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from math import isfinite
 from os import environ
 
 import psycopg2
@@ -128,6 +129,10 @@ def nearest():
 
 @app.route('/species/<int:species_id>/profile', methods=['GET'])
 def species_profile(species_id):
+    local_stats_context, local_stats_error = parse_local_stats_context()
+    if local_stats_error is not None:
+        return local_stats_error
+
     conn = psycopg2.connect(**db_params())
     try:
         cur = conn.cursor()
@@ -161,6 +166,35 @@ def species_profile(species_id):
             (species_id,),
         )
         row = cur.fetchone()
+
+        local_stats = None
+        if row is not None and local_stats_context is not None:
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*) AS same_species_count,
+                    MAX(dbh_trunk) AS largest_dbh
+                FROM street_trees
+                WHERE species_id = %s
+                AND ST_DWithin(
+                    geom::geography,
+                    ST_MakePoint(%s, %s)::geography,
+                    %s
+                );
+                """,
+                (
+                    species_id,
+                    local_stats_context["lng"],
+                    local_stats_context["lat"],
+                    local_stats_context["radius_m"],
+                ),
+            )
+            stats_row = cur.fetchone()
+            local_stats = {
+                "radius_m": local_stats_context["radius_m"],
+                "same_species_count": stats_row[0] if stats_row else 0,
+                "largest_dbh": stats_row[1] if stats_row else None,
+            }
         cur.close()
     finally:
         conn.close()
@@ -195,10 +229,39 @@ def species_profile(species_id):
                 "benefits": None,
                 "risk": None,
                 "media": None,
-                "local_stats": None,
+                "local_stats": local_stats,
             },
         }
     )
+
+
+def parse_local_stats_context():
+    """Return nearby local-stats context when all required query params are present."""
+    lat_raw = request.args.get("lat")
+    lng_raw = request.args.get("lng")
+    radius_raw = request.args.get("radius_m")
+
+    if lat_raw is None or lng_raw is None or radius_raw is None:
+        return None, None
+
+    try:
+        lat = float(lat_raw)
+        lng = float(lng_raw)
+        radius_m = float(radius_raw)
+    except ValueError:
+        return None, (jsonify({"error": "lat, lng, and radius_m must be numbers"}), 400)
+
+    if not isfinite(lat) or not isfinite(lng) or not isfinite(radius_m):
+        return None, (jsonify({"error": "lat, lng, and radius_m must be finite numbers"}), 400)
+
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        return None, (jsonify({"error": "lat/lng are out of bounds"}), 400)
+
+    radius_m = max(MIN_RADIUS_M, min(radius_m, MAX_RADIUS_M))
+    if radius_m.is_integer():
+        radius_m = int(radius_m)
+
+    return {"lat": lat, "lng": lng, "radius_m": radius_m}, None
 
 
 def serialize_datetime(value):

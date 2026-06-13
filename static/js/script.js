@@ -4,11 +4,12 @@ let markerByKey = new Map(); // Active tree markers keyed by source/objectid
 let markerInsertionOrder = []; // FIFO order for cap-based pruning
 let resultKeys = []; // Keys for current table rows by index
 let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
-let speciesProfileCache = new Map(); // Species profiles keyed by numeric species_id
+let speciesProfileCache = new Map(); // Species profiles keyed by species/context
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
 const TREE_QUERY_LIMIT = 60;
+const SPECIES_PROFILE_LOCAL_RADIUS_M = 1000;
 const FULLSCREEN_PREF_KEY = 'treeseek.map.fullscreen';
 const WELCOME_DISMISSED_KEY = 'treeseek.welcome.dismissed';
 const markerMetrics = {
@@ -282,9 +283,27 @@ function usableSpeciesId(value) {
     return numericValue;
 }
 
+function usableCoordinate(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return null;
+    }
+    return numericValue;
+}
+
 function aboutSpeciesLabel(commonName) {
     const normalizedName = normalizeText(commonName);
     return normalizedName ? `About ${normalizedName}` : 'About this species';
+}
+
+function speciesProfileCacheKey(speciesId, latitude, longitude, radiusM) {
+    if (latitude === null || longitude === null || radiusM === null) {
+        return String(speciesId);
+    }
+    return `${speciesId}:${latitude}:${longitude}:${radiusM}`;
 }
 
 function closeSpeciesProfilePanel() {
@@ -344,6 +363,24 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         bodyHtml += '<p class="species-profile-status">No species profile is available yet.</p>';
     }
 
+    const localStats = profile.sections ? profile.sections.local_stats : null;
+    if (localStats) {
+        const radiusDisplay = formatNumber(localStats.radius_m);
+        const countDisplay = formatNumber(localStats.same_species_count);
+        const largestDbhDisplay = localStats.largest_dbh !== null &&
+            localStats.largest_dbh !== undefined
+            ? `<p>Largest nearby DBH: ${escapeHtml(formatNumber(localStats.largest_dbh))} cm</p>`
+            : '';
+        bodyHtml += `
+            <section class="species-profile-local-stats">
+                <h3>Nearby in TreeSeek</h3>
+                <p>${escapeHtml(countDisplay)} mapped records within ${escapeHtml(radiusDisplay)} m</p>
+                ${largestDbhDisplay}
+                <p>Radius used: ${escapeHtml(radiusDisplay)} m</p>
+            </section>
+        `;
+    }
+
     if (sourceUrl || (canShowSummary && (attribution || license))) {
         bodyHtml += '<div class="species-profile-source">';
         if (sourceUrl) {
@@ -361,6 +398,14 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
     setSpeciesProfileShell(commonNameDisplay, bodyHtml);
 }
 
+function formatNumber(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 'N/A';
+    }
+    return Number.isInteger(numericValue) ? String(numericValue) : numericValue.toFixed(1);
+}
+
 function renderSpeciesProfileError(commonName, botanicalName) {
     const botanicalNameDisplay = normalizeText(botanicalName);
     const botanicalHtml = botanicalNameDisplay
@@ -372,20 +417,34 @@ function renderSpeciesProfileError(commonName, botanicalName) {
     );
 }
 
-function openSpeciesProfilePanel(speciesId, commonName, botanicalName) {
+function openSpeciesProfilePanel(speciesId, commonName, botanicalName, latitude, longitude) {
     const numericSpeciesId = usableSpeciesId(speciesId);
     if (!numericSpeciesId) {
         return;
     }
+    const numericLatitude = usableCoordinate(latitude);
+    const numericLongitude = usableCoordinate(longitude);
+    const radiusM = numericLatitude !== null && numericLongitude !== null
+        ? SPECIES_PROFILE_LOCAL_RADIUS_M
+        : null;
+    const cacheKey = speciesProfileCacheKey(
+        numericSpeciesId,
+        numericLatitude,
+        numericLongitude,
+        radiusM
+    );
+    const queryString = radiusM === null
+        ? ''
+        : `?lat=${encodeURIComponent(numericLatitude)}&lng=${encodeURIComponent(numericLongitude)}&radius_m=${radiusM}`;
 
     loadingSpeciesProfilePanel(commonName, botanicalName);
 
-    if (speciesProfileCache.has(numericSpeciesId)) {
-        renderSpeciesProfile(speciesProfileCache.get(numericSpeciesId), commonName, botanicalName);
+    if (speciesProfileCache.has(cacheKey)) {
+        renderSpeciesProfile(speciesProfileCache.get(cacheKey), commonName, botanicalName);
         return;
     }
 
-    fetch(`/species/${numericSpeciesId}/profile`)
+    fetch(`/species/${numericSpeciesId}/profile${queryString}`)
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`Species profile request failed with ${response.status}`);
@@ -393,7 +452,7 @@ function openSpeciesProfilePanel(speciesId, commonName, botanicalName) {
             return response.json();
         })
         .then((profile) => {
-            speciesProfileCache.set(numericSpeciesId, profile);
+            speciesProfileCache.set(cacheKey, profile);
             renderSpeciesProfile(profile, commonName, botanicalName);
         })
         .catch((error) => {
@@ -437,6 +496,8 @@ function syncMarkers(data) {
         const botanicalNameDisplay = normalizeText(item.botanical_name) || 'N/A';
         const sourceNameDisplay = normalizeText(item.original_common_name);
         const speciesId = usableSpeciesId(item.species_id);
+        const latitude = usableCoordinate(item.latitude);
+        const longitude = usableCoordinate(item.longitude);
         const sourceNameRow = sourceNameDisplay && sourceNameDisplay !== commonNameDisplay
             ? `<tr><td>Original name</td><td>${escapeHtml(sourceNameDisplay)}</td></tr>`
             : '';
@@ -449,6 +510,8 @@ function syncMarkers(data) {
                         data-species-id="${speciesId}"
                         data-common-name="${escapeHtml(commonNameDisplay)}"
                         data-botanical-name="${escapeHtml(botanicalNameDisplay)}"
+                        data-latitude="${latitude === null ? '' : latitude}"
+                        data-longitude="${longitude === null ? '' : longitude}"
                     >${escapeHtml(aboutSpeciesLabel(commonNameDisplay))} -&gt;</button>
                 </div>
             `
@@ -748,7 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
         openSpeciesProfilePanel(
             trigger.dataset.speciesId,
             trigger.dataset.commonName,
-            trigger.dataset.botanicalName
+            trigger.dataset.botanicalName,
+            trigger.dataset.latitude,
+            trigger.dataset.longitude
         );
     });
     if (!hasDismissedWelcomeModal()) {

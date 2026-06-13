@@ -16,6 +16,20 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Add TE-009B minimal local stats UI
+- Prompt summary: Implement a minimal `TE-009B` UI slice that renders `TE-015` nearby local stats in the existing species profile panel.
+- Scope: `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Passed clicked tree latitude/longitude plus default `radius_m=1000` to `/species/<species_id>/profile`; made the species profile cache context-aware; rendered a compact "Nearby in TreeSeek" section only when `sections.local_stats` is present; left summary, loading, error, and missing-summary behavior unchanged.
+- Validation: Focused panel/API tests passed (`19 passed`); final `make check` passed (`ruff` + `pytest`, `56 passed`).
+- Follow-ups: Keep broader `TE-009B` sections and full `TE-015` frontend copy/stats for later slices.
+
+## 2026-06-13 - Add TE-015 minimal local stats API
+- Prompt summary: Implement the minimal API-only slice of `TE-015` for local TreeSeek species stats on `/species/<species_id>/profile`.
+- Scope: `api.py`, `tests/test_api.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-015-local-species-stats.md`, `docs/agent-log.md`.
+- Decisions: Added `sections.local_stats` only when `lat`, `lng`, and `radius_m` are all provided; kept the TE-008A response stable; limited initial stats to `radius_m`, `same_species_count`, and `largest_dbh`; used numeric `species_id` matching, rejected non-finite context values, and clamped radius using the existing API radius bounds; marked `TE-015` `done` for the minimal API-plus-panel local stats slice, with broader aggregate stats left as future enhancement work.
+- Validation: Baseline `make lint` and `make test` passed before edits; targeted `tests/test_api.py` passed (`15 passed`); final `make check` passed (`ruff` + `pytest`, `55 passed`).
+- Follow-ups: Add broader stats such as cities/datasets in a later enhancement.
+
 ## 2026-06-12 - Mark TE-008A and TE-009A done
 - Prompt summary: Review latest `TE-009A`/`TE-008A` changes and verify backlog status reflects completed work.
 - Scope: `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/backlog/treeseek-enrichment-specs/TE-009A-species-profile-panel.md`, `docs/agent-log.md`.

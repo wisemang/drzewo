@@ -39,7 +39,7 @@ Update this file in the same commit as implementation changes.
 | TE-012 | P2 | todo | TE-010 | Add enrichment observability (`enrichment_runs` audit table + summary script). | Each enrichment run logs status, counts, and timing; failures captured with error text. |
 | TE-013 | P2 | todo | TE-009B | Optional imagery moderation/caching policy (fallback image, stale-link handling). | Broken/missing images degrade gracefully; attribution still visible. |
 | TE-014 | P0 | done | none | Decide legal/licensing constraints and attribution requirements for all external sources before production sync. | Decision log added in this file with approved source list and usage constraints. |
-| TE-015 | P1 | todo | TE-001, TE-008A | Add local TreeSeek-derived species stats to the species profile API and panel. | API can return same-species mapped-record counts, radius/context metadata, nearby DBH stats when location is supplied, cities/datasets where the species appears, and clear copy that these are TreeSeek mapped-record stats. |
+| TE-015 | P1 | done | TE-001, TE-008A | Add local TreeSeek-derived species stats to the species profile API and panel. | API returns same-species mapped-record count, radius, and largest nearby DBH when explicit location context is supplied; the species panel renders those local stats when present. Broader aggregate stats such as cities/datasets remain future enhancement work. |
 
 ## Suggested Execution Order
 

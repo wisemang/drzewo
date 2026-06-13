@@ -4,8 +4,9 @@ import api
 
 
 class FakeCursor:
-    def __init__(self, rows):
+    def __init__(self, rows, fetchone_results=None):
         self.rows = rows
+        self.fetchone_results = list(fetchone_results) if fetchone_results is not None else None
         self.executed = None
         self.params = None
         self.calls = []
@@ -19,6 +20,10 @@ class FakeCursor:
         return self.rows
 
     def fetchone(self):
+        if self.fetchone_results is not None:
+            if not self.fetchone_results:
+                return None
+            return self.fetchone_results.pop(0)
         if not self.rows:
             return None
         return self.rows[0]
@@ -28,8 +33,8 @@ class FakeCursor:
 
 
 class FakeConnection:
-    def __init__(self, rows):
-        self.cursor_instance = FakeCursor(rows)
+    def __init__(self, rows, fetchone_results=None):
+        self.cursor_instance = FakeCursor(rows, fetchone_results=fetchone_results)
         self.closed = False
 
     def cursor(self):
@@ -225,6 +230,135 @@ def test_species_profile_returns_null_profile_for_unenriched_species(monkeypatch
     assert payload["botanical_name"] == "Acer rubrum"
     assert payload["sections"]["summary"] is None
     assert payload["sections"]["benefits"] is None
+    assert payload["sections"]["local_stats"] is None
+
+
+def test_species_profile_returns_local_stats_when_context_is_present(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        "https://en.wikipedia.org/wiki/Acer_rubrum",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (3, 47)])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=1000")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["local_stats"] == {
+        "radius_m": 1000,
+        "same_species_count": 3,
+        "largest_dbh": 47,
+    }
+    stats_query, stats_params = fake_conn.cursor_instance.calls[1]
+    assert "FROM street_trees" in stats_query
+    assert "WHERE species_id = %s" in stats_query
+    assert "ST_DWithin" in stats_query
+    assert stats_params == (12, -79.38, 43.65, 1000)
+
+
+def test_species_profile_omits_local_stats_when_context_is_partial(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38")
+
+    assert response.status_code == 200
+    assert response.get_json()["sections"]["local_stats"] is None
+    assert len(fake_conn.cursor_instance.calls) == 1
+
+
+def test_species_profile_clamps_local_stats_radius(monkeypatch):
+    profile_row = (
+        12,
+        "acer_rubrum",
+        "Acer rubrum",
+        "Red Maple",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    fake_conn = FakeConnection(None, fetchone_results=[profile_row, (0, None)])
+
+    def fake_connect(**_kwargs):
+        return fake_conn
+
+    monkeypatch.setattr(api.psycopg2, "connect", fake_connect)
+
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=99999")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["sections"]["local_stats"]["radius_m"] == api.MAX_RADIUS_M
+    assert fake_conn.cursor_instance.calls[1][1][-1] == api.MAX_RADIUS_M
+
+
+def test_species_profile_rejects_invalid_local_stats_context():
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=abc")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "lat, lng, and radius_m must be numbers"}
+
+
+def test_species_profile_rejects_non_finite_local_stats_context():
+    client = api.app.test_client()
+    response = client.get("/species/12/profile?lat=43.65&lng=-79.38&radius_m=nan")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "lat, lng, and radius_m must be finite numbers"}
 
 
 def test_species_profile_returns_404_for_unknown_species(monkeypatch):
