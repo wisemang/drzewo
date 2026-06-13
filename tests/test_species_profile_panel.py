@@ -100,6 +100,19 @@ def test_species_profile_panel_renders_local_stats_when_present():
     assert ".species-profile-source-copy" in css
 
 
+def test_species_profile_panel_renders_benefits_when_present():
+    script = read_text("static/js/script.js")
+    css = read_text("static/css/styles.css")
+
+    assert "const benefits = profile.sections ? profile.sections.benefits : null" in script
+    assert "speciesProfileHelpers.formatSpeciesProfileBenefits(benefits)" in script
+    assert "<section class=\"species-profile-benefits\">" in script
+    assert "<h3>Benefits</h3>" in script
+    assert "species-profile-benefit-item" in script
+    assert ".species-profile-benefits" in css
+    assert ".species-profile-benefit-item" in css
+
+
 def test_species_profile_panel_has_mobile_release_polish():
     css = read_text("static/css/styles.css")
 
@@ -114,14 +127,12 @@ def test_species_profile_panel_has_mobile_release_polish():
     assert "min-height: 44px" in css
 
 
-def test_species_profile_panel_does_not_render_future_estimate_or_risk_sections():
+def test_species_profile_panel_keeps_risk_and_media_sections_hidden():
     script = read_text("static/js/script.js")
     css = read_text("static/css/styles.css")
 
-    assert "species-profile-benefits" not in script
     assert "species-profile-risk" not in script
     assert "species-profile-media" not in script
-    assert "species-profile-benefits" not in css
     assert "species-profile-risk" not in css
     assert "species-profile-media" not in css
 
@@ -205,3 +216,47 @@ def test_species_profile_summary_attribution_copy_is_concise():
     )
 
     assert result == "Summary from Wikipedia contributors · CC BY-SA 4.0"
+
+
+def test_species_profile_benefits_copy_formats_text_notes():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileBenefits({"
+        "available: true, "
+        "items: [{"
+        "scope: 'species', "
+        "label: 'Shade and cooling', "
+        "text: ' Large-canopied trees can provide shade and cooling in urban settings. '"
+        "}]"
+        "})"
+    )
+
+    assert result == [
+        {
+            "label": "Shade and cooling",
+            "text": "Large-canopied trees can provide shade and cooling in urban settings.",
+        }
+    ]
+
+
+def test_species_profile_benefits_copy_omits_missing_or_estimate_items():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileBenefits({"
+        "available: true, "
+        "items: ["
+        "{scope: 'species', text: '  '}, "
+        "{scope: 'tree_instance', label: 'Stormwater', "
+        "text: 'Estimated annual stormwater interception'}, "
+        "{scope: 'species', label: 'Stormwater', "
+        "text: 'Estimated annual stormwater interception', "
+        "value: 1200, unit: 'litres_per_year'}, "
+        "{scope: 'species', label: 'Habitat', text: 'Supports urban wildlife habitat.'}"
+        "]"
+        "})"
+    )
+
+    assert result == [
+        {
+            "label": "Habitat",
+            "text": "Supports urban wildlife habitat.",
+        }
+    ]

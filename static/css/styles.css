@@ -263,6 +263,33 @@ a:hover {
     margin: 0.35rem 0;
 }
 
+.species-profile-benefits {
+    margin-top: 1rem;
+}
+
+.species-profile-benefits h3 {
+    margin: 0 0 0.5rem;
+    color: #2a7b2a;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.species-profile-benefit-item + .species-profile-benefit-item {
+    margin-top: 0.85rem;
+}
+
+.species-profile-benefit-item h4 {
+    margin: 0 0 0.3rem;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    color: #2d3d21;
+}
+
+.species-profile-benefit-item p {
+    margin: 0;
+    line-height: 1.5;
+}
+
 .species-profile-status {
     margin: 0;
     color: #555;

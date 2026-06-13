@@ -393,6 +393,9 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         }
     }
 
+    const benefits = profile.sections ? profile.sections.benefits : null;
+    const benefitItems = speciesProfileHelpers.formatSpeciesProfileBenefits(benefits);
+
     if (canShowSummary) {
         bodyHtml += `
             <section class="species-profile-about">
@@ -402,6 +405,26 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
         `;
     } else {
         bodyHtml += '<p class="species-profile-status">No species profile is available yet.</p>';
+    }
+
+    if (benefitItems.length > 0) {
+        const benefitsHtml = benefitItems.map((item) => {
+            const labelHtml = item.label
+                ? `<h4>${escapeHtml(item.label)}</h4>`
+                : '';
+            return `
+                <article class="species-profile-benefit-item">
+                    ${labelHtml}
+                    <p>${escapeHtml(item.text)}</p>
+                </article>
+            `;
+        }).join('');
+        bodyHtml += `
+            <section class="species-profile-benefits">
+                <h3>Benefits</h3>
+                ${benefitsHtml}
+            </section>
+        `;
     }
 
     if (sourceUrl || (canShowSummary && (attribution || license))) {

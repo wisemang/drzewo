@@ -42,7 +42,34 @@
         return `Summary from ${attribution} · ${license}`;
     }
 
+    function formatSpeciesProfileBenefits(benefits) {
+        if (!benefits || benefits.available === false || !Array.isArray(benefits.items)) {
+            return [];
+        }
+
+        return benefits.items
+            .filter((item) => {
+                if (!item || typeof item !== 'object' || item.scope !== 'species') {
+                    return false;
+                }
+                if (typeof item.text !== 'string' || !item.text.trim()) {
+                    return false;
+                }
+                if (hasFiniteSpeciesProfileNumber(item.value) ||
+                        hasFiniteSpeciesProfileNumber(item.min_value) ||
+                        hasFiniteSpeciesProfileNumber(item.max_value)) {
+                    return false;
+                }
+                return true;
+            })
+            .map((item) => ({
+                label: typeof item.label === 'string' && item.label.trim() ? item.label.trim() : null,
+                text: item.text.trim()
+            }));
+    }
+
     const helpers = {
+        formatSpeciesProfileBenefits,
         formatSpeciesProfileLocalStats,
         formatSpeciesProfileNumber,
         formatSpeciesProfileRadius,

@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Render species benefits in the profile panel
+- Prompt summary: Implement the frontend rendering path for `sections.benefits` only, using the normalized optional-section contract and keeping risk/media hidden.
+- Scope: `static/js/script.js`, `static/js/species_profile_helpers.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Rendered only qualitative species-scope benefit notes; filtered estimate-shaped or malformed benefit items out of the frontend helper so the panel does not start showing modeled numbers or placeholders; left risk/media rendering untouched.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests and final `make check` were run after edits.
+- Follow-ups: Extend `TE-009B` later for risk/media and any clearly-caveated estimate presentation once the product wants those sections visible.
+
 ## 2026-06-13 - Normalize TE-008B optional profile sections
 - Prompt summary: Tighten the species profile API contract for optional `benefits`, `risk`, and `media` sections without changing frontend rendering.
 - Scope: `api.py`, `tests/test_api.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`, `docs/agent-log.md`.
