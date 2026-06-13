@@ -2,7 +2,7 @@
 
 ## Status
 
-todo
+done
 
 ## Priority
 
@@ -21,6 +21,8 @@ P1
 Add repeatable enrichment job commands/scripts with idempotent upsert behavior.
 
 The first practical use case is refreshing Wikipedia-backed species profiles, but the job structure should also support future enrichment sources such as benefits, risk signals, media, and local stats.
+
+Implemented for the existing Wikipedia species profile enrichment path. Future enrichment sources should remain separate until at least two concrete job types exist.
 
 ## Product Goal
 

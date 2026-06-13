@@ -92,14 +92,13 @@ def profile_from_wikipedia_payload(species_row, payload, retrieved_at=None):
 
 
 def fetch_species_targets(cursor, *, species_key=None, limit=None, refresh=False):
-    """Return species rows with Wikipedia URLs that need profile enrichment."""
-    where_clauses = ["species.wikipedia_url IS NOT NULL", "species.wikipedia_url <> ''"]
+    """Return species rows with their current Wikipedia profile state."""
+    _ = refresh
+    where_clauses = ["TRUE"]
     params = [SOURCE_SYSTEM]
     if species_key:
         where_clauses.append("species.species_key = %s")
         params.append(species_key)
-    if not refresh:
-        where_clauses.append("profile.id IS NULL")
 
     limit_clause = ""
     if limit:
@@ -113,7 +112,19 @@ def fetch_species_targets(cursor, *, species_key=None, limit=None, refresh=False
             species.species_key,
             species.canonical_botanical_name,
             species.display_common_name,
-            species.wikipedia_url
+            species.wikipedia_url,
+            profile.id AS profile_id,
+            profile.summary,
+            profile.taxonomy,
+            profile.canonical_url,
+            profile.source_system,
+            profile.source_url,
+            profile.retrieved_at,
+            profile.method_version,
+            profile.confidence,
+            profile.license_name,
+            profile.license_url,
+            profile.attribution
         FROM species
         LEFT JOIN species_profile AS profile
             ON profile.species_id = species.id
@@ -131,9 +142,53 @@ def fetch_species_targets(cursor, *, species_key=None, limit=None, refresh=False
             "canonical_botanical_name": row[2],
             "display_common_name": row[3],
             "wikipedia_url": row[4],
+            "profile_id": row[5],
+            "existing_profile": None
+            if row[5] is None
+            else {
+                "summary": row[6],
+                "taxonomy": row[7],
+                "canonical_url": row[8],
+                "source_system": row[9],
+                "source_url": row[10],
+                "retrieved_at": row[11],
+                "method_version": row[12],
+                "confidence": row[13],
+                "license_name": row[14],
+                "license_url": row[15],
+                "attribution": row[16],
+            },
         }
         for row in cursor.fetchall()
     ]
+
+
+def normalize_taxonomy(value):
+    if isinstance(value, str):
+        return json.loads(value)
+    return value or {}
+
+
+def profile_has_changed(existing_profile, profile):
+    """Return whether fetched profile content differs from the stored record."""
+    if existing_profile is None:
+        return True
+
+    comparable_fields = (
+        "summary",
+        "canonical_url",
+        "source_system",
+        "source_url",
+        "method_version",
+        "confidence",
+        "license_name",
+        "license_url",
+        "attribution",
+    )
+    for field in comparable_fields:
+        if existing_profile.get(field) != profile.get(field):
+            return True
+    return normalize_taxonomy(existing_profile.get("taxonomy")) != profile.get("taxonomy", {})
 
 
 def upsert_species_profile(cursor, profile):
@@ -185,20 +240,66 @@ def enrich_species_profiles(cursor, *, species_key=None, limit=None, refresh=Fal
         limit=limit,
         refresh=refresh,
     )
-    results = {"selected": len(targets), "updated": 0, "failed": 0}
+    results = {
+        "checked": len(targets),
+        "created": 0,
+        "updated": 0,
+        "unchanged": 0,
+        "skipped": 0,
+        "errors": 0,
+    }
 
     for species_row in targets:
+        if not species_row["wikipedia_url"]:
+            results["skipped"] += 1
+            continue
+
         try:
             payload = fetch_wikipedia_summary(species_row["wikipedia_url"])
             profile = profile_from_wikipedia_payload(species_row, payload)
+            existing_profile = species_row["existing_profile"]
+            if existing_profile is None:
+                results["created"] += 1
+            elif refresh or profile_has_changed(existing_profile, profile):
+                results["updated"] += 1
+            else:
+                results["unchanged"] += 1
+                continue
+
             if not dry_run:
                 upsert_species_profile(cursor, profile)
-            results["updated"] += 1
         except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
-            results["failed"] += 1
-            print(f"Failed {species_row['species_key']}: {exc}")
+            results["errors"] += 1
+            print(f"Error {species_row['species_key']}: {exc}")
 
     return results
+
+
+def format_enrichment_summary(results, *, dry_run=False):
+    if dry_run:
+        return "\n".join(
+            [
+                "DRY RUN: no database changes written.",
+                f"Checked: {results['checked']} species",
+                f"Would create: {results['created']} profiles",
+                f"Would update: {results['updated']} profiles",
+                f"Would leave unchanged: {results['unchanged']} profiles",
+                f"Would skip: {results['skipped']}",
+                f"Errors: {results['errors']}",
+            ]
+        )
+
+    return "\n".join(
+        [
+            "Species profile enrichment complete.",
+            f"Checked: {results['checked']} species",
+            f"Created: {results['created']} profiles",
+            f"Updated: {results['updated']} profiles",
+            f"Unchanged: {results['unchanged']} profiles",
+            f"Skipped: {results['skipped']}",
+            f"Errors: {results['errors']}",
+        ]
+    )
 
 
 def main():
@@ -225,11 +326,7 @@ def main():
             conn.rollback()
         else:
             conn.commit()
-        print(
-            "Species profile enrichment: "
-            f"selected={results['selected']} updated={results['updated']} "
-            f"failed={results['failed']}"
-        )
+        print(format_enrichment_summary(results, dry_run=args.dry_run))
     finally:
         conn.close()
 

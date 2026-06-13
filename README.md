@@ -83,7 +83,11 @@ make enrich-species-profiles SPECIES_KEY=acer_rubrum REFRESH=1
 ```
 
 Profiles are stored in `species_profile` with source, retrieval, method, confidence, license,
-and attribution metadata. The API returns one profile at `/species/<species_id>/profile`.
+and attribution metadata. Re-running the default job checks current Wikipedia profile content,
+creates missing records, updates changed records, leaves unchanged records alone, skips species
+without Wikipedia URLs, and prints summary counts. Use `DRY_RUN=1` to review counts without writes,
+or `REFRESH=1` to force existing profile records to be refreshed. The API returns one profile at
+`/species/<species_id>/profile`.
 
 ### Archive local raw datasets
 

@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Make Wikipedia profile enrichment repeatable
+- Prompt summary: Implement `TE-010` for repeatable enrichment jobs, focused on the existing Wikipedia species profile enrichment path.
+- Scope: `scripts/enrich_species_profiles.py`, `tests/test_species_profile_enrichment.py`, `README.md`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-010-enrichment-jobs.md`, `docs/agent-log.md`.
+- Decisions: Kept the job specific to Wikipedia species profiles; default runs now check all selected species, skip missing Wikipedia URLs, fetch and compare sourced profile content, insert missing records, update changed records, and leave unchanged records unwritten; retained `REFRESH=1` for forced refreshes and `DRY_RUN=1` for no-write summaries.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused enrichment tests passed (`10 passed`); final `make check` passed (`ruff` + `pytest`, `64 passed`).
+- Follow-ups: none.
+
 ## 2026-06-13 - Add TE-009B minimal local stats UI
 - Prompt summary: Implement a minimal `TE-009B` UI slice that renders `TE-015` nearby local stats in the existing species profile panel.
 - Scope: `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
