@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Polish species profile panel mobile and announcement behavior
+- Prompt summary: Apply the smallest release-readiness polish pass for the species profile panel without changing API behavior, content structure, or enrichment scope.
+- Scope: `templates/index.html`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-009B-enrichment-panel-sections.md`, `docs/agent-log.md`.
+- Decisions: Added a polite live region for panel body updates, improved mobile bottom-sheet robustness with dynamic viewport and safe-area handling, increased the close-button touch target, and narrowed `TE-008B`/`TE-009B` tracker language so local stats plus current provenance are no longer described as future work.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`11 passed`); final `make check` passed (`ruff` + `pytest`, `71 passed`).
+- Follow-ups: Do one real mobile/browser smoke pass; add DOM-level interaction coverage only if the repo adopts a lightweight precedent.
+
 ## 2026-06-13 - Harden species profile stale fetch handling
 - Prompt summary: Review the species profile panel for the next highest-value, lowest-risk hardening pass and implement the smallest useful slice.
 - Scope: `static/js/script.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

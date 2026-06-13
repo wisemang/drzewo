@@ -31,9 +31,9 @@ Update this file in the same commit as implementation changes.
 | TE-006 | P1 | todo | TE-001, TE-003 | Add `species_risk` + `species_risk_observation` for native/introduced/invasive/pest/pathogen signals, with EDDMapS-oriented risk support. | Species risk flags queryable by region, risk type, source, confidence, and freshness; UI/API must not present region-specific claims as global facts. |
 | TE-007 | P2 | todo | TE-001, TE-003 | Add `species_media` for public-domain or compatible-license imagery plus attribution payload. | At least one image path with license + credit metadata can be returned for a species. |
 | TE-008A | P1 | done | TE-004 | Add species profile API response contract for current profile data. | `/species/<species_id>/profile` follows `docs/backlog/treeseek-enrichment-specs/TE-008A-species-profile-api.md`: common name, botanical name, sectioned summary, source URL, license, attribution, provenance, and null-safe missing-data behavior; documented and tested. |
-| TE-008B | P1 | todo | TE-005, TE-006, TE-007, TE-011, TE-015 | Expand species profile API with optional enrichment sections. | API supports optional `benefits`, `risk`, `media`, `local_stats`, and section-level provenance without breaking existing clients. |
+| TE-008B | P1 | todo | TE-005, TE-006, TE-007, TE-011 | Expand species profile API with remaining optional enrichment sections. | API supports optional `benefits`, `risk`, and `media` sections, with section-level provenance and null-safe behavior, without breaking existing clients. |
 | TE-009A | P1 | done | TE-008A | Frontend: species profile panel launched from tree popup. | Popup includes an “About [species]” action; panel renders common name, botanical name, summary, Wikipedia link, and attribution; existing map/table workflow remains unchanged. |
-| TE-009B | P1 | todo | TE-008B | Frontend: enrichment sections in species panel. | Panel renders optional benefits, risk badges, media, local stats, and source/provenance sections with graceful missing-data fallbacks. |
+| TE-009B | P1 | todo | TE-008B | Frontend: remaining enrichment sections in species panel. | Panel renders optional benefits, risk badges, and media with graceful missing-data fallbacks while preserving the current summary, local stats, and provenance behavior. |
 | TE-010 | P1 | done | TE-002, TE-004, TE-005, TE-006, TE-007 | Add repeatable enrichment job commands/scripts (idempotent upsert behavior). | Running job twice does not duplicate data; dry-run mode exists for review. |
 | TE-011 | P1 | todo | TE-008A | Add API/loader tests for “fact vs estimate vs risk signal” semantics and null-safe behavior. | Tests validate labeling, confidence handling, and missing-data fallbacks. |
 | TE-012 | P2 | todo | TE-010 | Add enrichment observability (`enrichment_runs` audit table + summary script). | Each enrichment run logs status, counts, and timing; failures captured with error text. |
@@ -54,8 +54,8 @@ Update this file in the same commit as implementation changes.
 9. `TE-009A` current profile frontend panel
 10. `TE-011` expanded semantics/null-safe tests
 11. `TE-015` local TreeSeek species stats
-12. `TE-008B` future enrichment API sections
-13. `TE-009B` future enrichment frontend sections
+12. `TE-008B` future benefits/risk/media API sections
+13. `TE-009B` future benefits/risk/media frontend sections
 14. `TE-010` idempotent enrichment jobs
 15. `TE-007`, `TE-012`, `TE-013` lower-priority follow-through
 
@@ -80,7 +80,7 @@ Template:
 ### 2026-06-12 - Wikipedia profile endpoint
 - Context: The profile provenance table exists; the next user-visible step is making seeded Wikipedia URLs produce retrievable species profiles.
 - Decision: Add `make enrich-species-profiles` as the first Wikipedia profile population path and expose profiles through `/species/<species_id>/profile`, rather than expanding `/nearest` before the full enriched tree response design.
-- Consequences: Profile enrichment can be run and refreshed independently. `TE-008A` tracks the current profile contract, while `TE-008B` remains open for later benefits/risk/media/local-stats expansion.
+- Consequences: Profile enrichment can be run and refreshed independently. `TE-008A` tracks the current profile contract, while `TE-008B` remains open for later benefits/risk/media expansion.
 
 ### 2026-06-12 - Species API identity semantics
 - Context: The profile API exposes both numeric `species_id` and human-readable `species_key`.

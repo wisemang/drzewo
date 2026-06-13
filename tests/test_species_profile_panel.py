@@ -15,6 +15,8 @@ def test_species_profile_panel_shell_is_present():
     assert 'id="species-profile-panel"' in html
     assert 'id="species-profile-title"' in html
     assert 'id="species-profile-body"' in html
+    assert 'aria-live="polite"' in html
+    assert 'aria-atomic="false"' in html
     assert 'id="species-profile-close"' in html
     assert 'aria-label="Close species profile"' in html
     assert 'title="Close species profile"' in html
@@ -95,6 +97,20 @@ def test_species_profile_panel_renders_local_stats_when_present():
     assert "Radius used:" not in script
     assert ".species-profile-local-stats" in css
     assert ".species-profile-source-copy" in css
+
+
+def test_species_profile_panel_has_mobile_release_polish():
+    css = read_text("static/css/styles.css")
+
+    assert "max-height: 100dvh" in css
+    assert "height: min(78dvh, 620px)" in css
+    assert "env(safe-area-inset-bottom" in css
+    assert "env(safe-area-inset-left" in css
+    assert "env(safe-area-inset-right" in css
+    assert "overscroll-behavior: contain" in css
+    assert "-webkit-overflow-scrolling: touch" in css
+    assert "min-width: 44px" in css
+    assert "min-height: 44px" in css
 
 
 def run_species_profile_helper(expression):

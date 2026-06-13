@@ -15,9 +15,11 @@ P1
 
 ## Summary
 
-Expand the species profile panel to render optional enrichment sections such as benefits, risk badges, media, local TreeSeek stats, and provenance/source links.
+Expand the species profile panel to render the remaining optional enrichment sections such as benefits, risk badges, and media.
 
 This builds on the initial species profile panel rather than replacing it.
+
+Local TreeSeek stats plus summary/source provenance are already part of the current panel and are not the focus of this follow-on task.
 
 ## Product Goal
 
@@ -28,7 +30,6 @@ TreeSeek should make species profiles feel locally useful and ecologically infor
 Potential sections include:
 
 - Summary
-- In TreeSeek / local stats
 - Native or introduced status
 - Risk / invasive / pest / pathogen signals
 - Ecological value
@@ -43,7 +44,7 @@ Render sections only when data exists.
 
 Missing data should not produce empty headings or broken UI.
 
-Each section should carry its own source/provenance where applicable.
+Each new third-party section should carry its own source/provenance where applicable.
 
 ## Example Layout
 
@@ -53,11 +54,6 @@ Quercus rubra
 
 Summary
 [Wikipedia summary]
-
-In TreeSeek
-42 red oaks mapped within 1 km
-Largest nearby red oak: 78 cm DBH
-Seen in: Toronto, Ottawa
 
 Status
 Native in Ontario
@@ -82,6 +78,6 @@ Wikipedia contributors · CC BY-SA 4.0
 - Panel hides missing sections cleanly.
 - Risk/native/invasive claims include region context.
 - Estimated benefits are labeled as estimates.
-- Source/provenance links are available for third-party data.
+- New third-party sections expose source/provenance links when applicable.
 - Existing TE-009A profile behavior remains intact.
 - UI remains usable on mobile.

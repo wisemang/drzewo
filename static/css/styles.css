@@ -160,6 +160,7 @@ a:hover {
     z-index: 3600;
     width: min(390px, 100vw);
     height: 100vh;
+    max-height: 100dvh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -205,6 +206,9 @@ a:hover {
     line-height: 1;
     cursor: pointer;
     align-self: flex-start;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.2rem;
 }
 
 .species-profile-close:hover {
@@ -212,8 +216,13 @@ a:hover {
 }
 
 .species-profile-body {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 .species-profile-botanical {
@@ -482,12 +491,18 @@ body.map-fullscreen-active #map {
         bottom: 0;
         width: 100vw;
         height: min(78vh, 620px);
+        height: min(78dvh, 620px);
         border-left: none;
         border-top: 1px solid #A08040;
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.34);
     }
 
     .species-profile-header {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem max(1rem, env(safe-area-inset-right, 0px)) 0.85rem max(1rem, env(safe-area-inset-left, 0px));
+    }
+
+    .species-profile-body {
+        padding-left: max(1rem, env(safe-area-inset-left, 0px));
+        padding-right: max(1rem, env(safe-area-inset-right, 0px));
     }
 }
