@@ -6,6 +6,7 @@ let resultKeys = []; // Keys for current table rows by index
 let rowIndexByKey = new Map(); // Row index lookup for marker click highlighting
 let speciesProfileCache = new Map(); // Species profiles keyed by species/context
 let lastSpeciesProfileTrigger = null; // Popup trigger that opened the current species profile
+let activeSpeciesProfileRequestId = 0; // Invalidates stale profile fetches after close/reopen
 let currentProvider = 'openfreemap'; // Default map provider
 let osmLayer, openFreeMapLayer;
 const MAX_PERSISTENT_MARKERS = 600; // Balanced cap for older phones
@@ -314,6 +315,7 @@ function closeSpeciesProfilePanel() {
     }
 
     panel.setAttribute('hidden', '');
+    activeSpeciesProfileRequestId += 1;
     if (
         lastSpeciesProfileTrigger &&
         document.contains(lastSpeciesProfileTrigger) &&
@@ -465,6 +467,8 @@ function openSpeciesProfilePanel(speciesId, commonName, botanicalName, latitude,
     const queryString = radiusM === null
         ? ''
         : `?lat=${encodeURIComponent(numericLatitude)}&lng=${encodeURIComponent(numericLongitude)}&radius_m=${radiusM}`;
+    const requestId = activeSpeciesProfileRequestId + 1;
+    activeSpeciesProfileRequestId = requestId;
 
     loadingSpeciesProfilePanel(commonName, botanicalName);
 
@@ -482,9 +486,15 @@ function openSpeciesProfilePanel(speciesId, commonName, botanicalName, latitude,
         })
         .then((profile) => {
             speciesProfileCache.set(cacheKey, profile);
+            if (requestId !== activeSpeciesProfileRequestId) {
+                return;
+            }
             renderSpeciesProfile(profile, commonName, botanicalName);
         })
         .catch((error) => {
+            if (requestId !== activeSpeciesProfileRequestId) {
+                return;
+            }
             console.warn('Error fetching species profile:', error);
             renderSpeciesProfileError(commonName, botanicalName);
         });

@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-13 - Harden species profile stale fetch handling
+- Prompt summary: Review the species profile panel for the next highest-value, lowest-risk hardening pass and implement the smallest useful slice.
+- Scope: `static/js/script.js`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Added a lightweight request id guard so stale profile fetches cannot reopen a closed panel or overwrite a newer species profile after rapid open/close or quick species switching; kept completed stale successes cacheable for later use.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel tests passed (`10 passed`); final `make check` passed (`ruff` + `pytest`, `70 passed`).
+- Follow-ups: Add true DOM/browser interaction coverage for focus and Escape behavior when the project has a lightweight browser test precedent.
+
 ## 2026-06-13 - Polish species profile panel interactions
 - Prompt summary: Polish species profile panel interaction behavior without changing API behavior, content sections, or panel design.
 - Scope: `static/js/script.js`, `templates/index.html`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

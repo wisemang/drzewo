@@ -55,12 +55,32 @@ def test_species_profile_panel_manages_focus_and_escape_close():
     script = read_text("static/js/script.js")
 
     assert "let lastSpeciesProfileTrigger = null" in script
+    assert "let activeSpeciesProfileRequestId = 0" in script
     assert "closeButton.focus()" in script
     assert "document.contains(lastSpeciesProfileTrigger)" in script
     assert "lastSpeciesProfileTrigger.focus()" in script
     assert "function isSpeciesProfilePanelOpen()" in script
     assert "event.key === 'Escape' && isSpeciesProfilePanelOpen()" in script
     assert "closeSpeciesProfilePanel();" in script
+
+
+def test_species_profile_panel_ignores_stale_fetch_results():
+    script = read_text("static/js/script.js")
+
+    assert "activeSpeciesProfileRequestId += 1" in script
+    assert "const requestId = activeSpeciesProfileRequestId + 1" in script
+    assert "activeSpeciesProfileRequestId = requestId" in script
+    assert "if (requestId !== activeSpeciesProfileRequestId)" in script
+    assert "speciesProfileCache.set(cacheKey, profile);" in script
+    assert script.index("speciesProfileCache.set(cacheKey, profile);") < script.index(
+        "if (requestId !== activeSpeciesProfileRequestId)"
+    )
+    assert script.index("if (requestId !== activeSpeciesProfileRequestId)") < script.index(
+        "renderSpeciesProfile(profile, commonName, botanicalName);"
+    )
+    assert script.index("if (requestId !== activeSpeciesProfileRequestId)") < script.index(
+        "renderSpeciesProfileError(commonName, botanicalName);"
+    )
 
 
 def test_species_profile_panel_renders_local_stats_when_present():
