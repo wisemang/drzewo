@@ -11,7 +11,10 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-data/
+data/*
+!data/enrichment/
+data/enrichment/*
+!data/enrichment/*.jsonl
 dist/
 downloads/
 eggs/

@@ -6,7 +6,7 @@ PY := $(BIN)/python
 RUFF := $(BIN)/ruff
 PYTEST := $(BIN)/pytest
 
-.PHONY: help setup install-dev run test lint format check load-prod archive-data download-geneva-data enrich-species-profiles enrich-benefits analyze-logs
+.PHONY: help setup install-dev run test lint format check load-prod archive-data download-geneva-data enrich-species-profiles enrich-benefits enrich-risk analyze-logs
 
 help:
 	@echo "Targets:"
@@ -21,6 +21,7 @@ help:
 	@echo "  download-geneva-data Download Geneva SITG trees into data/raw/geneva/<date>/"
 	@echo "  enrich-species-profiles Populate species_profile from Wikipedia (optional SPECIES_KEY=... LIMIT=... REFRESH=1 DRY_RUN=1)"
 	@echo "  enrich-benefits Import reviewed qualitative species benefits (optional SEED=... DRY_RUN=1)"
+	@echo "  enrich-risk    Import reviewed regional species risk records (optional SEED=... DRY_RUN=1)"
 	@echo "  analyze-logs Analyze Nginx access logs (PATHS=... TOP=...)"
 
 setup:
@@ -59,6 +60,9 @@ enrich-species-profiles:
 
 enrich-benefits:
 	$(PY) scripts/enrich_species_benefits.py $(if $(SEED),--seed "$(SEED)") $(if $(DRY_RUN),--dry-run)
+
+enrich-risk:
+	$(PY) scripts/enrich_species_risk.py $(if $(SEED),--seed "$(SEED)") $(if $(DRY_RUN),--dry-run)
 
 analyze-logs:
 	$(PY) -m nginx_log_analysis $(if $(PATHS),$(PATHS)) $(if $(TOP),--top $(TOP))

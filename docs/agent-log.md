@@ -16,6 +16,20 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-15 - Verify TE-017 and TE-018 enrichment behavior against the dev DB
+- Prompt summary: Run the reviewed benefits and risk enrichments against the local development database, rerun both for idempotency, spot-check seeded and unseeded species profile API responses, and confirm no frontend risk rendering was added before future risk UI work.
+- Scope: `docs/agent-log.md`.
+- Decisions: Treated this as a post-implementation verification pass rather than a behavior change; confirmed benefits render only for seeded species, risk remains API-only, and the current risk upsert identity is sufficient because it includes `risk_type`, `region`, `region_type`, `source_system`, `source_url`, and `method_version`.
+- Validation: `make enrich-benefits` inserted 5 rows on first run and skipped 5 unchanged on rerun; `make enrich-risk` inserted 11 rows on first run and skipped 11 unchanged on rerun; live `/species/<id>/profile` spot checks passed for seeded and unseeded species; `make check` passed (`ruff` clean, `pytest` `115 passed`).
+- Follow-ups: none.
+
+## 2026-06-15 - Add TE-018 reviewed regional risk seed ingestion
+- Prompt summary: Implement `TE-018` end to end with a repeatable regional risk importer, reviewed local seed file, official-source verification, and tests around validation and idempotent reruns.
+- Scope: `scripts/enrich_species_risk.py`, `data/enrichment/risk_seed.jsonl`, `tests/test_species_risk_enrichment.py`, `Makefile`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-018-reviewed-seed-ingestion-for-regional-spec.md`, `docs/agent-log.md`.
+- Decisions: Kept the first slice narrow by mapping VASCAN Ontario rows only to `native_status` and `introduced_status`, mapping the CFIA emerald ash borer overlay only to `pest_host`, requiring complete provenance plus explicit `region` and `region_type`, rejecting safety wording and broad invasive/statutory claims, and resolving seed rows via `species_key` and/or `scientific_name` rather than requiring numeric species IDs. Deferred `Ginkgo biloba` because the source pass did not produce a VASCAN result to seed confidently.
+- Validation: Baseline `make lint` and `make test` had already passed before edits; focused TE-018 tests were added and passed before running the importer dry-run and final repo checks.
+- Follow-ups: Extend the same reviewed-seed pattern for later risk sources only after their claim vocabulary, licensing, and region semantics are documented as tightly as this first VASCAN/CFIA slice.
+
 ## 2026-06-15 - Review first benefits seed notes against USDA guides
 - Prompt summary: Review every checked-in `TE-017` benefit seed row against the cited USDA PLANTS / Plant Guide source before production use, revise or remove anything not directly supported, then rerun the importer dry-run and repo checks.
 - Scope: `data/enrichment/benefits_seed.jsonl`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.
