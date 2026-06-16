@@ -1,4 +1,13 @@
 (function speciesProfileHelpersModule(root) {
+    const SPECIES_BENEFIT_LABELS = {
+        pollinator_support: 'Pollinator support',
+        shade_or_amenity: 'Shade and amenity',
+        wildlife_food: 'Wildlife food',
+        wildlife_habitat: 'Wildlife habitat',
+        site_rehabilitation: 'Site rehabilitation',
+        cultural_or_human_use: 'Cultural or human use'
+    };
+
     function formatSpeciesProfileNumber(value) {
         const numericValue = Number(value);
         if (!Number.isFinite(numericValue)) {
@@ -42,6 +51,10 @@
         return `Summary from ${attribution} · ${license}`;
     }
 
+    function formatSpeciesProfileBenefitLabel(metricType) {
+        return SPECIES_BENEFIT_LABELS[metricType] || null;
+    }
+
     function formatSpeciesProfileBenefits(benefits) {
         if (!benefits || benefits.available === false || !Array.isArray(benefits.items)) {
             return [];
@@ -50,6 +63,9 @@
         return benefits.items
             .filter((item) => {
                 if (!item || typeof item !== 'object' || item.scope !== 'species') {
+                    return false;
+                }
+                if (!formatSpeciesProfileBenefitLabel(item.metric_type)) {
                     return false;
                 }
                 if (typeof item.text !== 'string' || !item.text.trim()) {
@@ -63,12 +79,28 @@
                 return true;
             })
             .map((item) => ({
-                label: typeof item.label === 'string' && item.label.trim() ? item.label.trim() : null,
-                text: item.text.trim()
+                label: formatSpeciesProfileBenefitLabel(item.metric_type),
+                text: item.text.trim(),
+                sourceSystem: typeof item.source_system === 'string' && item.source_system.trim()
+                    ? item.source_system.trim()
+                    : null,
+                sourceUrl: typeof item.source_url === 'string' && item.source_url.trim()
+                    ? item.source_url.trim()
+                    : null,
+                attribution: typeof item.attribution === 'string' && item.attribution.trim()
+                    ? item.attribution.trim()
+                    : null,
+                license: typeof item.license === 'string' && item.license.trim()
+                    ? item.license.trim()
+                    : null,
+                licenseUrl: typeof item.license_url === 'string' && item.license_url.trim()
+                    ? item.license_url.trim()
+                    : null
             }));
     }
 
     const helpers = {
+        formatSpeciesProfileBenefitLabel,
         formatSpeciesProfileBenefits,
         formatSpeciesProfileLocalStats,
         formatSpeciesProfileNumber,

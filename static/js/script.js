@@ -412,16 +412,32 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
             const labelHtml = item.label
                 ? `<h4>${escapeHtml(item.label)}</h4>`
                 : '';
+            const sourceName = item.attribution || item.sourceSystem;
+            const sourceHtml = sourceName && item.sourceUrl
+                ? `<p class="species-profile-benefit-source">Source: <a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceName)}</a></p>`
+                : sourceName
+                    ? `<p class="species-profile-benefit-source">Source: ${escapeHtml(sourceName)}</p>`
+                    : '';
+            const licenseHtml = item.license
+                ? `<p class="species-profile-benefit-license">${
+                    item.licenseUrl
+                        ? `<a href="${escapeHtml(item.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.license)}</a>`
+                        : escapeHtml(item.license)
+                }</p>`
+                : '';
             return `
                 <article class="species-profile-benefit-item">
                     ${labelHtml}
                     <p>${escapeHtml(item.text)}</p>
+                    ${sourceHtml}
+                    ${licenseHtml}
                 </article>
             `;
         }).join('');
         bodyHtml += `
             <section class="species-profile-benefits">
                 <h3>Benefits</h3>
+                <p class="species-profile-benefits-caveat">Species-level notes from cited sources. Actual benefits depend on tree size, health, and site conditions.</p>
                 ${benefitsHtml}
             </section>
         `;

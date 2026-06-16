@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-15 - Add TE-009B1 reviewed benefits panel polish
+- Prompt summary: Break out the enrichment backlog follow-up items, then implement the first frontend slice for reviewed qualitative benefits without enabling risk/media rendering.
+- Scope: `docs/backlog/tree-enrichment-backlog.md`, `static/js/species_profile_helpers.js`, `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Kept the frontend benefits section limited to approved first-slice qualitative `metric_type` values with fixed readable labels, skipped unknown/malformed or estimate-style items, preserved API note text verbatim, added a compact section caveat plus lightweight source/license display, and left risk/media rendering disabled.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel checks passed with `.venv/bin/pytest tests/test_species_profile_panel.py` (`17 passed`); final `make check` passed (`ruff` clean, `pytest` `116 passed`).
+- Follow-ups: `TE-009B2` can add a conservative risk/status section later using the same null-safe section contract, while `TE-009B3` remains separate for media rendering.
+
 ## 2026-06-15 - Run reviewed benefits and risk enrichment in production
 - Prompt summary: After confirming the production schema was already present, run the reviewed TE-017 and TE-018 enrichment imports against the production database, rerun them for idempotency, and spot-check seeded and unseeded species profile responses through the production DB path.
 - Scope: `docs/agent-log.md`.

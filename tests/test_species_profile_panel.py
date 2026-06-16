@@ -108,9 +108,19 @@ def test_species_profile_panel_renders_benefits_when_present():
     assert "speciesProfileHelpers.formatSpeciesProfileBenefits(benefits)" in script
     assert "<section class=\"species-profile-benefits\">" in script
     assert "<h3>Benefits</h3>" in script
+    assert (
+        "Species-level notes from cited sources. Actual benefits depend on tree size, "
+        "health, and site conditions."
+    ) in script
+    assert "species-profile-benefits-caveat" in script
     assert "species-profile-benefit-item" in script
+    assert "species-profile-benefit-source" in script
+    assert "species-profile-benefit-license" in script
     assert ".species-profile-benefits" in css
+    assert ".species-profile-benefits-caveat" in css
     assert ".species-profile-benefit-item" in css
+    assert ".species-profile-benefit-source" in css
+    assert ".species-profile-benefit-license" in css
 
 
 def test_species_profile_panel_has_mobile_release_polish():
@@ -223,17 +233,27 @@ def test_species_profile_benefits_copy_formats_text_notes():
         "helpers.formatSpeciesProfileBenefits({"
         "available: true, "
         "items: [{"
+        "metric_type: 'shade_or_amenity', "
         "scope: 'species', "
-        "label: 'Shade and cooling', "
-        "text: ' Large-canopied trees can provide shade and cooling in urban settings. '"
+        "label: 'Ignored API label', "
+        "text: ' Large-canopied trees can provide shade and cooling in urban settings. ', "
+        "source_system: 'usda-plants', "
+        "source_url: 'https://plants.usda.gov/example', "
+        "attribution: 'USDA NRCS', "
+        "license: 'Public domain'"
         "}]"
         "})"
     )
 
     assert result == [
         {
-            "label": "Shade and cooling",
+            "label": "Shade and amenity",
             "text": "Large-canopied trees can provide shade and cooling in urban settings.",
+            "sourceSystem": "usda-plants",
+            "sourceUrl": "https://plants.usda.gov/example",
+            "attribution": "USDA NRCS",
+            "license": "Public domain",
+            "licenseUrl": None,
         }
     ]
 
@@ -243,20 +263,50 @@ def test_species_profile_benefits_copy_omits_missing_or_estimate_items():
         "helpers.formatSpeciesProfileBenefits({"
         "available: true, "
         "items: ["
-        "{scope: 'species', text: '  '}, "
-        "{scope: 'tree_instance', label: 'Stormwater', "
+        "{metric_type: 'wildlife_habitat', scope: 'species', text: '  '}, "
+        "{metric_type: 'wildlife_habitat', scope: 'tree_instance', label: 'Stormwater', "
         "text: 'Estimated annual stormwater interception'}, "
-        "{scope: 'species', label: 'Stormwater', "
+        "{metric_type: 'wildlife_habitat', scope: 'species', label: 'Stormwater', "
         "text: 'Estimated annual stormwater interception', "
         "value: 1200, unit: 'litres_per_year'}, "
-        "{scope: 'species', label: 'Habitat', text: 'Supports urban wildlife habitat.'}"
+        "{metric_type: 'unknown_metric', scope: 'species', label: 'Unknown', "
+        "text: 'Source-backed note.'}, "
+        "{metric_type: 'wildlife_habitat', scope: 'species', label: 'Habitat', "
+        "text: 'Supports urban wildlife habitat.'}"
         "]"
         "})"
     )
 
     assert result == [
         {
-            "label": "Habitat",
+            "label": "Wildlife habitat",
             "text": "Supports urban wildlife habitat.",
+            "sourceSystem": None,
+            "sourceUrl": None,
+            "attribution": None,
+            "license": None,
+            "licenseUrl": None,
         }
+    ]
+
+
+def test_species_profile_benefit_labels_cover_approved_first_slice_metric_types():
+    result = run_species_profile_helper(
+        "["
+        "helpers.formatSpeciesProfileBenefitLabel('pollinator_support'), "
+        "helpers.formatSpeciesProfileBenefitLabel('shade_or_amenity'), "
+        "helpers.formatSpeciesProfileBenefitLabel('wildlife_food'), "
+        "helpers.formatSpeciesProfileBenefitLabel('wildlife_habitat'), "
+        "helpers.formatSpeciesProfileBenefitLabel('site_rehabilitation'), "
+        "helpers.formatSpeciesProfileBenefitLabel('cultural_or_human_use')"
+        "]"
+    )
+
+    assert result == [
+        "Pollinator support",
+        "Shade and amenity",
+        "Wildlife food",
+        "Wildlife habitat",
+        "Site rehabilitation",
+        "Cultural or human use",
     ]
