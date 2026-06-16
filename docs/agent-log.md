@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-15 - Run reviewed benefits and risk enrichment in production
+- Prompt summary: After confirming the production schema was already present, run the reviewed TE-017 and TE-018 enrichment imports against the production database, rerun them for idempotency, and spot-check seeded and unseeded species profile responses through the production DB path.
+- Scope: `docs/agent-log.md`.
+- Decisions: Reused the existing SSH tunnel pattern from `scripts/load_prod.sh`, sourced `.env.prod`, and invoked the enrichment scripts directly so the reviewed seed imports could target prod without changing the Make targets. Kept this to data population and verification only; no frontend risk rendering changes were made.
+- Validation: Production benefits import inserted 5 rows on first run and skipped 5 unchanged on rerun; production risk import inserted 11 rows on first run and skipped 11 unchanged on rerun. Production spot checks confirmed seeded benefits/risk rows for `acer_rubrum`, dual status plus CFIA pest-host rows for `fraxinus_pennsylvanica`, risk-only status for `acer_platanoides`, and `benefits: null`, `risk: null`, `media: null` for `ginkgo_biloba`.
+- Follow-ups: none.
+
 ## 2026-06-15 - Verify TE-017 and TE-018 enrichment behavior against the dev DB
 - Prompt summary: Run the reviewed benefits and risk enrichments against the local development database, rerun both for idempotency, spot-check seeded and unseeded species profile API responses, and confirm no frontend risk rendering was added before future risk UI work.
 - Scope: `docs/agent-log.md`.
