@@ -16,6 +16,20 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-15 - Review first benefits seed notes against USDA guides
+- Prompt summary: Review every checked-in `TE-017` benefit seed row against the cited USDA PLANTS / Plant Guide source before production use, revise or remove anything not directly supported, then rerun the importer dry-run and repo checks.
+- Scope: `data/enrichment/benefits_seed.jsonl`, `docs/backlog/tree-enrichment-backlog.md`, `docs/agent-log.md`.
+- Decisions: Kept all five pilot rows but rewrote them to use the species-specific USDA Plant Guide PDF URLs/titles instead of the generic homepage, tightened note wording to cautious source-backed claims, and changed green ash from an unsupported `site_rehabilitation` note to a supported `shade_or_amenity` note.
+- Validation: Verified rows against the USDA Plants API plus linked Plant Guide PDFs; `make enrich-benefits DRY_RUN=1` passed with 5 rows accepted; `make check` passed (`ruff` clean, `pytest` `99 passed`).
+- Follow-ups: Apply the same species-specific source verification standard to future benefits seed additions and to the first `TE-018` risk seed file before production import.
+
+## 2026-06-15 - Add TE-017 reviewed species benefit seed ingestion
+- Prompt summary: Implement `TE-017` end to end with a repeatable qualitative benefits importer, reviewed local seed file, and tests around validation and idempotent reruns.
+- Scope: `scripts/enrich_species_benefits.py`, `data/enrichment/benefits_seed.jsonl`, `tests/test_species_benefit_enrichment.py`, `Makefile`, `docs/backlog/tree-enrichment-backlog.md`, `docs/backlog/treeseek-enrichment-specs/TE-017-reviewed-seed-ingestion-for-qualitative-species-benefits.md`, `docs/agent-log.md`.
+- Decisions: Kept the first slice intentionally narrow by using `species_benefit.metric_type` as the canonical qualitative category field; validated only the approved first-slice metric types plus complete provenance; resolved seed rows via `species_key`/`scientific_name`; generated reviewer-friendly labels from the approved categories; and treated deterministic reruns as species-plus-category/provenance updates rather than expanding the schema for a larger benefit taxonomy redesign.
+- Validation: Baseline `make lint` and `make test` passed before edits; final `make check` was run after implementation.
+- Follow-ups: Revisit the seed data if source review wants tighter species-specific URLs or note wording; extend the same importer pattern for `TE-018` regional risk/status ingestion.
+
 ## 2026-06-13 - Render species benefits in the profile panel
 - Prompt summary: Implement the frontend rendering path for `sections.benefits` only, using the normalized optional-section contract and keeping risk/media hidden.
 - Scope: `static/js/script.js`, `static/js/species_profile_helpers.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

@@ -2,7 +2,7 @@ TE-017 — Reviewed Seed Ingestion for Qualitative Species Benefits
 
 Status
 
-Todo
+done
 
 Priority
 
