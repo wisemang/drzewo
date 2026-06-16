@@ -16,6 +16,13 @@ Do not log secrets, tokens, or private user data.
 
 ## Entries
 
+## 2026-06-16 - Add TE-009B2 regional status and cautions panel
+- Prompt summary: Implement the first conservative frontend rendering slice for reviewed regional species risk/status signals without implying recommendations, infestation, or safety from missing data.
+- Scope: `static/js/species_profile_helpers.js`, `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.
+- Decisions: Added a dedicated `Regional status and cautions` section only for approved first-slice `risk_type` values, rendered region codes explicitly, kept API notes verbatim, showed compact source/license provenance when present, and gated the extra native/introduced and pest-host caveats on the corresponding rows. Left benefits, summary, local stats, focus/Escape behavior, mobile layout, and hidden media behavior unchanged.
+- Validation: Baseline `make lint` and `make test` passed before edits; focused panel checks passed with `.venv/bin/pytest tests/test_species_profile_panel.py` (`21 passed`); final `make check` passed (`ruff` clean, `pytest` `120 passed`).
+- Follow-ups: `TE-009B3` remains the next optional frontend slice for compatible-license species media rendering.
+
 ## 2026-06-15 - Add TE-009B1 reviewed benefits panel polish
 - Prompt summary: Break out the enrichment backlog follow-up items, then implement the first frontend slice for reviewed qualitative benefits without enabling risk/media rendering.
 - Scope: `docs/backlog/tree-enrichment-backlog.md`, `static/js/species_profile_helpers.js`, `static/js/script.js`, `static/css/styles.css`, `tests/test_species_profile_panel.py`, `docs/agent-log.md`.

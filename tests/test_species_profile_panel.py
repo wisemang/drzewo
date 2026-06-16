@@ -123,6 +123,38 @@ def test_species_profile_panel_renders_benefits_when_present():
     assert ".species-profile-benefit-license" in css
 
 
+def test_species_profile_panel_renders_regional_status_and_cautions():
+    script = read_text("static/js/script.js")
+    css = read_text("static/css/styles.css")
+
+    assert "const risk = profile.sections ? profile.sections.risk : null" in script
+    assert "speciesProfileHelpers.formatSpeciesProfileRisks(risk)" in script
+    assert "<section class=\"species-profile-risk\">" in script
+    assert "<h3>Regional status and cautions</h3>" in script
+    assert (
+        "Signals are from cited regional sources. Missing risk data does not mean "
+        "the species is safe or free of concerns."
+    ) in script
+    assert (
+        "Regional status is not a planting recommendation. Native does not mean "
+        "risk-free, and introduced does not necessarily mean invasive."
+    ) in script
+    assert (
+        "Pest-host notes are species- or genus-level signals and do not indicate "
+        "that this individual tree is affected."
+    ) in script
+    assert "species-profile-risk-item" in script
+    assert "species-profile-risk-region" in script
+    assert "species-profile-risk-source" in script
+    assert "species-profile-risk-license" in script
+    assert ".species-profile-risk" in css
+    assert ".species-profile-risk-caveat" in css
+    assert ".species-profile-risk-item" in css
+    assert ".species-profile-risk-region" in css
+    assert ".species-profile-risk-source" in css
+    assert ".species-profile-risk-license" in css
+
+
 def test_species_profile_panel_has_mobile_release_polish():
     css = read_text("static/css/styles.css")
 
@@ -137,13 +169,11 @@ def test_species_profile_panel_has_mobile_release_polish():
     assert "min-height: 44px" in css
 
 
-def test_species_profile_panel_keeps_risk_and_media_sections_hidden():
+def test_species_profile_panel_keeps_media_section_hidden():
     script = read_text("static/js/script.js")
     css = read_text("static/css/styles.css")
 
-    assert "species-profile-risk" not in script
     assert "species-profile-media" not in script
-    assert "species-profile-risk" not in css
     assert "species-profile-media" not in css
 
 
@@ -310,3 +340,100 @@ def test_species_profile_benefit_labels_cover_approved_first_slice_metric_types(
         "Site rehabilitation",
         "Cultural or human use",
     ]
+
+
+def test_species_profile_risks_copy_formats_native_status_with_region_and_provenance():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileRisks({"
+        "available: true, "
+        "items: [{"
+        "risk_type: 'native_status', "
+        "status: 'native', "
+        "region: 'CA-ON', "
+        "notes: 'Native in Ontario according to the cited regional checklist.', "
+        "source_system: 'vascan', "
+        "source_url: 'https://example.test/risk/acer-rubrum/ca-on', "
+        "attribution: 'VASCAN', "
+        "license: 'CC BY 4.0'"
+        "}]"
+        "})"
+    )
+
+    assert result == {
+        "items": [
+            {
+                "riskType": "native_status",
+                "label": "Native status",
+                "region": "CA-ON",
+                "text": "Native in Ontario according to the cited regional checklist.",
+                "sourceSystem": "vascan",
+                "sourceUrl": "https://example.test/risk/acer-rubrum/ca-on",
+                "attribution": "VASCAN",
+                "license": "CC BY 4.0",
+                "licenseUrl": None,
+            }
+        ],
+        "hasRegionalStatusCaveat": True,
+        "hasPestHostCaveat": False,
+    }
+
+
+def test_species_profile_risks_copy_supports_introduced_and_pest_host_caveats():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileRisks({"
+        "available: true, "
+        "items: ["
+        "{risk_type: 'introduced_status', status: 'introduced', region: 'CA', "
+        "notes: 'Introduced status note from a cited regional source.'}, "
+        "{risk_type: 'pest_host', status: 'present', region: 'CA-ON', "
+        "notes: 'Ash species are documented hosts in the cited pest advisory.'}"
+        "]"
+        "})"
+    )
+
+    assert result["items"] == [
+        {
+            "riskType": "introduced_status",
+            "label": "Introduced status",
+            "region": "CA",
+            "text": "Introduced status note from a cited regional source.",
+            "sourceSystem": None,
+            "sourceUrl": None,
+            "attribution": None,
+            "license": None,
+            "licenseUrl": None,
+        },
+        {
+            "riskType": "pest_host",
+            "label": "Pest host",
+            "region": "CA-ON",
+            "text": "Ash species are documented hosts in the cited pest advisory.",
+            "sourceSystem": None,
+            "sourceUrl": None,
+            "attribution": None,
+            "license": None,
+            "licenseUrl": None,
+        },
+    ]
+    assert result["hasRegionalStatusCaveat"] is True
+    assert result["hasPestHostCaveat"] is True
+
+
+def test_species_profile_risks_copy_omits_unknown_or_malformed_items():
+    result = run_species_profile_helper(
+        "helpers.formatSpeciesProfileRisks({"
+        "available: true, "
+        "items: ["
+        "{risk_type: 'unknown_type', status: 'present', region: 'CA', notes: 'x'}, "
+        "{risk_type: 'native_status', status: 'unknown', region: 'CA-ON', notes: 'x'}, "
+        "{risk_type: 'management_concern', status: 'present', region: '  ', notes: 'x'}, "
+        "{risk_type: 'management_concern', status: 'present', region: 'CA-ON', notes: '  '}"
+        "]"
+        "})"
+    )
+
+    assert result == {
+        "items": [],
+        "hasRegionalStatusCaveat": False,
+        "hasPestHostCaveat": False,
+    }

@@ -7,6 +7,12 @@
         site_rehabilitation: 'Site rehabilitation',
         cultural_or_human_use: 'Cultural or human use'
     };
+    const SPECIES_RISK_LABELS = {
+        native_status: 'Native status',
+        introduced_status: 'Introduced status',
+        pest_host: 'Pest host',
+        management_concern: 'Management concern'
+    };
 
     function formatSpeciesProfileNumber(value) {
         const numericValue = Number(value);
@@ -55,6 +61,30 @@
         return SPECIES_BENEFIT_LABELS[metricType] || null;
     }
 
+    function formatSpeciesProfileRiskLabel(riskType) {
+        return SPECIES_RISK_LABELS[riskType] || null;
+    }
+
+    function formatSpeciesProfileSourceFields(item) {
+        return {
+            sourceSystem: typeof item.source_system === 'string' && item.source_system.trim()
+                ? item.source_system.trim()
+                : null,
+            sourceUrl: typeof item.source_url === 'string' && item.source_url.trim()
+                ? item.source_url.trim()
+                : null,
+            attribution: typeof item.attribution === 'string' && item.attribution.trim()
+                ? item.attribution.trim()
+                : null,
+            license: typeof item.license === 'string' && item.license.trim()
+                ? item.license.trim()
+                : null,
+            licenseUrl: typeof item.license_url === 'string' && item.license_url.trim()
+                ? item.license_url.trim()
+                : null
+        };
+    }
+
     function formatSpeciesProfileBenefits(benefits) {
         if (!benefits || benefits.available === false || !Array.isArray(benefits.items)) {
             return [];
@@ -81,22 +111,54 @@
             .map((item) => ({
                 label: formatSpeciesProfileBenefitLabel(item.metric_type),
                 text: item.text.trim(),
-                sourceSystem: typeof item.source_system === 'string' && item.source_system.trim()
-                    ? item.source_system.trim()
-                    : null,
-                sourceUrl: typeof item.source_url === 'string' && item.source_url.trim()
-                    ? item.source_url.trim()
-                    : null,
-                attribution: typeof item.attribution === 'string' && item.attribution.trim()
-                    ? item.attribution.trim()
-                    : null,
-                license: typeof item.license === 'string' && item.license.trim()
-                    ? item.license.trim()
-                    : null,
-                licenseUrl: typeof item.license_url === 'string' && item.license_url.trim()
-                    ? item.license_url.trim()
-                    : null
+                ...formatSpeciesProfileSourceFields(item)
             }));
+    }
+
+    function formatSpeciesProfileRisks(risk) {
+        const emptyResult = {
+            items: [],
+            hasRegionalStatusCaveat: false,
+            hasPestHostCaveat: false
+        };
+        if (!risk || risk.available === false || !Array.isArray(risk.items)) {
+            return emptyResult;
+        }
+
+        const items = risk.items
+            .filter((item) => {
+                if (!item || typeof item !== 'object') {
+                    return false;
+                }
+                if (!formatSpeciesProfileRiskLabel(item.risk_type)) {
+                    return false;
+                }
+                if (typeof item.region !== 'string' || !item.region.trim()) {
+                    return false;
+                }
+                if (typeof item.notes !== 'string' || !item.notes.trim()) {
+                    return false;
+                }
+                if (typeof item.status !== 'string' || !item.status.trim() || item.status === 'unknown') {
+                    return false;
+                }
+                return true;
+            })
+            .map((item) => ({
+                riskType: item.risk_type,
+                label: formatSpeciesProfileRiskLabel(item.risk_type),
+                region: item.region.trim(),
+                text: item.notes.trim(),
+                ...formatSpeciesProfileSourceFields(item)
+            }));
+
+        return {
+            items,
+            hasRegionalStatusCaveat: items.some(
+                (item) => item.riskType === 'native_status' || item.riskType === 'introduced_status'
+            ),
+            hasPestHostCaveat: items.some((item) => item.riskType === 'pest_host')
+        };
     }
 
     const helpers = {
@@ -105,6 +167,8 @@
         formatSpeciesProfileLocalStats,
         formatSpeciesProfileNumber,
         formatSpeciesProfileRadius,
+        formatSpeciesProfileRiskLabel,
+        formatSpeciesProfileRisks,
         formatSpeciesProfileSummaryAttribution
     };
 

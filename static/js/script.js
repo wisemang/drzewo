@@ -395,6 +395,8 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
 
     const benefits = profile.sections ? profile.sections.benefits : null;
     const benefitItems = speciesProfileHelpers.formatSpeciesProfileBenefits(benefits);
+    const risk = profile.sections ? profile.sections.risk : null;
+    const riskSection = speciesProfileHelpers.formatSpeciesProfileRisks(risk);
 
     if (canShowSummary) {
         bodyHtml += `
@@ -439,6 +441,48 @@ function renderSpeciesProfile(profile, fallbackCommonName, fallbackBotanicalName
                 <h3>Benefits</h3>
                 <p class="species-profile-benefits-caveat">Species-level notes from cited sources. Actual benefits depend on tree size, health, and site conditions.</p>
                 ${benefitsHtml}
+            </section>
+        `;
+    }
+
+    if (riskSection.items.length > 0) {
+        const riskHtml = riskSection.items.map((item) => {
+            const sourceName = item.attribution || item.sourceSystem;
+            const sourceHtml = sourceName && item.sourceUrl
+                ? `<p class="species-profile-risk-source">Source: <a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceName)}</a></p>`
+                : sourceName
+                    ? `<p class="species-profile-risk-source">Source: ${escapeHtml(sourceName)}</p>`
+                    : '';
+            const licenseHtml = item.license
+                ? `<p class="species-profile-risk-license">${
+                    item.licenseUrl
+                        ? `<a href="${escapeHtml(item.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.license)}</a>`
+                        : escapeHtml(item.license)
+                }</p>`
+                : '';
+            return `
+                <article class="species-profile-risk-item">
+                    <h4>${escapeHtml(item.label)}</h4>
+                    <p class="species-profile-risk-region">${escapeHtml(item.region)}</p>
+                    <p>${escapeHtml(item.text)}</p>
+                    ${sourceHtml}
+                    ${licenseHtml}
+                </article>
+            `;
+        }).join('');
+        const statusCaveatHtml = riskSection.hasRegionalStatusCaveat
+            ? '<p class="species-profile-risk-caveat">Regional status is not a planting recommendation. Native does not mean risk-free, and introduced does not necessarily mean invasive.</p>'
+            : '';
+        const pestHostCaveatHtml = riskSection.hasPestHostCaveat
+            ? '<p class="species-profile-risk-caveat">Pest-host notes are species- or genus-level signals and do not indicate that this individual tree is affected.</p>'
+            : '';
+        bodyHtml += `
+            <section class="species-profile-risk">
+                <h3>Regional status and cautions</h3>
+                <p class="species-profile-risk-caveat">Signals are from cited regional sources. Missing risk data does not mean the species is safe or free of concerns.</p>
+                ${statusCaveatHtml}
+                ${pestHostCaveatHtml}
+                ${riskHtml}
             </section>
         `;
     }
