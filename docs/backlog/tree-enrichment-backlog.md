@@ -40,6 +40,10 @@ Update this file in the same commit as implementation changes.
 | TE-013 | P2 | todo | TE-009B | Optional imagery moderation/caching policy (fallback image, stale-link handling). | Broken/missing images degrade gracefully; attribution still visible. |
 | TE-014 | P0 | done | none | Decide legal/licensing constraints and attribution requirements for all external sources before production sync. | Decision log added in this file with approved source list and usage constraints. |
 | TE-015 | P1 | done | TE-001, TE-008A | Add local TreeSeek-derived species stats to the species profile API and panel. | API returns same-species mapped-record count, radius, and largest nearby DBH when explicit location context is supplied; the species panel renders those local stats when present. Broader aggregate stats such as cities/datasets remain future enhancement work. |
+| TE-016 | P0 | todo | TE-003, TE-005, TE-006, TE-014 | Define approved first-source data strategy for benefits and risk enrichment. | Decision document names approved first sources, rejected/deferred sources, licensing/attribution rules, allowed claim wording, null behavior, and first pilot species list. |
+| TE-017 | P0 | todo | TE-005, TE-010, TE-016 | Add reviewed seed ingestion for qualitative species benefits. | `make enrich-benefits` imports reviewed species-level qualitative benefit notes with complete provenance; reruns are idempotent; missing/unmatched species remain `benefits: null`; no numeric/tree-instance estimates are created. |
+| TE-018 | P0 | todo | TE-006, TE-010, TE-016 | Add reviewed seed ingestion for regional species risk/status signals. | `make enrich-risk` imports VASCAN Ontario regional status and narrow CFIA EAB ash overlay with complete provenance; reruns are idempotent; missing/unmatched species remain `risk: null`; no missing-risk-as-safe inference is exposed. |
+| TE-019 | P1 | todo | TE-017, TE-018, TE-012 | Add production enrichment review/deploy workflow. | Seed files can be dry-run, validated, imported, audited, and promoted to prod with count summaries and rollback-safe/idempotent behavior. |
 
 ## Suggested Execution Order
 
