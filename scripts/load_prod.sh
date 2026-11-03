@@ -87,6 +87,7 @@ case "$CITY" in
   san_francisco) SOURCE_NAME="San Francisco Street Tree Inventory" ;;
   madison_wi) SOURCE_NAME="Madison Urban Forestry Street Trees" ;;
   geneva) SOURCE_NAME="Geneva Cantonal Tree Inventory" ;;
+  warsaw) SOURCE_NAME="Warsaw Baza Zieleni Tree Inventory" ;;
 esac
 
 if [[ -n "$SOURCE_NAME" ]]; then

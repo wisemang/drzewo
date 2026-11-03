@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 from psycopg2.extras import execute_values
 
 from data_management import latest_archived_dataset
+from warsaw_data import SOURCE as WARSAW_SOURCE
+from warsaw_data import known_text as warsaw_known_text
+from warsaw_data import read_archive as read_warsaw_archive
 
 # Load environment variables from .env file
 load_dotenv()
@@ -100,6 +103,11 @@ CITY_HANDLERS = {
         "source_name": "Geneva Cantonal Tree Inventory",
         "loader": "load_geneva_data",
         "enrichments": ["wikipedia_links"],
+    },
+    "warsaw": {
+        "source_name": WARSAW_SOURCE,
+        "loader": "load_warsaw_data",
+        "enrichments": [],
     },
 }
 
@@ -1455,6 +1463,62 @@ def load_geneva_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
         load_geneva_geojson(cursor, data, batch_size)
 
 
+def load_warsaw_data(cursor, filename, batch_size=DEFAULT_BATCH_SIZE):
+    """Load a fully validated, source-preserving Warsaw Baza Zieleni archive."""
+    data = read_warsaw_archive(filename)
+    sql_query = """
+    INSERT INTO street_trees (
+        source, objectid, structid, site, botanical_name, common_name, original_common_name,
+        species_id, dbh_trunk, geom
+    ) VALUES %s
+    ON CONFLICT (source, objectid) DO NOTHING;
+    """
+    template = """
+    (%s, %s, %s, %s, %s, %s, %s,
+    (SELECT id FROM species WHERE species_key = %s), %s,
+    ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+    """
+    rows = []
+    for index, feature in enumerate(data["features"], start=1):
+        rows.append(warsaw_row_tuple(feature))
+        if len(rows) >= batch_size:
+            _flush_batch(cursor, sql_query, rows, template, batch_size)
+        if index % PROGRESS_INTERVAL == 0:
+            print(f"Processed {index} Warsaw features...")
+    _flush_batch(cursor, sql_query, rows, template, batch_size)
+
+
+def warsaw_row_tuple(feature):
+    """Map validated Warsaw source fields without treating circumference as diameter."""
+    _source_id, inventory_number, fields = read_warsaw_feature(feature)
+    botanical_name = warsaw_known_text(fields["Nazwa łacińska"])
+    original_common_name = warsaw_known_text(fields["Nazwa polska"])
+    common_name, original_common_name, species_key = resolved_species_values(
+        original_common_name, botanical_name, WARSAW_SOURCE
+    )
+    manager = warsaw_known_text(fields["Jednostka zarządzająca"])
+    dbh_trunk = parse_diameter_cm(None, warsaw_known_text(fields["Obwód pnia w cm"]))
+    return (
+        WARSAW_SOURCE,
+        feature["properties"]["_treeseek_objectid"],
+        inventory_number,
+        manager,
+        botanical_name,
+        common_name,
+        original_common_name,
+        species_key,
+        dbh_trunk,
+        point_to_multipoint_json(feature["geometry"]),
+    )
+
+
+def read_warsaw_feature(feature):
+    """Use the archive validator for individual loader rows as a defensive check."""
+    from warsaw_data import validate_feature
+
+    return validate_feature(feature)
+
+
 def load_geneva_geojson(cursor, data, batch_size):
     """Load Geneva GeoJSON features with WGS84 coordinates."""
     sql_query = """
@@ -1572,7 +1636,7 @@ def geneva_shared_values(properties):
         common_name,
         original_common_name,
         species_key,
-        parse_geneva_diameter_cm(prop("diam_1m"), prop("circonference")),
+        parse_diameter_cm(prop("diam_1m"), prop("circonference")),
     )
 
 
@@ -1749,6 +1813,14 @@ def botanical_name_candidates(value):
     without_cultivar = re.sub(r"\s+'[^']+'", "", normalized).strip()
     if without_cultivar and without_cultivar not in candidates:
         candidates.append(without_cultivar)
+    authorless_binomial = re.match(r"^([a-z]+(?:\s+x)?\s+[a-z][a-z-]+)\b", normalized)
+    if authorless_binomial and authorless_binomial.group(1) not in candidates:
+        candidates.append(authorless_binomial.group(1))
+    generic_species = re.match(r"^([a-z]+)\s+spp?\.?(?:\s|$|\()", normalized)
+    if generic_species:
+        candidate = f"{generic_species.group(1)} sp."
+        if candidate not in candidates:
+            candidates.append(candidate)
     return candidates
 
 
@@ -1861,8 +1933,8 @@ def parse_int(value):
         return None
 
 
-def parse_geneva_diameter_cm(diameter_value, circumference_value=None):
-    """Parse Geneva trunk diameter as centimeters, falling back from circumference."""
+def parse_diameter_cm(diameter_value, circumference_value=None):
+    """Parse trunk diameter in centimeters, falling back from circumference."""
     diameter_cm = parse_float(diameter_value)
     if diameter_cm is not None:
         return round(diameter_cm)
@@ -1945,6 +2017,7 @@ def main():
             enrich_data(cursor, city_config)
 
         row_count = count_city_rows(cursor, source_name)
+        print(f"{city} source rows in database: {row_count}")
         record_import_run(
             cursor,
             city=city,

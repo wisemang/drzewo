@@ -3,6 +3,28 @@ from datetime import datetime, timezone
 import tree_loader
 
 
+def warsaw_feature():
+    return {
+        "type": "Feature",
+        "_id": "1232965",
+        "geometry": {"type": "Point", "coordinates": [20.99627, 52.22483]},
+        "properties": {
+            "NAZWA_SERWIS": "D1007155",
+            "_treeseek_objectid": 1007155,
+            "_label_": "\n".join(
+                (
+                    "Numer inwentaryzacyjny: D1007155",
+                    "Nazwa polska: brzoza",
+                    "Nazwa łacińska: Betula sp.",
+                    "Obwód pnia w cm: 42",
+                    "Jednostka zarządzająca: Dzielnica Ochota",
+                    "Aktualność danych na dzień: 18.11.2025",
+                )
+            ),
+        },
+    }
+
+
 class FakeCursor:
     def __init__(
         self,
@@ -47,6 +69,55 @@ def test_count_city_rows_returns_count():
 
     assert count == 29455
     assert "SELECT COUNT(*) FROM street_trees WHERE source = %s" in cursor.calls[0][0]
+
+
+def test_warsaw_row_keeps_source_identifiers_and_derives_diameter_from_circumference():
+    row = tree_loader.warsaw_row_tuple(warsaw_feature())
+
+    assert row[0] == "Warsaw Baza Zieleni Tree Inventory"
+    assert row[1] == 1007155
+    assert row[2] == "D1007155"
+    assert row[3] == "Dzielnica Ochota"
+    assert row[4] == "Betula sp."
+    assert row[6] == "brzoza"
+    assert row[8] == 13
+    assert '"coordinates": [[20.99627, 52.22483]]' in row[-1]
+
+
+def test_resolved_species_values_ignores_botanical_author_citations():
+    common_name, original_common_name, species_key = tree_loader.resolved_species_values(
+        "klon pospolity", "Acer platanoides L.", "Warsaw Baza Zieleni Tree Inventory"
+    )
+
+    assert common_name == "Norway Maple"
+    assert original_common_name == "klon pospolity"
+    assert species_key == "acer_platanoides"
+
+
+def test_resolved_species_values_handles_reviewed_warsaw_names_and_generic_taxa():
+    cases = (
+        ("topola szara", "Populus ×canescens (Aiton) Sm.", "populus_x_canescens"),
+        ("wiąz szypułkowy", "Ulmus laevis Pall.", "ulmus_laevis"),
+        ("śliwa", "Prunus sp. (śliwa)", "prunus"),
+    )
+
+    for common_name, botanical_name, species_key in cases:
+        _common, original_common_name, resolved_key = tree_loader.resolved_species_values(
+            common_name, botanical_name, "Warsaw Baza Zieleni Tree Inventory"
+        )
+        assert original_common_name == common_name
+        assert resolved_key == species_key
+
+
+def test_parse_diameter_cm_falls_back_from_circumference():
+    assert tree_loader.parse_diameter_cm(None, "42") == 13
+
+
+def test_warsaw_is_registered_as_a_file_first_city_loader():
+    config = tree_loader.CITY_HANDLERS["warsaw"]
+
+    assert config["source_name"] == "Warsaw Baza Zieleni Tree Inventory"
+    assert config["loader"] == "load_warsaw_data"
 
 
 def test_record_import_run_writes_expected_values():

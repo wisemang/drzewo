@@ -35,6 +35,7 @@ Use `tree_loader.py` to import city data:
 .venv/bin/python tree_loader.py san_francisco --file /path/to/san_francisco.csv
 .venv/bin/python tree_loader.py madison_wi --file /path/to/madison_wi.geojson
 .venv/bin/python tree_loader.py geneva --file /path/to/geneva.json
+.venv/bin/python tree_loader.py warsaw --file /path/to/warsaw-trees.geojson
 ```
 
 When `--file` is omitted, the loader automatically uses the newest archived file under `data/raw/<city>/<YYYY-MM-DD>/`.
@@ -48,6 +49,26 @@ make download-geneva-data
 
 This writes `data/raw/geneva/<today>/geneva-trees-full.geojson`. Use `OUTPUT=...` to choose a
 different path or `OVERWRITE=1` to replace an existing file.
+
+Warsaw's Baza Zieleni is exposed through the city map's feature service. Download and verify its
+20 tree themes before importing:
+
+```bash
+make download-warsaw-data
+```
+
+This writes `data/raw/warsaw/<today>/warsaw-trees.geojson`. The downloader archives source labels,
+inventory numbers, source URLs, response checksums, retrieval timestamps, and the city reuse-terms
+URL. For every theme it requires a full-extent response to match two independently requested
+geographic halves. It stops without writing an archive when a response is incomplete or inconsistent.
+The raw source reports trunk circumference. TreeSeek derives an integer trunk diameter in centimeters
+by dividing it by π; the original circumference remains in the validated raw archive.
+
+Only use a generated archive with the Warsaw loader; it rejects manually assembled or altered files:
+
+```bash
+.venv/bin/python tree_loader.py warsaw
+```
 
 To replace all existing rows for one city source before loading, add `--refresh`:
 
@@ -70,7 +91,7 @@ The loader seeds the normalized species catalog from:
 - `seeds/species.csv`
 - `seeds/species_aliases.csv`
 
-Toronto and Geneva imports use this catalog to store `street_trees.species_id`, display a
+Toronto, Geneva, and Warsaw imports use this catalog to store `street_trees.species_id`, display a
 Canadian English species name, and retain the source-provided common name for comparison.
 Refresh a city import after applying the migration to populate `species_id` for that source.
 
@@ -108,6 +129,8 @@ Create `.env.prod` with production DB credentials, then run:
 make load-prod CITY=toronto
 # Optional override:
 make load-prod CITY=toronto FILE=data/raw/toronto/2026-03-26/Street\ Tree\ Data\ -\ 4326.geojson
+# Warsaw's validated bulk archive:
+make load-prod CITY=warsaw FILE=data/raw/warsaw/2026-11-02/warsaw-trees.geojson
 ```
 
 `scripts/load_prod.sh` will:
